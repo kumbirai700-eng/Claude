@@ -1092,3 +1092,78 @@ h1,h2,h3,h4 { font-family: var(--display); }
   .nav-links.open .nav-menu { position: static; opacity: 1; visibility: visible; transform: none; border: none; box-shadow: none; border-top: 1px solid var(--line); }
   .nav-actions { margin-left: auto; }
 }
+
+/* ============================================================================
+   ▓▓▓ ROUND 5 — globe in hero, 2-field search, profile, space map, gear days ▓▓▓
+   ========================================================================= */
+/* slanted hover underline in the header */
+.nav-item > a::after, .nav-links > a.nav-item::after { transform: scaleX(0) skewX(-18deg); }
+.nav-item:hover > a::after, .nav-links > a.nav-item:hover::after, .nav-links a.active::after { transform: scaleX(1) skewX(-18deg); }
+
+/* profile icon in the nav */
+.nav-profile { display: grid; place-items: center; width: 38px; height: 38px; border: 2px solid var(--line2); color: var(--text); transition: all .15s var(--ease); }
+.nav-profile:hover { border-color: var(--green); color: var(--green); transform: translate(-1px,-1px); box-shadow: 3px 3px 0 #000; }
+.nav-profile .icn { width: 18px; height: 18px; }
+
+/* ---- 2-field hero search ---- */
+.hsearch { display: flex; align-items: stretch; gap: 0; padding: 0; }
+.hs-field { position: relative; display: flex; align-items: center; gap: 8px; padding: 0 14px; flex: 1; min-width: 0; }
+.hs-field.hs-where { flex: 0 0 38%; border-left: 2px solid var(--green); }
+.hs-field .hs-ic { color: var(--green); display: grid; place-items: center; flex-shrink: 0; }
+.hs-field input { flex: 1; min-width: 0; background: none; border: none; height: 58px; color: var(--text); font-family: var(--mono); font-size: 14px; }
+.hs-field input:focus { outline: none; }
+.hs-field input::placeholder { color: var(--muted); }
+.hsearch-sug { left: -2px; right: -2px; }
+
+/* ---- hero globe card (globe lives in the hero now) ---- */
+.hero-globe-card { position: relative; height: 460px; display: grid; place-items: center; }
+.hero-globe-card .globe-wrap { width: 100%; height: 100%; }
+.hero-globe-card .globe { width: min(360px, 80%); height: min(360px, 80%); }
+
+/* ---- discovery section live map ---- */
+.feature-map-card { position: relative; height: 440px; border: 2px solid var(--green); box-shadow: var(--shadow); overflow: hidden; }
+.feature-map-card #feat-map { position: absolute; inset: 0; }
+
+/* ---- account / edit form ---- */
+.nav-profile + .acct-chip { margin-left: 2px; }
+
+/* ---- space location map ---- */
+.space-map { height: 280px; border: 2px solid var(--line2); position: relative; overflow: hidden; background: var(--ink); }
+.space-loc { font-family: var(--mono); font-size: 11.5px; text-transform: uppercase; color: var(--muted); margin-top: 12px; display: flex; align-items: center; gap: 8px; }
+.space-loc .icn { width: 15px; height: 15px; color: var(--green); }
+
+/* ---- gear day selector ---- */
+.gear-days { display: flex; align-items: center; gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.gear-days .gd-lbl { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; color: var(--muted); }
+.gd-step { display: flex; align-items: center; border: 2px solid var(--line2); }
+.gd-step button { width: 30px; height: 32px; font-size: 16px; color: var(--green); transition: background .12s; }
+.gd-step button:hover { background: var(--surface2); }
+.gd-step input { width: 44px; height: 32px; text-align: center; background: var(--ink); border: none; border-left: 2px solid var(--line2); border-right: 2px solid var(--line2); color: var(--text); font-family: var(--mono); font-size: 14px; }
+.gd-step input::-webkit-outer-spin-button, .gd-step input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.gd-total { margin-left: auto; font-family: var(--display); font-size: 20px; color: var(--green); }
+
+/* ---- MORE HOVER: pricing + cards change colour on hover ---- */
+.price-card { transition: transform .18s var(--ease), box-shadow .18s, border-color .18s, background .18s; }
+.price-card:hover { border-color: var(--green); background: #10140e; box-shadow: var(--shadow-g); transform: translate(-3px,-4px); }
+.price-card:hover .who { color: var(--green); }
+.price-card:hover .amt { color: var(--green); }
+.price-card.hl:hover { box-shadow: 8px 9px 0 var(--green); }
+.trust-card:hover { background: #10140e; }
+.trust-card:hover .ti { color: var(--green); transform: rotate(-6deg) scale(1.08); }
+.trust-card .ti { transition: transform .2s var(--ease), color .2s; }
+.cat-card:hover h3 { color: var(--green); }
+.cat-card h3 { transition: color .15s; }
+.list-cta:hover h3 { color: var(--green); }
+.list-cta h3 { transition: color .15s; }
+.faq summary:hover { color: var(--green); }
+.result:hover .result-name { color: var(--green); }
+.pop-tag, .chip, .amenity { transition: all .15s var(--ease); }
+.amenity:hover { border-color: var(--green); color: var(--green); }
+.blog-card:hover h3 { color: var(--green); }
+.blog-body h3 { transition: color .15s; }
+
+@media (max-width: 1080px){ .hero-globe-card { height: 360px; } }
+@media (max-width: 720px){
+  .hsearch { flex-direction: column; } .hs-field.hs-where { flex: 1; border-left: none; border-top: 2px solid var(--green); width: 100%; }
+  .hsearch-go { width: 100%; }
+}

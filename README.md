@@ -1,4 +1,4 @@
-# THE CREATIVE CENTRE
+# THE CREATIVE COLLECTIVE
 
 A black, map-based marketplace for finding creative **crew** near you — not
 just models and photographers, but the whole call sheet: **gaffers, sound

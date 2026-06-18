@@ -1,5 +1,5 @@
 // ============================================================================
-//  THE CREATIVE CENTRE — app (Australia)  ·  Aurora Australis
+//  THE CREATIVE COLLECTIVE — app (Australia)  ·  Aurora Australis
 // ============================================================================
 
 const LS = {
@@ -13,7 +13,7 @@ const state = {
   gear: [...LS.get('gear', []), ...SEED_GEAR],
   shortlist: new Set(LS.get('shortlist', [])),
   spaces: [...LS.get('spaces', []), ...SEED_SPACES],
-  map: null, markers: [], mode: 'people', heroMap: null,
+  map: null, markers: [], mode: 'people', heroMap: null, spaceMap: null,
   user: LS.get('user', null),
   following: new Set(LS.get('following', [])),
   cur: LS.get('cur', 'AUD'),
@@ -28,6 +28,8 @@ function money(str){
     return CUR_SYM[state.cur] + v.toLocaleString();
   });
 }
+// apply saved profile edits over seed / local creators
+(function(){ const ov=LS.get('overrides',{}); state.creators.forEach(c=>{ if(ov[c.id]) Object.assign(c, ov[c.id]); }); })();
 let ROUTE_PARAMS = new URLSearchParams();
 
 // ---------- helpers ----------
@@ -66,7 +68,7 @@ function filtered(){
 // ============================================================================
 //  ROUTER
 // ============================================================================
-const routes = { home:renderHome, discover:renderDiscover, jobs:renderJobs, gear:renderGear, join:renderJoin, creator:renderCreator, spaces:renderSpaces, space:renderSpace, blog:renderBlog, post:renderPost };
+const routes = { home:renderHome, discover:renderDiscover, jobs:renderJobs, gear:renderGear, join:renderJoin, creator:renderCreator, spaces:renderSpaces, space:renderSpace, blog:renderBlog, post:renderPost, account:renderAccount };
 function router(){
   const raw = location.hash.replace('#','') || 'home';
   const [route, qs] = raw.split('?');
@@ -84,6 +86,7 @@ function router(){
   // tear down live maps when leaving their views
   if (route !== 'discover' && state.map){ try{ state.map.remove(); }catch{} state.map=null; state.markers=[]; }
   if (route !== 'home' && state.heroMap){ try{ state.heroMap.remove(); }catch{} state.heroMap=null; }
+  if (route !== 'space' && state.spaceMap){ try{ state.spaceMap.remove(); }catch{} state.spaceMap=null; }
 
   const fn = routes[route] || renderHome;
   $$('.nav-links a').forEach(a => a.classList.toggle('active', a.dataset.route === route));
@@ -157,10 +160,17 @@ function renderHome(){
           <h1>The crew, the kit,<br>the spot. <em>One map.</em></h1>
           <p class="lede">Every part of a shoot — crew, gear and locations — plotted across Australia. Built for the people who actually make the work.</p>
           <form class="hsearch" id="hero-search" role="search">
-            <span class="hsearch-ic">${ic('search')}</span>
-            <input id="hs-q" autocomplete="off" aria-label="Search the scene" />
+            <div class="hs-field hs-what">
+              <span class="hs-ic">${ic('search')}</span>
+              <input id="hs-q" autocomplete="off" aria-label="What are you looking for" />
+              <div class="hsearch-sug" id="hs-sug" hidden></div>
+            </div>
+            <div class="hs-field hs-where">
+              <span class="hs-ic">${ic('pin')}</span>
+              <input id="hs-where" autocomplete="off" placeholder="Where?" aria-label="Where" />
+              <div class="hsearch-sug" id="hs-where-sug" hidden></div>
+            </div>
             <button class="hsearch-go" type="submit">GO ${ic('arrow')}</button>
-            <div class="hsearch-sug" id="hs-sug" hidden></div>
           </form>
           <div class="pop-row"><span class="lbl">Try</span>
             <a class="pop-tag" href="#discover?role=Model">Models</a>
@@ -170,9 +180,16 @@ function renderHome(){
           </div>
         </div>
 
-        <div class="hero-map-card">
-          <div id="hero-map"></div>
-          <div class="hmc-bar"><span class="hmc-live"><span class="dot"></span> LIVE MAP</span><span class="hmc-cnt">${total} creators · ${state.spaces.length} spaces</span></div>
+        <div class="hero-globe-card">
+          <div class="feature-visual globe-wrap" id="globe-wrap">
+            <div class="globe" id="globe">
+              <div class="g-tex" id="g-tex">${WORLD_SVG}${WORLD_SVG}</div>
+              <div class="g-grat">${Array.from({length:7},(_,k)=>`<i class="gm" style="left:${(k+1)*12.5}%"></i>`).join('')}<i class="gl" style="top:32%"></i><i class="gl" style="top:50%"></i><i class="gl" style="top:68%"></i></div>
+              <div class="g-shade"></div><div class="g-rim"></div>
+            </div>
+            ${INTL.slice(0,4).map((p,i)=>`<div class="g-prof p${i}"><div class="g-prof-av" style="${avatarBg(p[0]+p[1])}">${p[0][0]}</div><div class="g-prof-t"><b>${esc(p[0])}</b><span>${esc(p[2])} · ${esc(p[1])}</span></div></div>`).join('')}
+            <div class="globe-hint">${ic('arrow','icn')} drag the globe</div>
+          </div>
         </div>
       </div>
     </section>
@@ -197,21 +214,16 @@ function renderHome(){
       <div class="cat-grid">${CATEGORIES.map((c,i)=>`<a class="cat-card reveal d${(i%4)+1}" href="#discover?cat=${c.id}"><div class="cat-ico">${ic(CAT_ICON[c.id])}</div><h3>${c.label}</h3><div class="roles">${c.roles.slice(0,4).join(' · ')}${c.roles.length>4?' …':''}</div><div class="cnt">View near you →</div></a>`).join('')}</div>
     </div></section>
 
-    <!-- GLOBAL SCENE — continents globe -->
+    <!-- DISCOVERY MAP -->
     <section class="sec"><div class="wrap"><div class="feature">
-      <div class="feature-copy reveal"><div class="kicker">Local map · global scene</div><h2>The map is local. The scene is global.</h2>
-        <p>Discovery happens on an accurate map of your city — but the community reaches across the world. Connect with creatives anywhere, then bring the work home.</p>
-        <ul class="feature-list"><li>${VBADGE} Approximate location only — exact addresses never shown</li><li>${VBADGE} Connect with crew across cities and continents</li><li>${VBADGE} Never a dead empty map — coverage widens automatically</li></ul>
+      <div class="feature-copy reveal"><div class="kicker">The discovery map</div><h2>See who's actually near you.</h2>
+        <p>An accurate, live map of Australia — filter by role and distance, preview portfolios from the pin, and shortlist before you ever send a message.</p>
+        <ul class="feature-list"><li>${VBADGE} Real geography, smooth zoom, talent plotted by city</li><li>${VBADGE} Approximate location only — exact addresses never shown</li><li>${VBADGE} Never a dead empty map — coverage widens automatically</li></ul>
         <a class="btn btn-primary" href="#discover?reset=1">Open the map ${ic('arrow')}</a>
       </div>
-      <div class="feature-visual globe-wrap reveal d2" id="globe-wrap">
-        <div class="globe" id="globe">
-          <div class="g-tex" id="g-tex">${WORLD_SVG}${WORLD_SVG}</div>
-          <div class="g-grat">${Array.from({length:7},(_,k)=>`<i class="gm" style="left:${(k+1)*12.5}%"></i>`).join('')}<i class="gl" style="top:32%"></i><i class="gl" style="top:50%"></i><i class="gl" style="top:68%"></i></div>
-          <div class="g-shade"></div><div class="g-rim"></div>
-        </div>
-        ${INTL.slice(0,4).map((p,i)=>`<div class="g-prof p${i}"><div class="g-prof-av" style="${avatarBg(p[0]+p[1])}">${p[0][0]}</div><div class="g-prof-t"><b>${esc(p[0])}</b><span>${esc(p[2])} · ${esc(p[1])}</span></div></div>`).join('')}
-        <div class="globe-hint">${ic('arrow','icn')} drag to spin</div>
+      <div class="feature-visual feature-map-card reveal d2">
+        <div id="feat-map"></div>
+        <div class="hmc-bar"><span class="hmc-live"><span class="dot"></span> LIVE MAP — AUSTRALIA</span><span class="hmc-cnt">${total} creators · ${state.spaces.length} spaces</span></div>
       </div>
     </div></div></section>
 
@@ -281,7 +293,7 @@ function renderHome(){
       <div class="sec-head center reveal"><div class="eyebrow">Pricing</div><h2>Free where it has to be. Paid where it makes sense.</h2><p>Creators are free forever — density is the product. Brands pay only when they hire. Gear earns as that market matures.</p></div>
       <div class="price-grid">
         <div class="price-card reveal"><div class="who">Creators</div><div class="amt">Free <small>forever</small></div><div class="stage">Stage 0 · live</div><ul><li>${ic('check')} Unlimited portfolio &amp; gallery</li><li>${ic('check')} Discoverable on the map</li><li>${ic('check')} Apply to briefs in your city</li><li>${ic('check')} 0% cut of your bookings</li></ul><a class="btn btn-ghost btn-block" href="#join">Join free</a></div>
-        <div class="price-card hl reveal d2"><div class="who">Brands</div><div class="amt">$49 <small>/ job post</small></div><div class="stage">Stage 1 · live</div><ul><li>${ic('check')} Browse the full map free</li><li>${ic('check')} Post a brief, notify matching crew</li><li>${ic('check')} Shortlist &amp; contact unlock</li><li>${ic('check')} Post 3+ → switch to a saver plan</li></ul><a class="btn btn-primary btn-block" href="#jobs">Post a brief</a></div>
+        <div class="price-card hl reveal d2"><div class="who">Brands</div><div class="amt">$3.99 <small>/ job post</small></div><div class="stage">Stage 1 · live</div><ul><li>${ic('check')} Browse the full map free</li><li>${ic('check')} Post a brief, notify matching crew</li><li>${ic('check')} Shortlist &amp; contact unlock</li><li>${ic('check')} Post 3+ → switch to a saver plan</li></ul><a class="btn btn-primary btn-block" href="#jobs">Post a brief</a></div>
         <div class="price-card reveal d3"><div class="who">Gear rental</div><div class="amt">Commission <small>only</small></div><div class="stage">Stage 3 · rolling out</div><ul><li>${ic('check')} List gear you already own</li><li>${ic('check')} No listing fee</li><li>${ic('check')} Deposit &amp; calendar handled</li><li>${ic('check')} Opens city-by-city</li></ul><a class="btn btn-ghost btn-block" href="#gear">Browse gear</a></div>
       </div>
     </div></section>
@@ -317,12 +329,12 @@ function renderHome(){
     <!-- FOOTER -->
     <footer class="foot-big">
       <div class="foot-cols">
-        <div class="about"><a class="brand" href="#home" data-nav><span class="brand-mark"><svg viewBox="0 0 900 820" class="brand-au"><path d="M612,60 C660,96 740,190 800,440 C788,540 755,612 730,645 C700,665 625,672 590,650 C540,646 500,648 470,645 C360,652 230,640 155,610 C135,580 120,530 120,520 C130,440 150,360 250,230 C300,172 330,142 360,150 C420,150 455,118 470,86 C520,108 560,148 560,150 C600,118 612,60 612,60 Z"/></svg></span><span class="brand-name">THE&nbsp;CREATIVE&nbsp;CENTRE</span></a><p>Australia's map-based marketplace for finding creative crew. Free for creators, density-first by design.</p></div>
+        <div class="about"><a class="brand" href="#home" data-nav><span class="brand-mark"><svg viewBox="0 0 900 820" class="brand-au"><path d="M612,60 C660,96 740,190 800,440 C788,540 755,612 730,645 C700,665 625,672 590,650 C540,646 500,648 470,645 C360,652 230,640 155,610 C135,580 120,530 120,520 C130,440 150,360 250,230 C300,172 330,142 360,150 C420,150 455,118 470,86 C520,108 560,148 560,150 C600,118 612,60 612,60 Z"/></svg></span><span class="brand-name">THE&nbsp;CREATIVE&nbsp;COLLECTIVE</span></a><p>Australia's map-based marketplace for finding creative crew. Free for creators, density-first by design.</p></div>
         <div class="foot-col"><h5>Product</h5><a href="#discover?reset=1">Discover map</a><a href="#spaces">Spaces</a><a href="#jobs">For brands</a><a href="#gear">Gear rental</a><a href="#join">For creators</a></div>
         <div class="foot-col"><h5>Roles</h5><a href="#discover?role=Model">Models</a><a href="#discover?role=Photographer">Photographers</a><a href="#discover?role=Gaffer">Gaffers</a><a href="#discover?role=Sound%20Mixer">Sound</a></div>
         <div class="foot-col"><h5>Cities</h5>${CITIES.slice(0,6).map(c=>`<a href="#discover?city=${encodeURIComponent(c)}">${c}</a>`).join('')}</div>
       </div>
-      <div class="foot-bar"><span>© 2026 The Creative Centre · Australia</span><span>Free for creators, always.</span></div>
+      <div class="foot-bar"><span>© 2026 The Creative Collective · Australia</span><span>Free for creators, always.</span></div>
     </footer>
   </div>`));
 
@@ -336,52 +348,65 @@ function renderHome(){
   initGlobe();
 }
 
-// landing search — typewriter placeholder + live suggestions + smart parse
+// landing search — WHAT (role, typewriter) + WHERE (city autocomplete) + GO
 function initHeroSearch(){
-  const form = $('#hero-search'), inp = $('#hs-q'), sug = $('#hs-sug'); if(!form) return;
-  const ex = ['photographer in Sydney','recording studio in Brisbane','gaffer in Melbourne','makeup artist in Perth','sound mixer in Gold Coast','warehouse in Melbourne'];
+  const form = $('#hero-search'), inp = $('#hs-q'), sug = $('#hs-sug');
+  const wIn = $('#hs-where'), wSug = $('#hs-where-sug'); if(!form) return;
+
+  // typewriter placeholder on the WHAT field
+  const ex = ['photographer','recording studio','gaffer','makeup artist','sound mixer','warehouse'];
   let ei=0, ci=0, del=false, typing=true;
   (function type(){
-    if(!document.body.contains(inp)) return;
-    if(!typing){ return; }
-    const t = ex[ei];
-    ci += del ? -1 : 1;
-    inp.setAttribute('placeholder', 'Try “'+t.slice(0,ci)+'”');
-    if(!del && ci>=t.length){ del=true; setTimeout(type, 1600); return; }
+    if(!document.body.contains(inp)) return; if(!typing) return;
+    const t=ex[ei]; ci+=del?-1:1; inp.setAttribute('placeholder','Try “'+t.slice(0,ci)+'”');
+    if(!del && ci>=t.length){ del=true; setTimeout(type,1500); return; }
     if(del && ci<=0){ del=false; ei=(ei+1)%ex.length; }
-    setTimeout(type, del?34:62);
+    setTimeout(type, del?34:64);
   })();
-  inp.addEventListener('focus', ()=>{ typing=false; inp.setAttribute('placeholder','Search crew, spaces, roles, cities…'); render(inp.value); });
-  inp.addEventListener('blur', ()=>{ setTimeout(()=>{ sug.hidden=true; }, 160); if(!inp.value){ typing=true; type(); } });
-  inp.addEventListener('input', ()=>render(inp.value));
-  function render(q){
+
+  // WHAT suggestions
+  inp.addEventListener('focus', ()=>{ typing=false; inp.setAttribute('placeholder','Role, studio, gear…'); whatSug(inp.value); });
+  inp.addEventListener('blur',  ()=>{ setTimeout(()=>sug.hidden=true,160); if(!inp.value){ typing=true; type(); } });
+  inp.addEventListener('input', ()=>whatSug(inp.value));
+  function whatSug(q){
     const ql=q.trim().toLowerCase();
-    const roles = ALL_ROLES.filter(r=>r.toLowerCase().includes(ql)).slice(0,4);
-    const cities = CITIES.filter(c=>c.toLowerCase().includes(ql)).slice(0,3);
-    const out=[];
-    if(ql){ roles.forEach(r=>out.push(`<button data-go="#discover?role=${encodeURIComponent(r)}">${ic('users','icn')} <b>${esc(r)}</b><span>crew</span></button>`));
-            cities.forEach(c=>out.push(`<button data-go="#discover?city=${encodeURIComponent(c)}">${ic('pin','icn')} <b>${esc(c)}</b><span>city</span></button>`)); }
-    else { ['Model','Photographer','Gaffer','Recording Engineer'].forEach(r=>out.push(`<button data-go="#discover?role=${encodeURIComponent(r)}">${ic('users','icn')} <b>${esc(r)}</b><span>popular</span></button>`)); }
-    sug.innerHTML = out.join('') || `<div class="sug-none">Press GO to search “${esc(q)}”</div>`;
-    sug.hidden = false;
-    $$('#hs-sug button').forEach(b=>b.addEventListener('mousedown', e=>{ e.preventDefault(); location.hash=b.dataset.go; }));
+    const roles=(ql?ALL_ROLES.filter(r=>r.toLowerCase().includes(ql)):['Model','Photographer','Gaffer','Recording Engineer','Makeup Artist']).slice(0,5);
+    sug.innerHTML = roles.map(r=>`<button data-pick="${esc(r)}">${ic('users','icn')} <b>${esc(r)}</b></button>`).join('') || `<div class="sug-none">Search “${esc(q)}”</div>`;
+    sug.hidden=false;
+    $$('#hs-sug button').forEach(b=>b.addEventListener('mousedown', e=>{ e.preventDefault(); inp.value=b.dataset.pick; sug.hidden=true; wIn.focus(); }));
   }
+  // WHERE suggestions (city autocomplete)
+  wIn.addEventListener('focus', ()=>whereSug(wIn.value));
+  wIn.addEventListener('blur',  ()=>setTimeout(()=>wSug.hidden=true,160));
+  wIn.addEventListener('input', ()=>whereSug(wIn.value));
+  function whereSug(q){
+    const ql=q.trim().toLowerCase();
+    const cities=CITIES.filter(c=>!ql||c.toLowerCase().includes(ql)).slice(0,6);
+    wSug.innerHTML = cities.map(c=>`<button data-city="${esc(c)}">${ic('pin','icn')} <b>${esc(c)}</b><span>${state.creators.filter(x=>x.city===c).length}</span></button>`).join('') || `<div class="sug-none">No city</div>`;
+    wSug.hidden=false;
+    $$('#hs-where-sug button').forEach(b=>b.addEventListener('mousedown', e=>{ e.preventDefault(); wIn.value=b.dataset.city; wSug.hidden=true; }));
+  }
+
   form.addEventListener('submit', e=>{
     e.preventDefault();
     const q=inp.value.trim().toLowerCase();
-    const role=ALL_ROLES.find(r=>q.includes(r.toLowerCase().split(' ')[0]));
-    const city=CITIES.find(c=>q.includes(c.toLowerCase()));
-    const p=new URLSearchParams(); if(city)p.set('city',city); if(role)p.set('role',role); if(!city&&!role&&q)p.set('q',q);
-    location.hash='#discover'+(p.toString()?'?'+p:'?reset=1');
+    const role=ALL_ROLES.find(r=>r.toLowerCase()===q) || ALL_ROLES.find(r=>q && r.toLowerCase().includes(q.split(' ')[0]));
+    const city=CITIES.find(c=>c.toLowerCase()===wIn.value.trim().toLowerCase()) || CITIES.find(c=>wIn.value && c.toLowerCase().includes(wIn.value.trim().toLowerCase()));
+    const studio = /studio|warehouse|space|location/.test(q);
+    const p=new URLSearchParams();
+    if(city) p.set('city',city);
+    if(studio) p.set('mode','spaces'); else if(role) p.set('role',role); else if(q) p.set('q',q);
+    if(![...p].length) p.set('reset','1');
+    location.hash='#discover?'+p.toString();
   });
 }
 
-// live mini-map in the hero (Australia-wide with animated talent pins)
+// live mini-map in the discovery feature section (Australia-wide, animated pins)
 function initHeroMap(){
-  const host = $('#hero-map'); if(!host) return;
+  const host = $('#feat-map'); if(!host) return;
   if (typeof maplibregl === 'undefined'){ host.innerHTML = `<div class="hmc-fallback">${ic('pin','icn')} Live map loads online</div>`; return; }
   state.heroMap = new maplibregl.Map({
-    container: 'hero-map', interactive: true, attributionControl: false,
+    container: 'feat-map', interactive: true, attributionControl: false,
     style: { version:8, sources:{ c:{ type:'raster', tileSize:256, tiles:['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png','https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png','https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'] } }, layers:[{ id:'c', type:'raster', source:'c' }] },
     center:[134.5,-25.7], zoom:3.1, dragRotate:false,
   });
@@ -820,6 +845,9 @@ function renderSpace(){
         ${socialsHTML(s)}
         <div class="pf-section-t">The space</div>
         <div class="gallery">${shots}</div>
+        <div class="pf-section-t">Where it is</div>
+        <div class="space-map" id="space-map"><div class="hmc-fallback">${ic('pin','icn')} Map loads online</div></div>
+        <div class="space-loc">${ic('pin','icn')} ${esc(s.area)}, ${esc(s.city)} · exact address shared after booking</div>
       </div>
       <aside class="pf-rail">
         <div class="rate">${esc(money(s.rate))} <small>/ hour</small></div>
@@ -834,6 +862,17 @@ function renderSpace(){
   $('#sp-book').addEventListener('click', () => toast(`Booking request sent to ${s.host}`));
   $('#sp-tour').addEventListener('click', () => toast('Recce request sent — the host will be in touch'));
   $$('.gallery .shot').forEach(sh => sh.addEventListener('click', () => openLightbox(sh.dataset.full)));
+  if (typeof maplibregl !== 'undefined'){
+    const host=$('#space-map'); host.innerHTML='';
+    state.spaceMap = new maplibregl.Map({ container:'space-map', attributionControl:false, interactive:true, dragRotate:false,
+      style:{ version:8, sources:{ c:{ type:'raster', tileSize:256, tiles:['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png','https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png','https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'] } }, layers:[{ id:'c', type:'raster', source:'c' }] },
+      center:[s.lng,s.lat], zoom:13 });
+    state.spaceMap.on('load', ()=>{ state.spaceMap.resize();
+      const node=el(`<div class="mk mk-space"><div class="mk-dot">${ic('building','icn')}</div></div>`);
+      node.querySelector('.icn').style.cssText='width:18px;height:18px;color:var(--ink)';
+      new maplibregl.Marker({element:node,anchor:'center'}).setLngLat([s.lng,s.lat]).addTo(state.spaceMap);
+    });
+  }
 }
 
 // ============================================================================
@@ -852,7 +891,7 @@ function renderJobs(){
           <div class="form-row"><label class="label">Lead role</label><select class="field" name="role">${ALL_ROLES.map(r=>`<option>${r}</option>`).join('')}</select></div>
           <div class="form-row two"><div><label class="label">Budget</label><input class="field" name="budget" placeholder="$5,000 total"></div><div><label class="label">Usage</label><input class="field" name="usage" placeholder="Web + OOH, 6 mo"></div></div>
           <div class="form-row"><label class="label">The brief</label><textarea class="field" name="brief" placeholder="What you're making, the vibe, what you need on the day…"></textarea></div>
-          <div class="form-row price-row"><div><div style="font-weight:600;font-size:14px">Job post</div><div class="hint" style="margin:0">Single brief · first-timer rate</div></div><div class="amt2">$49</div></div>
+          <div class="form-row price-row"><div><div style="font-weight:600;font-size:14px">Job post</div><div class="hint" style="margin:0">Single brief · first-timer rate</div></div><div class="amt2">$3.99</div></div>
           <button class="btn btn-primary btn-block" type="submit">Post brief &amp; notify crew</button>
           <div class="hint" style="text-align:center;margin-top:10px">Post 3+ and we'll offer a monthly plan that saves you money.</div>
         </form></div></div>
@@ -886,11 +925,72 @@ function renderGear(){
   const paint = () => {
     const city=$('#gear-city').value;
     const list=state.gear.filter(g=>city==='All cities'||g.city===city);
-    $('#gear-list').innerHTML = list.length ? list.map(g=>`<div class="gear-card reveal"><div class="gear-img" style="background-image:url('${gearURL(g)}')"><span class="cat">${esc(g.cat)}</span></div><div class="gear-info"><div class="brand">${esc(g.brand)}</div><h3>${esc(g.model)}</h3><div class="gf"><span class="brandline">${esc(g.owner)} · ${esc(g.area)}</span><span class="rate">${esc(money(g.rate))}</span></div><button class="btn btn-ghost btn-sm btn-block" style="margin-top:14px" data-rent="${g.id}">Request dates · dep. ${esc(money(g.deposit))}</button></div></div>`).join('') : `<div style="color:var(--muted)">No gear listed in ${city} yet — this market opens as crew density grows.</div>`;
-    $$('[data-rent]').forEach(b=>b.addEventListener('click',()=>toast('Request sent — owner confirms availability & deposit')));
+    $('#gear-list').innerHTML = list.length ? list.map(g=>{
+      const per = parseFloat((g.rate||'').replace(/[^\d.]/g,''))||0;
+      return `<div class="gear-card reveal"><div class="gear-img" style="background-image:url('${gearURL(g)}')"><span class="cat">${esc(g.cat)}</span></div>
+      <div class="gear-info"><div class="brand">${esc(g.brand)}</div><h3>${esc(g.model)}</h3>
+        <div class="gf"><span class="brandline">${esc(g.owner)} · ${esc(g.area)}</span><span class="rate">${esc(money(g.rate))}</span></div>
+        <div class="gear-days">
+          <span class="gd-lbl">Days</span>
+          <div class="gd-step"><button type="button" data-step="-1" data-g="${g.id}">−</button><input type="number" min="1" max="60" value="1" data-days="${g.id}" data-per="${per}"><button type="button" data-step="1" data-g="${g.id}">+</button></div>
+          <span class="gd-total" data-total="${g.id}">${esc(money('$'+per))}</span>
+        </div>
+        <button class="btn btn-primary btn-sm btn-block" style="margin-top:12px" data-rent="${g.id}">Request booking · dep. ${esc(money(g.deposit))}</button>
+      </div></div>`; }).join('') : `<div style="color:var(--muted)">No gear listed in ${city} yet — this market opens as crew density grows.</div>`;
+    const recalc = (id) => {
+      const inp=$(`[data-days="${id}"]`); let d=Math.max(1,Math.min(60,+inp.value||1)); inp.value=d;
+      $(`[data-total="${id}"]`).textContent=money('$'+(+inp.dataset.per)*d);
+    };
+    $$('[data-days]').forEach(inp=>{ recalc(inp.dataset.days); inp.addEventListener('input',()=>recalc(inp.dataset.days)); });
+    $$('[data-step]').forEach(b=>b.addEventListener('click',()=>{ const inp=$(`[data-days="${b.dataset.g}"]`); inp.value=(+inp.value||1)+(+b.dataset.step); recalc(b.dataset.g); }));
+    $$('[data-rent]').forEach(b=>b.addEventListener('click',()=>{ const d=$(`[data-days="${b.dataset.rent}"]`).value; toast(`Request sent — ${d}-day booking, owner confirms availability`); }));
     initReveal();
   };
   $('#gear-city').addEventListener('change', paint); paint();
+}
+
+// ============================================================================
+//  VIEW: ACCOUNT  (your own profile — view & edit)
+// ============================================================================
+function renderAccount(){
+  if(!state.user){ openAuth('login'); location.hash='#home'; return; }
+  const c = state.creators.find(x => x.id === state.user.creatorId);
+  if(!c){
+    $('#view').appendChild(el(`<div class="wrap section-pad"><div class="page-head reveal"><div class="eyebrow">Your account</div><h1>Finish your profile</h1><p>You're logged in as <b style="color:var(--green)">${esc(state.user.email||state.user.name)}</b>. Create your folio so you show up on the map and people can connect with you.</p></div><div style="padding:34px 0;display:flex;gap:12px;flex-wrap:wrap"><a class="btn btn-primary" href="#join">Create my profile ${ic('arrow')}</a><a class="btn btn-ghost" href="#discover">Browse the map</a></div></div>`));
+    return;
+  }
+  const s = c.socials||{}, f = c.followers||{};
+  $('#view').appendChild(el(`<div class="wrap section-pad">
+    <div class="page-head reveal" style="display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap">
+      <div><div class="eyebrow">Your profile</div><h1>Edit your folio</h1><p>Changes go live on your public profile instantly.</p></div>
+      <a class="btn btn-ghost" href="#creator?id=${c.id}">View public profile ${ic('arrow')}</a>
+    </div>
+    <div class="section-pad"><div class="card form-card reveal">
+      <form id="acct-form">
+        <div class="form-row two"><div><label class="label">Name</label><input class="field" name="name" value="${esc(c.name)}"></div><div><label class="label">City</label><select class="field" name="city">${CITIES.map(x=>`<option ${x===c.city?'selected':''}>${x}</option>`).join('')}</select></div></div>
+        <div class="form-row"><label class="label">Role(s)</label><div class="checkrow" id="acct-roles">${ALL_ROLES.map(r=>`<label class="check"><input type="checkbox" value="${esc(r)}" ${c.roles.includes(r)?'checked':''}>${esc(r)}</label>`).join('')}</div></div>
+        <div class="form-row two"><div><label class="label">Suburb</label><input class="field" name="area" value="${esc(c.area||'')}"></div><div><label class="label">Day rate</label><input class="field" name="rate" value="${esc(c.rate||'')}"></div></div>
+        <div class="form-row two"><div><label class="label">Years experience</label><input class="field" type="number" name="exp" value="${c.exp||0}"></div><div><label class="label">Gear you own</label><input class="field" name="gear" value="${esc((c.gear||[]).join(', '))}"></div></div>
+        <div class="form-row"><label class="label">Bio</label><textarea class="field" name="bio">${esc(c.bio||'')}</textarea></div>
+        <div class="form-row"><label class="label">Socials &amp; following</label>
+          <div class="form-row two" style="margin-bottom:10px"><div><input class="field" name="ig" value="${esc(s.ig||'')}" placeholder="Instagram @"></div><div><input class="field" name="ig_f" type="number" value="${f.ig||''}" placeholder="IG followers"></div></div>
+          <div class="form-row two" style="margin-bottom:10px"><div><input class="field" name="tt" value="${esc(s.tt||'')}" placeholder="TikTok @"></div><div><input class="field" name="tt_f" type="number" value="${f.tt||''}" placeholder="TikTok followers"></div></div>
+          <div class="form-row two" style="margin:0"><div><input class="field" name="x" value="${esc(s.x||'')}" placeholder="X / Twitter @"></div><div><input class="field" name="li" value="${esc(s.li||'')}" placeholder="LinkedIn"></div></div>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Save changes</button>
+      </form>
+    </div></div>
+  </div>`));
+  $('#acct-form').addEventListener('submit', e => {
+    e.preventDefault(); const fd=new FormData(e.target);
+    const roles=$$('#acct-roles input:checked').map(i=>i.value); if(!roles.length){ toast('Pick at least one role'); return; }
+    const clean=v=>(v||'').replace(/^@/,'').trim();
+    const upd={ name:fd.get('name'), city:fd.get('city'), area:fd.get('area'), rate:fd.get('rate'), exp:+fd.get('exp')||0, bio:fd.get('bio'), roles, gear:(fd.get('gear')||'').split(',').map(x=>x.trim()).filter(Boolean), tags:roles.slice(0,3), socials:{ig:clean(fd.get('ig')),tt:clean(fd.get('tt')),x:clean(fd.get('x')),li:clean(fd.get('li'))}, followers:{ig:+fd.get('ig_f')||0,tt:+fd.get('tt_f')||0,x:f.x||0} };
+    Object.assign(c, upd);
+    const ov=LS.get('overrides',{}); ov[c.id]=Object.assign(ov[c.id]||{}, upd); LS.set('overrides',ov);
+    if(FB.on && FB.db) FB.db.collection('profiles').doc(c.id).set(upd,{merge:true}).catch(()=>{});
+    toast('Profile saved'); location.hash='#creator?id='+c.id;
+  });
 }
 
 // ============================================================================
@@ -908,7 +1008,7 @@ function renderJoin(){
       <div class="step"><div class="n">03</div><h4>Get discovered</h4><p>Brands find you by role and distance — no cold DMs.</p></div>
       <div class="step"><div class="n">04</div><h4>Get booked</h4><p>Briefs land in your city; book direct. We never take a cut.</p></div>
     </div></div></div>
-    <div class="wrap section-pad"><div class="card form-card reveal"><div class="eyebrow">Create your profile</div><h3 style="font-size:26px;margin-bottom:6px">Join the Creative Centre</h3><p style="color:var(--muted);font-size:14px;margin-bottom:24px">Only the first four are required. Everything else builds your folio.</p>
+    <div class="wrap section-pad"><div class="card form-card reveal"><div class="eyebrow">Create your profile</div><h3 style="font-size:26px;margin-bottom:6px">Join the Creative Collective</h3><p style="color:var(--muted);font-size:14px;margin-bottom:24px">Only the first four are required. Everything else builds your folio.</p>
       <form id="join-form">
         <div class="form-row two"><div><label class="label">Name *</label><input class="field" name="name" required placeholder="Your name"></div><div><label class="label">City *</label><select class="field" name="city">${CITIES.map(c=>`<option>${c}</option>`).join('')}</select></div></div>
         <div class="form-row"><label class="label">Your role(s) * — pick all that apply</label><div class="checkrow" id="role-picker">${ALL_ROLES.map(r=>`<label class="check"><input type="checkbox" value="${esc(r)}">${esc(r)}</label>`).join('')}</div></div>
@@ -932,7 +1032,7 @@ function renderJoin(){
     const clean = s => (s||'').replace(/^@/,'').trim();
     const socials = { ig:clean(f.get('ig')), tt:clean(f.get('tt')), x:clean(f.get('x')), li:clean(f.get('li')) };
     const followers = { ig:+f.get('ig_f')||0, tt:+f.get('tt_f')||0, x:0 };
-    const creator={ id:'u'+Date.now(), name:f.get('name'), roles, city:f.get('city'), area:f.get('area'), lat:ll.lat, lng:ll.lng, rate:f.get('rate')||'On request', exp:+f.get('exp')||0, verified:false, rating:5.0, jobs:0, top:false, gear:(f.get('gear')||'').split(',').map(s=>s.trim()).filter(Boolean), bio:f.get('bio')||'New to the Creative Centre.', tags:roles.slice(0,3), socials, followers, connections:0 };
+    const creator={ id:'u'+Date.now(), name:f.get('name'), roles, city:f.get('city'), area:f.get('area'), lat:ll.lat, lng:ll.lng, rate:f.get('rate')||'On request', exp:+f.get('exp')||0, verified:false, rating:5.0, jobs:0, top:false, gear:(f.get('gear')||'').split(',').map(s=>s.trim()).filter(Boolean), bio:f.get('bio')||'New to the Creative Collective.', tags:roles.slice(0,3), socials, followers, connections:0 };
     const mine=LS.get('creators',[]); mine.push(creator); LS.set('creators',mine); state.creators.push(creator); state.city=creator.city;
     if (state.user){ state.user.creatorId=creator.id; saveUser(); }   // link profile to account
     toast(`You're on the ${creator.city} map, ${creator.name.split(' ')[0]}!`);
@@ -982,7 +1082,7 @@ function renderNavCta(){
   const box = $('#nav-cta-area'); if(!box) return;
   if (state.user){
     const u = state.user;
-    box.innerHTML = `<div class="acct-chip" id="acct-chip"><span class="av" style="${avatarBg(u.name)}">${initials(u.name)}</span><span class="nm">${esc(u.name.split(' ')[0])}</span></div>`;
+    box.innerHTML = `<a class="nav-profile" href="#account" data-nav title="Your profile">${ic('user','icn')}</a><div class="acct-chip" id="acct-chip"><span class="av" style="${avatarBg(u.name)}">${initials(u.name)}</span><span class="nm">${esc(u.name.split(' ')[0])}</span></div>`;
     $('#acct-chip').addEventListener('click', toggleAcctMenu);
   } else {
     box.innerHTML = `<a class="btn-nav ghost" id="nav-login">Log in</a><a class="btn-nav solid" href="#join" data-nav>Join free</a><a class="btn-nav ghost" href="#join" data-nav>List your space</a>`;
@@ -1032,7 +1132,16 @@ function openAuth(tab='signup'){
       </form>`;
     $('#auth-form').addEventListener('submit', e => {
       e.preventDefault(); const f=new FormData(e.target);
-      state.user = { name: f.get('name') || (f.get('email')||'').split('@')[0], email: f.get('email'), kind: f.get('kind')||'creator', creatorId: state.user?.creatorId };
+      const name=f.get('name')||(f.get('email')||'').split('@')[0], email=f.get('email'), pass=f.get('pass'), kind=f.get('kind')||'creator';
+      if (FB.on){   // real Firebase auth
+        const op = t==='signup'
+          ? FB.auth.createUserWithEmailAndPassword(email,pass).then(cr=>cr.user.updateProfile({displayName:name}))
+          : FB.auth.signInWithEmailAndPassword(email,pass);
+        op.then(()=>{ state.user=Object.assign(state.user||{},{kind}); LS.set('user',state.user); m.remove(); toast(t==='signup'?`Welcome, ${name.split(' ')[0]}`:`Welcome back`); })
+          .catch(err=>toast(err.message.replace('Firebase: ','')));
+        return;
+      }
+      state.user = { name, email, kind, creatorId: state.user?.creatorId };   // localStorage fallback
       saveUser(); m.remove();
       toast(t==='signup' ? `Welcome, ${state.user.name.split(' ')[0]} — account created` : `Welcome back, ${state.user.name.split(' ')[0]}`);
       if (t==='signup' && state.user.kind==='creator') setTimeout(()=>{ if(location.hash.indexOf('join')<0) location.hash='#join'; }, 300);
@@ -1069,11 +1178,32 @@ function socialsHTML(c){
   return `<div class="socials">${Object.entries(c.socials).filter(([k,v])=>v).map(([k,v])=>`<a class="social-link" href="${SOCIAL_URL[k](v)}" target="_blank" rel="noopener">${esc(SOCIAL_ICON[k])}${f[k]?` <span class="ct">${numFmt(f[k])}</span>`:''}</a>`).join('')}</div>`;
 }
 
+// ============================================================================
+//  FIREBASE (optional real backend — fill window.FIREBASE_CONFIG to enable)
+//  Falls back to localStorage when not configured, so the demo always works.
+// ============================================================================
+const FB = { on:false, auth:null, db:null };
+function initFirebase(){
+  const cfg = window.FIREBASE_CONFIG;
+  if(!cfg || !cfg.apiKey || typeof firebase === 'undefined') return;
+  try{
+    firebase.initializeApp(cfg);
+    FB.auth = firebase.auth(); FB.db = firebase.firestore(); FB.on = true;
+    FB.auth.onAuthStateChanged(u => {
+      if(u){ state.user = { name:u.displayName || (u.email||'').split('@')[0], email:u.email, uid:u.uid, kind:state.user?.kind||'creator', creatorId:state.user?.creatorId }; }
+      else { state.user = null; }
+      LS.set('user', state.user); renderNavCta();
+    });
+    console.info('Firebase connected ✓');
+  }catch(e){ console.warn('Firebase init failed:', e.message); }
+}
+
 // ---------- boot ----------
 $('#scrim').addEventListener('click', closeProfile);
 document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeProfile(); $('.lightbox')?.remove(); } });
 $('#burger')?.addEventListener('click', () => { const open=$('.nav-links').classList.toggle('open'); $('#burger').setAttribute('aria-expanded', open); });
 const curSel = $('#cur-select');
 if (curSel){ curSel.value = state.cur; curSel.addEventListener('change', () => { state.cur = curSel.value; LS.set('cur', state.cur); router(); }); }
+initFirebase();
 renderNavCta();
 router();
