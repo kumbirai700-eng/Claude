@@ -878,3 +878,87 @@ body { line-height: 1.5; }
 
 @media (max-width: 1080px){ .statboard { margin-top: 8px; } }
 @media (max-width: 560px){ .sb-grid { grid-template-columns: 1fr; } .sb-cell:nth-child(odd){border-right:none} }
+
+/* ============================================================================
+   ▓▓ DISCOVER v2 — map right, filters+list left ▓▓
+   ========================================================================= */
+.cur-select { background: var(--ink); color: var(--text); border: 2px solid var(--line2); font-family: var(--mono); font-size: 11px; text-transform: uppercase; padding: 7px 8px; cursor: pointer; }
+.cur-select:hover { border-color: var(--green); }
+
+.discover-v2 { grid-template-columns: 400px 1fr; }
+.discover-v2 .panel { display: flex; flex-direction: column; }
+.discover-v2 .panel-head { position: static; }
+.mode-toggle.three { grid-template-columns: 1fr 1fr 1fr; display: grid; }
+.city-ac { position: relative; display: flex; align-items: center; gap: 10px; margin-top: 14px; background: var(--surface2); border: 2px solid var(--line2); padding: 0 14px; }
+.city-ac .icn { color: var(--green); flex-shrink: 0; }
+.city-ac input { flex: 1; background: none; border: none; color: var(--text); font-size: 15px; padding: 13px 0; font-family: var(--font); }
+.city-ac input:focus { outline: none; }
+.city-sug { position: absolute; top: calc(100% + 4px); left: -2px; right: -2px; background: var(--surface); border: 2px solid var(--green); box-shadow: var(--shadow); z-index: 30; max-height: 280px; overflow-y: auto; }
+.city-sug button { display: flex; justify-content: space-between; align-items: center; width: 100%; text-align: left; padding: 12px 14px; font-size: 14px; border-bottom: 1px solid var(--line); color: var(--text); }
+.city-sug button:hover { background: var(--surface2); color: var(--green); }
+.city-sug button span { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; color: var(--muted2); }
+.city-none { padding: 14px; color: var(--muted); font-size: 13px; }
+.search-wrap { display: flex; align-items: center; gap: 10px; margin-top: 10px; background: var(--surface2); border: 2px solid var(--line); padding: 0 14px; }
+.search-wrap .icn { color: var(--muted); }
+.search-wrap input { flex: 1; background: none; border: none; color: var(--text); font-size: 14px; padding: 12px 0; font-family: var(--font); }
+.search-wrap input:focus { outline: none; }
+
+.discover-v2 .filters { padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.discover-v2 .filters .fg { margin-bottom: 16px; }
+.discover-v2 .filters .fg:last-child { margin-bottom: 0; }
+.hotspots { padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.hotspot { display: grid; grid-template-columns: 88px 1fr 28px; align-items: center; gap: 10px; width: 100%; padding: 7px 0; cursor: pointer; }
+.hotspot .hs-name { font-family: var(--mono); font-size: 11.5px; text-transform: uppercase; color: var(--muted); text-align: left; }
+.hotspot.on .hs-name, .hotspot:hover .hs-name { color: var(--green); }
+.hotspot .hs-bar { height: 8px; background: var(--surface2); border: 1px solid var(--line); }
+.hotspot .hs-bar i { display: block; height: 100%; background: var(--green); }
+.hotspot .hs-n { font-family: var(--mono); font-size: 11px; color: var(--muted2); text-align: right; }
+.results-head { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 20px 10px; font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); z-index: 2; }
+.results-head #results-title { color: var(--text); }
+#results { flex: 1; overflow-y: auto; }
+.res-empty { padding: 28px 20px; color: var(--muted); font-size: 13.5px; }
+.result.job { cursor: pointer; }
+.mk-job .mk-dot { background: var(--green) !important; }
+.mk-job .mk-dot .icn { color: var(--ink) !important; }
+
+@media (max-width: 1080px){ .discover-v2 { grid-template-columns: 340px 1fr; } }
+@media (max-width: 720px){ .discover-v2 { grid-template-columns: 1fr; } .discover-v2 .panel { max-height: none; } .discover-v2 #results { max-height: 360px; } }
+
+/* ============================================================================
+   ▓▓ FEATURED ORBIT (mind-map) + INTERACTIVE GLOBE ▓▓
+   ========================================================================= */
+.orbit { position: relative; height: 540px; display: grid; place-items: center; margin-top: 20px; --R: 210px; }
+.orbit-center { width: 132px; height: 132px; border-radius: 50%; border: 2px solid var(--green); background: var(--ink); display: grid; place-content: center; text-align: center; box-shadow: 0 0 0 8px rgba(216,255,62,.05), var(--shadow-g); z-index: 3; }
+.orbit-center .oc-mark { color: var(--green); font-size: 30px; line-height: 1; }
+.orbit-center .oc-t { font-family: var(--display); font-size: 20px; text-transform: uppercase; line-height: .9; margin-top: 6px; }
+.orbit-ring { position: absolute; inset: 0; display: grid; place-items: center; animation: spin 46s linear infinite; }
+.orbit:hover .orbit-ring, .orbit:hover .on-spin { animation-play-state: paused; }
+.orbit-ring::before { content: ''; position: absolute; width: calc(var(--R) * 2); height: calc(var(--R) * 2); border: 1px dashed var(--line2); border-radius: 50%; }
+.orbit-node { position: absolute; cursor: pointer; }
+.on-spin { width: 132px; margin: -46px 0 0 -66px; background: var(--surface); border: 2px solid var(--line2); animation: spin 46s linear infinite reverse; transition: border-color .15s, transform .15s var(--ease); }
+.orbit-node:hover .on-spin { border-color: var(--green); box-shadow: var(--shadow-g); z-index: 5; }
+.on-av { height: 78px; background-size: cover; background-position: center; border-bottom: 2px solid var(--line2); }
+.on-meta { padding: 9px 11px; }
+.on-meta b { display: block; font-family: var(--display); font-size: 16px; text-transform: uppercase; }
+.on-meta span { font-family: var(--mono); font-size: 10px; text-transform: uppercase; color: var(--green); }
+
+/* globe */
+.globe-wrap { display: grid; place-items: center; perspective: 900px; cursor: grab; overflow: hidden; }
+.globe-wrap.dragging { cursor: grabbing; }
+.globe-scene { transform: rotateX(-16deg); transform-style: preserve-3d; }
+.globe { position: relative; width: 280px; height: 280px; transform-style: preserve-3d; will-change: transform; }
+.g-ring { position: absolute; inset: 0; border: 1px solid rgba(216,255,62,.32); border-radius: 50%; }
+.g-lat { position: absolute; left: 0; right: 0; height: 1px; background: rgba(216,255,62,.16); }
+.g-fill { position: absolute; inset: 6px; border-radius: 50%; background: radial-gradient(circle at 36% 30%, rgba(216,255,62,.16), rgba(8,11,10,.2) 55%, rgba(4,6,5,.5)); box-shadow: inset -22px -22px 60px rgba(0,0,0,.7), 0 0 60px rgba(216,255,62,.18); transform: translateZ(0.1px); }
+.globe-hint { position: absolute; bottom: 14px; font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted2); display: flex; align-items: center; gap: 7px; }
+.globe-hint .icn { width: 14px; height: 14px; color: var(--green); }
+.g-prof { position: absolute; left: 50%; top: 50%; transform: rotate(calc(var(--gi) * (360deg / var(--gn)))) translate(190px) rotate(calc(-1 * var(--gi) * (360deg / var(--gn)))); display: flex; align-items: center; gap: 8px; background: rgba(8,11,10,.85); border: 2px solid var(--line2); padding: 5px 10px 5px 5px; backdrop-filter: blur(6px); opacity: 0; animation: gpop 9s ease-in-out infinite; animation-delay: calc(var(--gi) * 1.5s); white-space: nowrap; }
+.g-prof-av { width: 26px; height: 26px; display: grid; place-items: center; font-family: var(--display); font-size: 12px; color: var(--ink); }
+.g-prof-t b { display: block; font-size: 12px; }
+.g-prof-t span { font-family: var(--mono); font-size: 9px; text-transform: uppercase; color: var(--green); }
+@keyframes gpop { 0%,100%{opacity:0; transform: rotate(calc(var(--gi)*(360deg/var(--gn)))) translate(176px) rotate(calc(-1*var(--gi)*(360deg/var(--gn)))) scale(.9)} 12%,30%{opacity:1; transform: rotate(calc(var(--gi)*(360deg/var(--gn)))) translate(196px) rotate(calc(-1*var(--gi)*(360deg/var(--gn)))) scale(1)} }
+
+@media (max-width: 720px){
+  .orbit { --R: 130px; height: 420px; } .on-spin { width: 104px; margin: -36px 0 0 -52px; } .on-av { height: 58px; }
+  .globe { width: 220px; height: 220px; } .g-prof { display: none; }
+}
