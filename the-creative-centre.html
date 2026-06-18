@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/coolvetica" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Climate+Crisis&family=Space+Mono:wght@400;700&display=swap" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <style>
 /* ============================================================================
@@ -744,18 +744,119 @@ body { line-height: 1.5; }
 @media (max-width:1080px){ .list-cta-grid { grid-template-columns: 1fr; } }
 @media (max-width:720px){ .list-strip { flex-direction: column; align-items: flex-start; } .list-strip span { font-size: 21px; } }
 
+/* ============================================================================
+   ▓▓ ROUND 3 — Climate Crisis type, graphic stats, auth, connections, blog ▓▓
+   ========================================================================= */
+:root { --display: 'Coolvetica','Archivo',Impact,sans-serif; --display-hero: 'Climate Crisis','Coolvetica',Impact,sans-serif; }
+.home-hero h1, .hero h1, .sec-head h2, .page-head h1, .cta-band h2, .list-strip span { font-family: var(--display-hero); font-weight: 400; line-height: .9; letter-spacing: -.005em; }
+.home-hero h1 em, .hero h1 em { font-family: var(--display-hero); font-style: normal; }
+
+/* loader: longer dash for the curved path so it draws cleanly */
+#au-path { stroke-dasharray: 4400 !important; stroke-dashoffset: 4400 !important; animation: draw 3.4s var(--ease) infinite !important; }
+#au-tas  { stroke-dasharray: 320 !important; stroke-dashoffset: 320 !important; }
+
+/* ---- NAV: two CTA buttons + account chip ---- */
+.nav-cta-area { display: flex; align-items: center; gap: 8px; }
+.btn-nav { font-family: var(--mono); font-weight: 700; text-transform: uppercase; font-size: 12px; letter-spacing: .04em; padding: 10px 15px; border: 2px solid var(--green); box-shadow: 3px 3px 0 #000; transition: transform .12s var(--ease), box-shadow .12s; }
+.btn-nav:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 #000; }
+.btn-nav.solid { background: var(--green); color: var(--ink); }
+.btn-nav.ghost { background: var(--ink); color: var(--green); }
+.acct-chip { display: flex; align-items: center; gap: 9px; cursor: pointer; border: 2px solid var(--line2); padding: 5px 12px 5px 6px; background: var(--surface); }
+.acct-chip:hover { border-color: var(--green); }
+.acct-chip .av { width: 28px; height: 28px; display: grid; place-items: center; font-family: var(--display); font-size: 13px; color: var(--ink); }
+.acct-chip .nm { font-family: var(--mono); font-size: 12px; text-transform: uppercase; }
+.acct-menu { position: absolute; top: 58px; right: 18px; background: var(--surface); border: 2px solid var(--line2); box-shadow: var(--shadow); min-width: 200px; z-index: 60; }
+.acct-menu a, .acct-menu button { display: block; width: 100%; text-align: left; padding: 13px 16px; font-family: var(--mono); font-size: 12.5px; text-transform: uppercase; color: var(--text); border-bottom: 1px solid var(--line); }
+.acct-menu a:hover, .acct-menu button:hover { background: var(--surface2); color: var(--green); }
+.acct-menu .who2 { color: var(--muted2); font-size: 10.5px; cursor: default; }
+
+/* ---- GRAPHIC STAT TILES (hero) ---- */
+.hero-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 0; margin-top: 48px; max-width: 640px; border: 2px solid var(--line2); background: var(--line); }
+.stat-tile { background: var(--ink); padding: 18px 18px 16px; position: relative; overflow: hidden; }
+.stat-tile + .stat-tile { border-left: 2px solid var(--line2); }
+.stat-tile .st-fig { font-family: var(--display-hero); font-size: clamp(34px,4vw,52px); line-height: .8; color: var(--text); }
+.stat-tile.lead .st-fig { color: var(--green); }
+.stat-tile .st-fig span { font-size: .5em; vertical-align: super; }
+.stat-tile .st-lbl { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-top: 10px; }
+.stat-tile .st-spark { display: flex; align-items: flex-end; gap: 3px; height: 22px; margin-top: 10px; }
+.stat-tile .st-spark i { flex: 1; background: var(--green); opacity: .35; transition: opacity .2s, height .2s; }
+.stat-tile:hover .st-spark i { opacity: .8; }
+.stat-tile .st-dots { display: grid; grid-template-columns: repeat(6,1fr); gap: 3px; margin-top: 10px; height: 22px; }
+.stat-tile .st-dots i { background: var(--green); opacity: .25; }
+.stat-tile .st-dots i.on { opacity: .9; }
+.stat-tile .st-pin { margin-top: 8px; height: 22px; color: var(--green); display: flex; align-items: flex-end; gap: 4px; font-family: var(--mono); font-size: 11px; }
+
+/* ---- CONNECT button states ---- */
+.btn-connect.is-on { background: var(--ink); color: var(--green); }
+.btn-connect.is-on:hover { box-shadow: 7px 7px 0 #000; }
+
+/* socials row */
+.socials { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.social-link { display: inline-flex; align-items: center; gap: 7px; border: 2px solid var(--line2); padding: 8px 12px; font-family: var(--mono); font-size: 11.5px; text-transform: uppercase; color: var(--text); transition: transform .12s var(--ease), border-color .12s, box-shadow .12s; }
+.social-link:hover { transform: translate(-2px,-2px); box-shadow: 3px 3px 0 var(--green); border-color: var(--green); }
+.social-link .ct { color: var(--green); font-weight: 700; }
+.social-link .icn { width: 15px; height: 15px; }
+
+/* connection count stat */
+.pf-stat .v.conn em { color: var(--green); }
+
+/* ---- AUTH MODAL ---- */
+.modal-scrim { position: fixed; inset: 0; background: rgba(3,4,3,.8); z-index: 100; display: grid; place-items: center; padding: 20px; backdrop-filter: blur(4px); }
+.modal { width: min(440px,100%); background: var(--surface); border: 2px solid var(--green); box-shadow: 10px 10px 0 #000; }
+.modal-head { display: flex; border-bottom: 2px solid var(--line2); }
+.modal-tab { flex: 1; padding: 16px; font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); border-bottom: 3px solid transparent; }
+.modal-tab.on { color: var(--green); border-bottom-color: var(--green); background: var(--surface2); }
+.modal-body { padding: 24px; }
+.modal-body h3 { font-family: var(--display); font-size: 26px; text-transform: uppercase; margin-bottom: 4px; }
+.modal-body .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+.modal-close { position: absolute; top: 16px; right: 18px; font-size: 20px; color: var(--text); z-index: 2; }
+.modal .form-row { margin-bottom: 14px; }
+.modal .seg-pick { display: flex; gap: 8px; }
+.modal .seg-pick label { flex: 1; text-align: center; padding: 11px; border: 2px solid var(--line2); font-family: var(--mono); font-size: 11.5px; text-transform: uppercase; cursor: pointer; }
+.modal .seg-pick input { display: none; }
+.modal .seg-pick input:checked + span { color: var(--green); }
+.modal .seg-pick label:has(input:checked) { border-color: var(--green); background: var(--surface2); }
+
+/* ---- BLOG ---- */
+.blog-hero { border-bottom: 2px solid var(--line2); padding: 70px 0 30px; position: relative; overflow: hidden; }
+.blog-cats { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 24px; }
+.blog-cat { font-family: var(--mono); font-size: 11.5px; text-transform: uppercase; padding: 8px 14px; border: 2px solid var(--line2); cursor: pointer; color: var(--muted); }
+.blog-cat.on, .blog-cat:hover { background: var(--green); color: var(--ink); border-color: var(--green); }
+.blog-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+.blog-card { border: 2px solid var(--line); background: var(--surface); cursor: pointer; transition: transform .15s var(--ease), box-shadow .15s, border-color .15s; }
+.blog-card:hover { transform: translate(-3px,-3px); box-shadow: var(--shadow-g); border-color: var(--green); }
+.blog-card.feat { grid-column: span 3; display: grid; grid-template-columns: 1.4fr 1fr; }
+.blog-img { height: 200px; background-size: cover; background-position: center; border-bottom: 2px solid var(--line); }
+.blog-card.feat .blog-img { height: auto; border-bottom: none; border-right: 2px solid var(--line); min-height: 320px; }
+.blog-body { padding: 22px; }
+.blog-meta { font-family: var(--mono); font-size: 11px; text-transform: uppercase; color: var(--green); display: flex; gap: 12px; }
+.blog-body h3 { font-family: var(--display); font-size: 24px; text-transform: uppercase; line-height: .98; margin: 12px 0 10px; }
+.blog-card.feat .blog-body h3 { font-size: 34px; }
+.blog-body p { color: var(--muted); font-size: 14px; }
+.post-wrap { max-width: 760px; margin: 0 auto; padding: 60px 30px 90px; }
+.post-wrap h1 { font-family: var(--display-hero); font-size: clamp(34px,5vw,58px); text-transform: uppercase; line-height: .92; margin: 18px 0; }
+.post-wrap .post-img { height: 360px; background-size: cover; background-position: center; border: 2px solid var(--line2); margin: 24px 0; }
+.post-wrap p.body { color: #CBD8D8; font-size: 17px; line-height: 1.7; }
+
+@media (max-width: 1080px){ .blog-grid { grid-template-columns: repeat(2,1fr); } .blog-card.feat { grid-column: span 2; } }
+@media (max-width: 720px){
+  .hero-stats { grid-template-columns: 1fr 1fr; } .stat-tile:nth-child(3){border-left:none}
+  .stat-tile:nth-child(odd){border-left:none} .stat-tile:nth-child(n+3){border-top:2px solid var(--line2)}
+  .blog-grid { grid-template-columns: 1fr; } .blog-card.feat { grid-column: span 1; grid-template-columns: 1fr; }
+  .blog-card.feat .blog-img { border-right: none; border-bottom: 2px solid var(--line); min-height: 200px; }
+}
+
 </style>
 </head>
 <body>
   <!-- ===================== LOADER (Australia outline draws itself) ===================== -->
   <div class="loader" id="loader">
-    <svg class="loader-au" viewBox="0 0 1000 820" aria-label="Loading Australia">
-      <path id="au-path" d="M175,250 L250,182 L340,150 L430,120 L470,165 L505,150 L545,180 L585,120 L610,92 L650,150 L705,235 L740,300 L762,365 L788,430 L802,495 L792,560 L765,612 L700,648 L640,652 L585,632 L548,598 L520,632 L470,648 L380,650 L300,632 L232,602 L165,566 L128,492 L120,420 L138,356 L150,300 Z" />
-      <path id="au-tas" d="M712,690 L742,675 L760,705 L744,738 L712,728 Z" />
-      <circle id="au-tracer" r="7" />
+    <svg class="loader-au" viewBox="0 0 900 820" aria-label="Loading Australia">
+      <path id="au-path" d="M612,60 C645,70 660,96 660,100 C700,140 740,190 770,250 C800,320 810,380 800,440 C790,500 788,540 775,560 C760,600 755,612 730,645 C705,662 700,665 660,668 C625,672 610,662 590,650 C575,652 560,648 555,640 C548,648 540,646 540,620 C530,640 525,650 525,650 C505,655 500,648 500,645 C492,656 485,640 485,615 C475,640 470,648 470,645 C420,650 360,652 300,640 C250,648 230,640 230,640 C190,630 160,620 155,610 C140,595 135,580 135,575 C125,545 120,530 120,520 C125,460 130,440 130,460 C135,400 150,360 195,300 C230,250 250,230 250,230 C280,190 300,172 300,170 C320,150 330,142 360,150 C395,135 405,128 405,130 C420,148 420,150 420,150 C440,130 455,118 455,120 C460,100 470,86 470,86 C495,100 520,108 520,108 C535,120 545,118 545,120 C555,140 560,148 560,150 C580,135 600,118 600,120 C606,90 612,60 612,60 Z" />
+      <path id="au-tas" d="M700,716 C720,706 740,700 752,706 C770,718 772,742 762,752 C750,772 740,778 724,772 C708,762 700,742 700,716 Z" />
     </svg>
     <div class="loader-word">THE CREATIVE CENTRE</div>
-    <div class="loader-sub">Mapping Australia's creative crew</div>
+    <div class="loader-sub">Putting the scene together</div>
   </div>
 
   <!-- ===================== MOUSE-TRACKING AURORA GLOW ===================== -->
@@ -766,7 +867,7 @@ body { line-height: 1.5; }
   <header class="nav" id="nav">
     <a class="brand" href="#home" data-nav>
       <span class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 1000 820" class="brand-au"><path d="M175,250 L250,182 L340,150 L430,120 L470,165 L505,150 L545,180 L585,120 L610,92 L650,150 L705,235 L740,300 L762,365 L788,430 L802,495 L792,560 L765,612 L700,648 L640,652 L585,632 L548,598 L520,632 L470,648 L380,650 L300,632 L232,602 L165,566 L128,492 L120,420 L138,356 L150,300 Z"/></svg>
+        <svg viewBox="0 0 900 820" class="brand-au"><path d="M612,60 C660,96 740,190 800,440 C788,540 755,612 730,645 C700,665 625,672 590,650 C540,646 500,648 470,645 C360,652 230,640 155,610 C135,580 120,530 120,520 C130,440 150,360 250,230 C300,172 330,142 360,150 C420,150 455,118 470,86 C520,108 560,148 560,150 C600,118 612,60 612,60 Z"/></svg>
       </span>
       <span class="brand-name">THE&nbsp;CREATIVE&nbsp;CENTRE</span>
     </a>
@@ -774,9 +875,9 @@ body { line-height: 1.5; }
       <a href="#discover" data-nav data-route="discover">Discover</a>
       <a href="#spaces"   data-nav data-route="spaces">Spaces</a>
       <a href="#jobs"     data-nav data-route="jobs">For brands</a>
-      <a href="#gear"     data-nav data-route="gear">Gear rental</a>
       <a href="#join"     data-nav data-route="join">For creators</a>
-      <a href="#join"     data-nav data-route="join" class="nav-cta">Join free</a>
+      <a href="#blog"     data-nav data-route="blog">Blog</a>
+      <span class="nav-cta-area" id="nav-cta-area"></span>
     </nav>
     <button class="nav-burger" id="burger" aria-label="Open menu" aria-expanded="false">☰</button>
   </header>
@@ -804,7 +905,8 @@ const CATEGORIES = [
   { id: 'talent',    label: 'Talent',                 roles: ['Model', 'Actor', 'Dancer', 'Presenter', 'Extra'] },
   { id: 'camera',    label: 'Camera',                 roles: ['Photographer', 'Videographer', 'Cinematographer / DP', 'Camera Operator', 'Drone Operator', 'Assistant Camera'] },
   { id: 'lighting',  label: 'Lighting & Grip',        roles: ['Gaffer', 'Grip', 'Best Boy', 'Lighting Technician'] },
-  { id: 'sound',     label: 'Sound',                  roles: ['Sound Mixer', 'Boom Operator', 'Composer', 'Music Producer'] },
+  { id: 'sound',     label: 'Sound',                  roles: ['Sound Mixer', 'Boom Operator', 'Composer', 'Sound Designer'] },
+  { id: 'music',     label: 'Music & Studio',         roles: ['Music Producer', 'Recording Engineer', 'Mixing Engineer', 'Mastering Engineer', 'Session Musician', 'Vocalist', 'Beatmaker', 'Songwriter', 'Studio Engineer'] },
   { id: 'glam',      label: 'Hair, Makeup & Style',   roles: ['Makeup Artist', 'Hair Stylist', 'Wardrobe Stylist', 'Nail Artist', 'Groomer'] },
   { id: 'direction', label: 'Direction & Production', roles: ['Director', 'Creative Director', 'Art Director', 'Producer', 'Production Assistant', 'Casting Director'] },
   { id: 'post',      label: 'Post-Production',         roles: ['Editor', 'Colorist', 'Retoucher', 'VFX Artist', 'Motion Designer'] },
@@ -830,6 +932,18 @@ const CITY_COORDS = {
   'Sunshine Coast':  { lat: -26.6500, lng: 153.0667, zoom: 11.4 },
   'Cairns':          { lat: -16.9186, lng: 145.7781, zoom: 12.0 },
   'Geelong':         { lat: -38.1499, lng: 144.3617, zoom: 12.0 },
+  'Byron Bay':       { lat: -28.6474, lng: 153.6020, zoom: 12.4 },
+  'Townsville':      { lat: -19.2590, lng: 146.8169, zoom: 12.0 },
+  'Toowoomba':       { lat: -27.5598, lng: 151.9507, zoom: 12.2 },
+  'Ballarat':        { lat: -37.5622, lng: 143.8503, zoom: 12.2 },
+  'Bendigo':         { lat: -36.7570, lng: 144.2794, zoom: 12.2 },
+  'Launceston':      { lat: -41.4332, lng: 147.1441, zoom: 12.2 },
+  'Mackay':          { lat: -21.1411, lng: 149.1860, zoom: 12.2 },
+  'Bunbury':         { lat: -33.3271, lng: 115.6414, zoom: 12.2 },
+  'Mandurah':        { lat: -32.5269, lng: 115.7217, zoom: 12.2 },
+  'Albury':          { lat: -36.0737, lng: 146.9135, zoom: 12.2 },
+  'Coffs Harbour':   { lat: -30.2963, lng: 153.1157, zoom: 12.2 },
+  'Noosa':           { lat: -26.3949, lng: 153.0908, zoom: 12.4 },
 };
 const CITIES = Object.keys(CITY_COORDS);
 
@@ -868,6 +982,26 @@ const SEED_CREATORS = [
   { id:'c24', name:'Maya Solomon',     roles:['Producer','Casting Director'],  city:'Adelaide',  area:'Bowden',        ...near('Adelaide', .006, .006), rate:'$1,400/day',exp:9,  verified:true,  rating:4.8, jobs:40, top:false, gear:[],                                          tags:['Content','Casting'],               bio:'Content production and casting across South Australia. Calm, organised, well-connected.' },
   { id:'c25', name:'Finn Gallagher',   roles:['Cinematographer / DP'],         city:'Gold Coast',area:'Mermaid Beach', ...near('Gold Coast',-.006,.004), rate:'$2,100/day',exp:11, verified:true,  rating:4.9, jobs:67, top:false, gear:['ARRI Alexa Mini LF','Signature Primes'],   tags:['Commercial','Film'],               bio:'Cinematographer for commercials and film. Owns an Alexa Mini LF package.' },
   { id:'c26', name:'Sienna Park',      roles:['Makeup Artist','Hair Stylist'], city:'Perth',     area:'Mount Lawley',  ...near('Perth',  .004,-.002), rate:'$820/day',  exp:6,  verified:false, rating:4.8, jobs:31, top:false, gear:[],                                          tags:['Beauty','Bridal','Editorial'],     bio:'Beauty, bridal and editorial. Double-threat hair and makeup for lean crews.' },
+
+  // ---- Brisbane (flooded for build preview) ----
+  { id:'c27', name:'Kai Tupou',        roles:['Photographer'],                 city:'Brisbane',  area:'West End',       ...near('Brisbane',-.009,.012), rate:'$1,500/day', exp:7,  verified:true,  rating:4.9, jobs:72, top:true,  gear:['Canon R5','RF 50mm f1.2'],            tags:['Portrait','Music'],            bio:'Portrait and music photographer working the Brisbane scene. Fast, candid, story-driven.' },
+  { id:'c28', name:'Bella Hartley',    roles:['Model'],                        city:'Brisbane',  area:'New Farm',       ...near('Brisbane',.011,-.004), rate:'$1,000/day', exp:4,  verified:true,  rating:4.8, jobs:38, top:false, gear:[],                                     tags:['Commercial','Editorial'],      bio:'Commercial and editorial model based in New Farm. Versatile, expressive, reliable.' },
+  { id:'c29', name:'Marcus Devlin',    roles:['Music Producer','Mixing Engineer'], city:'Brisbane', area:'Fortitude Valley', ...near('Brisbane',.002,.009), rate:'$600/day', exp:9, verified:true, rating:5.0, jobs:94, top:true, gear:['SSL console','Neumann U87','Pro Tools HDX'], tags:['Hip-hop','R&B','Mix'], bio:'Producer and mix engineer. Runs a tracking room in the Valley — beats, vocals, full mixes.' },
+  { id:'c30', name:'Jess Lombardi',    roles:['Recording Engineer','Studio Engineer'], city:'Brisbane', area:'Newstead', ...near('Brisbane',.006,.003), rate:'$520/day', exp:6, verified:false, rating:4.8, jobs:47, top:false, gear:['UA Apollo x8','Various mics'], tags:['Tracking','Live'], bio:'Tracking and studio engineer. Comfortable on bands, vocalists and podcasts alike.' },
+  { id:'c31', name:'Tane Wiremu',      roles:['Videographer','Editor'],        city:'Brisbane',  area:'South Brisbane', ...near('Brisbane',-.004,-.006), rate:'$1,300/day',exp:8,  verified:true,  rating:4.9, jobs:61, top:false, gear:['Sony FX6','Ronin'],                   tags:['Music Video','Brand'],         bio:'Music videos and brand films across SE QLD. Shoot-to-edit, quick turnarounds.' },
+  { id:'c32', name:'Harper Quinn',     roles:['Makeup Artist'],                city:'Brisbane',  area:'Paddington',     ...near('Brisbane',.008,.001), rate:'$700/day',  exp:5,  verified:false, rating:4.7, jobs:33, top:false, gear:[],                                     tags:['Beauty','Festival'],           bio:'Beauty and festival makeup. Bold colour work for music and editorial.' },
+  { id:'c33', name:'Diego Santos',     roles:['Dancer','Choreographer'],       city:'Brisbane',  area:'Woolloongabba',  ...near('Brisbane',-.002,.004), rate:'$620/day', exp:7, verified:true, rating:4.9, jobs:44, top:false, gear:[], tags:['Commercial','Hip-hop'], bio:'Dancer and choreographer. Brings a crew for music video ensemble work.' },
+  { id:'c34', name:'Sophie Nguyen',    roles:['Producer'],                     city:'Brisbane',  area:'Teneriffe',      ...near('Brisbane',.009,.006), rate:'$1,600/day',exp:11, verified:true,  rating:4.8, jobs:58, top:false, gear:[],                                     tags:['Commercial','Music Video'],    bio:'Line producer across QLD. Permits, crew, logistics handled end to end.' },
+  { id:'c35', name:'Ravi Naidu',       roles:['Beatmaker','Music Producer'],   city:'Brisbane',  area:'Highgate Hill',  ...near('Brisbane',-.006,.000), rate:'$450/day', exp:5, verified:false, rating:4.8, jobs:51, top:false, gear:['MPC Live II','Ableton'], tags:['Beats','Trap','Lo-fi'], bio:'Beatmaker and producer. Sells packs, does custom production, loves a late session.' },
+
+  // ---- Gold Coast (flooded for build preview) ----
+  { id:'c36', name:'Ocean Bailey',     roles:['Model','Presenter'],            city:'Gold Coast',area:'Burleigh Heads', ...near('Gold Coast',.006,-.005),rate:'$950/day', exp:5, verified:true, rating:4.9, jobs:49, top:true, gear:[], tags:['Surf','Lifestyle','Swim'], bio:'Surf, swim and lifestyle. In and out of the water all day, no problem.' },
+  { id:'c37', name:'Leila Haddad',     roles:['Photographer','Retoucher'],     city:'Gold Coast',area:'Palm Beach',     ...near('Gold Coast',-.003,.007),rate:'$1,400/day',exp:8, verified:true, rating:4.8, jobs:55, top:false, gear:['Nikon Z9','Profoto'], tags:['Swimwear','Editorial'], bio:'Swimwear and editorial photographer. Owns a light-filled space near Palm Beach.' },
+  { id:'c38', name:'Cody Fraser',      roles:['Drone Operator','Videographer'],city:'Gold Coast',area:'Broadbeach',     ...near('Gold Coast',.009,.002), rate:'$1,200/day',exp:6, verified:false,rating:4.7, jobs:36, top:false, gear:['DJI Mavic 3 Cine','FX30'], tags:['Aerial','Real Estate','Travel'], bio:'CASA-licensed drone op and shooter. Coastline aerials are my bread and butter.' },
+  { id:'c39', name:'Mia Tanaka',       roles:['Makeup Artist','Hair Stylist'], city:'Gold Coast',area:'Mermaid Waters', ...near('Gold Coast',-.005,-.003),rate:'$750/day', exp:6, verified:true, rating:5.0, jobs:42, top:false, gear:[], tags:['Bridal','Editorial','Beauty'], bio:'Bridal, beauty and editorial. Calm, fast, kit always ready.' },
+  { id:'c40', name:'Jaylen Brooks',    roles:['Music Producer','Vocalist'],    city:'Gold Coast',area:'Southport',      ...near('Gold Coast',.003,.006), rate:'$500/day', exp:4, verified:false,rating:4.8, jobs:39, top:false, gear:['Logic Pro','SM7B'], tags:['R&B','Pop','Topline'], bio:'Producer and vocalist. Toplines, hooks and full productions from a Southport room.' },
+  { id:'c41', name:'Ana Rivera',       roles:['Wardrobe Stylist'],             city:'Gold Coast',area:'Burleigh Heads', ...near('Gold Coast',.004,-.008),rate:'$900/day', exp:7, verified:true, rating:4.8, jobs:34, top:false, gear:[], tags:['Swim','Resort','Campaign'], bio:'Resort and swim styling for campaigns up and down the coast.' },
+  { id:'c42', name:'Zane Whitfield',   roles:['Recording Engineer','Mastering Engineer'], city:'Gold Coast', area:'Nerang', ...near('Gold Coast',-.008,.010), rate:'$540/day', exp:10, verified:true, rating:4.9, jobs:63, top:true, gear:['Avid S6','Manley masters'], tags:['Mix','Master','Live'], bio:'Mix and mastering engineer with a purpose-built room in Nerang. Releases that translate everywhere.' },
 ];
 
 // --- Seed jobs (brand-posted briefs) ---------------------------------------
@@ -909,6 +1043,28 @@ const SEED_SPACES = [
   { id:'s12', name:'Fremantle Garden Studio', type:'Garden / Outdoor',city:'Perth',     area:'Fremantle',      ...near('Perth', -.004, .004), rate:'$80/hr',  day:'$500/day',  cap:'35', size:'500', host:'Hugo Mertens',      rating:4.7, reviews:33,  instant:false, img:'space-gard-per',  amenities:['Outdoor','Greenery','Power access','Parking','Pet friendly','Restrooms'] },
 ];
 
+// --- socials, followers & connections (build-stage demo defaults) ----------
+function handleFrom(name){ return name.toLowerCase().replace(/[^a-z]+/g,''); }
+SEED_CREATORS.forEach((c) => {
+  const h = handleFrom(c.name);
+  c.socials   = c.socials   || { ig:h, tt:h, x:h, li:c.name.replace(/\s+/g,'-').toLowerCase() };
+  const base  = 1500 + (c.jobs * 137 % 52000);
+  c.followers = c.followers || { ig: base, tt: Math.round(base*0.55), x: Math.round(base*0.18) };
+  c.connections = c.connections || (240 + (c.jobs * 9 % 4200));
+});
+SEED_SPACES.forEach((s) => { s.socials = s.socials || { ig: handleFrom(s.name), tt:'', x:'', li:'' }; });
+
+// --- Blog / The Scene — newsletter of underground AU creative culture ------
+const SEED_POSTS = [
+  { id:'p01', title:'Brisbane is quietly becoming the country’s best music city', cat:'Music', author:'The Scene', date:'2026-06-14', read:6, img:'post-bne-music', excerpt:'Cheap rent, warehouse venues and a tight producer network. Why the Valley and West End are pulling talent north.', body:'Something’s shifting up north. While Sydney prices out its venues and Melbourne nurses a hangover, Brisbane has quietly assembled the ingredients of a real scene...' },
+  { id:'p02', title:'The rise of the one-person crew', cat:'Production', author:'The Scene', date:'2026-06-10', read:4, img:'post-onecrew', excerpt:'Shoot, light, record and edit — the multi-hyphenate is rewriting how small brands make work.', body:'The day rate that used to buy you a single specialist now buys a whole pipeline...' },
+  { id:'p03', title:'Gold Coast: more than a backdrop', cat:'Locations', author:'The Scene', date:'2026-06-05', read:5, img:'post-gc', excerpt:'Swim, surf and resort shoots are booming — and the local crew base is finally catching up to the postcard.', body:'For years the Gold Coast was a place you flew into for the light and flew out of with the footage...' },
+  { id:'p04', title:'Underground studios you can actually book', cat:'Spaces', author:'The Scene', date:'2026-05-29', read:7, img:'post-studios', excerpt:'From a Nerang mastering room to a Brunswick warehouse — the rooms the scene is actually using.', body:'The best rooms were never on the big directories. They got passed around on group chats...' },
+  { id:'p05', title:'How to price yourself without killing the scene', cat:'Business', author:'The Scene', date:'2026-05-22', read:5, img:'post-pricing', excerpt:'Undercutting feels smart until it isn’t. A grounded take on rates for emerging creatives.', body:'There’s a race to the bottom happening in every city, and it helps no one...' },
+  { id:'p06', title:'The connectors: meet the producers holding cities together', cat:'People', author:'The Scene', date:'2026-05-16', read:6, img:'post-connectors', excerpt:'Every scene runs on a handful of people who know everyone. We profile five of them.', body:'You’ve met them, or you’ve been booked by them. The producer who somehow knows the gaffer, the studio and the caterer...' },
+];
+const BLOG_CATS = ['All','Music','Production','Locations','Spaces','Business','People'];
+
 // ---- app ----
 // ============================================================================
 //  THE CREATIVE CENTRE — app (Australia)  ·  Aurora Australis
@@ -926,6 +1082,8 @@ const state = {
   shortlist: new Set(LS.get('shortlist', [])),
   spaces: [...LS.get('spaces', []), ...SEED_SPACES],
   map: null, markers: [], mode: 'people',
+  user: LS.get('user', null),
+  following: new Set(LS.get('following', [])),
 };
 let ROUTE_PARAMS = new URLSearchParams();
 
@@ -963,7 +1121,7 @@ function filtered(){
 // ============================================================================
 //  ROUTER
 // ============================================================================
-const routes = { home:renderHome, discover:renderDiscover, jobs:renderJobs, gear:renderGear, join:renderJoin, creator:renderCreator, spaces:renderSpaces, space:renderSpace };
+const routes = { home:renderHome, discover:renderDiscover, jobs:renderJobs, gear:renderGear, join:renderJoin, creator:renderCreator, spaces:renderSpaces, space:renderSpace, blog:renderBlog, post:renderPost };
 function router(){
   const raw = location.hash.replace('#','') || 'home';
   const [route, qs] = raw.split('?');
@@ -1021,6 +1179,8 @@ const CAT_ICON = { talent:'user', camera:'camera', lighting:'bulb', sound:'wave'
 // ============================================================================
 function renderHome(){
   const total = state.creators.length;
+  const bars = (s)=>Array.from({length:7},(_,i)=>`<i style="height:${28+((s*7+i*17)%70)}%"></i>`).join('');
+  const dots = (n,on)=>Array.from({length:n},(_,i)=>`<i class="${i<on?'on':''}"></i>`).join('');
   const tops = state.creators.filter(c => c.top).slice(0, 5);
   const featured = state.creators.filter(c => c.verified).sort((a,b)=>b.jobs-a.jobs).slice(0, 4);
   const featSpaces = [...state.spaces].sort((a,b)=>b.rating-a.rating).slice(0, 3);
@@ -1037,10 +1197,10 @@ function renderHome(){
           <h1>The crew, the kit,<br>the spot. <em>One map.</em></h1>
           <p class="lede">Models, photographers, gaffers, sound, hair &amp; makeup, editors — plus gear and locations. Every part of a shoot, plotted across Australia. Built for the people who actually make the work.</p>
           <div class="hero-stats">
-            <div><div class="num"><em>${total}+</em></div><div class="lbl">creators</div></div>
-            <div><div class="num">${state.spaces.length}</div><div class="lbl">spaces</div></div>
-            <div><div class="num">${ALL_ROLES.length}</div><div class="lbl">roles</div></div>
-            <div><div class="num">$0</div><div class="lbl">cut of bookings</div></div>
+            <div class="stat-tile lead"><div class="st-fig">${total}<span>+</span></div><div class="st-lbl">creators</div><div class="st-spark">${bars(2)}</div></div>
+            <div class="stat-tile"><div class="st-fig">${state.spaces.length}</div><div class="st-lbl">spaces</div><div class="st-pin">${ic('pin')}${ic('pin')}${ic('pin')}</div></div>
+            <div class="stat-tile"><div class="st-fig">${ALL_ROLES.length}</div><div class="st-lbl">roles</div><div class="st-dots">${dots(12,9)}</div></div>
+            <div class="stat-tile"><div class="st-fig">$0</div><div class="st-lbl">cut of bookings</div><div class="st-spark">${bars(9)}</div></div>
           </div>
         </div>
       </div>
@@ -1073,7 +1233,7 @@ function renderHome(){
     <!-- CATEGORIES -->
     <section class="sec"><div class="wrap">
       <div class="sec-head reveal"><div class="eyebrow">Every role on the call sheet</div><h2>Find any kind of creative</h2><p>Not just talent and cameras — the full crew, grouped the way a production actually works.</p></div>
-      <div class="cat-grid">${CATEGORIES.map((c,i)=>`<a class="cat-card reveal d${(i%4)+1}" href="#discover?cat=${c.id}"><div class="cat-ico">${ic(CAT_ICON[c.id])}</div><h3>${c.label}</h3><div class="roles">${c.roles.slice(0,4).join(' · ')}${c.roles.length>4?' …':''}</div><div class="cnt">${catCount(c.id)} available →</div></a>`).join('')}</div>
+      <div class="cat-grid">${CATEGORIES.map((c,i)=>`<a class="cat-card reveal d${(i%4)+1}" href="#discover?cat=${c.id}"><div class="cat-ico">${ic(CAT_ICON[c.id])}</div><h3>${c.label}</h3><div class="roles">${c.roles.slice(0,4).join(' · ')}${c.roles.length>4?' …':''}</div><div class="cnt">View near you →</div></a>`).join('')}</div>
     </div></section>
 
     <!-- MAP FEATURE -->
@@ -1182,7 +1342,7 @@ function renderHome(){
     <!-- FOOTER -->
     <footer class="foot-big">
       <div class="foot-cols">
-        <div class="about"><a class="brand" href="#home" data-nav><span class="brand-mark"><svg viewBox="0 0 1000 820" class="brand-au"><path d="M175,250 L250,182 L340,150 L430,120 L470,165 L505,150 L545,180 L585,120 L610,92 L650,150 L705,235 L740,300 L762,365 L788,430 L802,495 L792,560 L765,612 L700,648 L640,652 L585,632 L548,598 L520,632 L470,648 L380,650 L300,632 L232,602 L165,566 L128,492 L120,420 L138,356 L150,300 Z"/></svg></span><span class="brand-name">THE&nbsp;CREATIVE&nbsp;CENTRE</span></a><p>Australia's map-based marketplace for finding creative crew. Free for creators, density-first by design.</p></div>
+        <div class="about"><a class="brand" href="#home" data-nav><span class="brand-mark"><svg viewBox="0 0 900 820" class="brand-au"><path d="M612,60 C660,96 740,190 800,440 C788,540 755,612 730,645 C700,665 625,672 590,650 C540,646 500,648 470,645 C360,652 230,640 155,610 C135,580 120,530 120,520 C130,440 150,360 250,230 C300,172 330,142 360,150 C420,150 455,118 470,86 C520,108 560,148 560,150 C600,118 612,60 612,60 Z"/></svg></span><span class="brand-name">THE&nbsp;CREATIVE&nbsp;CENTRE</span></a><p>Australia's map-based marketplace for finding creative crew. Free for creators, density-first by design.</p></div>
         <div class="foot-col"><h5>Product</h5><a href="#discover?reset=1">Discover map</a><a href="#spaces">Spaces</a><a href="#jobs">For brands</a><a href="#gear">Gear rental</a><a href="#join">For creators</a></div>
         <div class="foot-col"><h5>Roles</h5><a href="#discover?role=Model">Models</a><a href="#discover?role=Photographer">Photographers</a><a href="#discover?role=Gaffer">Gaffers</a><a href="#discover?role=Sound%20Mixer">Sound</a></div>
         <div class="foot-col"><h5>Cities</h5>${CITIES.slice(0,6).map(c=>`<a href="#discover?city=${encodeURIComponent(c)}">${c}</a>`).join('')}</div>
@@ -1362,10 +1522,13 @@ function openProfile(id){
       <div class="kv"><div><div class="k">Day rate</div><div class="v">${esc(c.rate)}</div></div><div><div class="k">Rating</div><div class="v">${c.rating.toFixed(1)}★</div></div><div><div class="k">Booked</div><div class="v">${c.jobs}×</div></div></div>
       <div class="mini-gal">${shots}</div>
       <p class="bio">${esc(c.bio)}</p>
-      <div class="drawer-actions"><button class="btn btn-primary" id="d-book">Book / inquire</button><button class="btn btn-ghost" id="d-save">${saved?'✓ Shortlisted':'☆ Shortlist'}</button></div>
+      ${socialsHTML(c)}
+      <div class="drawer-actions">${connectBtnHTML(c.id)}<button class="btn btn-ghost" id="d-save">${saved?'✓ Shortlisted':'☆ Shortlist'}</button></div>
+      <div style="font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:12px;text-transform:uppercase"><b data-conncount="${c.id}" style="color:var(--green)">${numFmt(c.connections||0)}</b> connections</div>
       <a class="view-full" href="#creator?id=${c.id}">View full portfolio →</a>
     </div>`;
   $('#drawer').hidden=false; $('#drawer').setAttribute('aria-hidden','false'); $('#scrim').hidden=false;
+  wireConnect($('#drawer'));
   $('#drawer-close').addEventListener('click', closeProfile);
   $('#d-save').addEventListener('click', () => { state.shortlist.has(id)?state.shortlist.delete(id):state.shortlist.add(id); LS.set('shortlist',[...state.shortlist]); $('#d-save').textContent=state.shortlist.has(id)?'✓ Shortlisted':'☆ Shortlist'; toast(state.shortlist.has(id)?`${c.name} shortlisted`:`Removed ${c.name}`); });
   $('#d-book').addEventListener('click', () => { closeProfile(); location.hash='#jobs'; setTimeout(()=>toast('Post a brief to reach '+c.name.split(' ')[0]),200); });
@@ -1393,27 +1556,29 @@ function renderCreator(){
         <div class="roles">${esc(c.roles.join(' · '))}</div>
         <div class="loc">${ic('pin','icn')} ${esc(c.area)}, ${esc(c.city)}</div>
       </div>
-      <div class="pf-actions"><button class="btn btn-ghost" id="pf-save">${state.shortlist.has(c.id)?'✓ Shortlisted':'☆ Shortlist'}</button></div>
+      <div class="pf-actions">${connectBtnHTML(c.id)}<button class="btn btn-ghost" id="pf-save">${state.shortlist.has(c.id)?'✓ Shortlisted':'☆ Shortlist'}</button></div>
     </div>
     <div class="pf-body">
       <div class="pf-main">
         <div class="pf-stats">
+          <div class="pf-stat"><div class="v conn"><em data-conncount="${c.id}">${numFmt(c.connections||0)}</em></div><div class="k">Connections</div></div>
           <div class="pf-stat"><div class="v"><em>${c.rating.toFixed(1)}</em>★</div><div class="k">Rating</div></div>
           <div class="pf-stat"><div class="v">${c.jobs}</div><div class="k">Bookings</div></div>
           <div class="pf-stat"><div class="v">${c.exp}<small style="font-size:16px"> yrs</small></div><div class="k">Experience</div></div>
-          <div class="pf-stat"><div class="v">${c.verified?'Verified':'New'}</div><div class="k">Status</div></div>
         </div>
         <div class="pf-section-t">About</div>
         <p class="pf-bio">${esc(c.bio)}</p>
         <div class="pf-tags">${(c.tags||[]).map(t=>`<span class="pf-tag">${esc(t)}</span>`).join('')}</div>
+        ${socialsHTML(c)}
         <div class="pf-section-t">Portfolio</div>
         <div class="gallery">${shots}</div>
       </div>
       <aside class="pf-rail">
         <div class="rate">${esc(c.rate)}</div>
         <div class="avail"><span class="dot"></span> Available for bookings</div>
-        <a class="btn btn-primary btn-block" href="#jobs" id="pf-book">Book / send brief</a>
-        <button class="btn btn-ghost btn-block" id="pf-save2">${state.shortlist.has(c.id)?'✓ Shortlisted':'☆ Shortlist'}</button>
+        ${connectBtnHTML(c.id, true)}
+        <a class="btn btn-primary btn-block" href="#jobs" id="pf-book" style="margin-top:10px">Book / send brief</a>
+        <button class="btn btn-ghost btn-block" id="pf-save2" style="margin-top:10px">${state.shortlist.has(c.id)?'✓ Shortlisted':'☆ Shortlist'}</button>
         ${gearOwned.length?`<div class="pf-section-t" style="margin:24px 0 12px">Gear for hire</div><div class="pf-gear">${gearOwned.map(g=>`<div class="gi"><img loading="lazy" src="${gearURL(g)}" onerror="${IMGERR}" alt=""><div><div class="gt">${esc(g.brand)} ${esc(g.model)}</div><div class="gs">${esc(g.rate)} · ${esc(g.cat)}</div></div></div>`).join('')}</div>`:''}
         <div class="note">Contact opens once a brand posts a brief or unlocks contact — that's the line we monetise. Location shown is an approximate suburb.</div>
       </aside>
@@ -1425,8 +1590,48 @@ function renderCreator(){
   $('#pf-save2').addEventListener('click', toggleSave);
   $('#pf-book').addEventListener('click', () => setTimeout(()=>toast('Post a brief to reach '+c.name.split(' ')[0]),200));
   $$('.gallery .shot').forEach(s => s.addEventListener('click', () => openLightbox(s.dataset.full)));
+  wireConnect();
 }
 function openLightbox(src){ const lb=el(`<div class="lightbox"><img src="${src}" alt=""></div>`); lb.addEventListener('click', ()=>lb.remove()); document.body.appendChild(lb); }
+
+// ============================================================================
+//  VIEW: BLOG  ("The Scene" — newsletter of underground AU creative culture)
+// ============================================================================
+function postURL(p, w=900, h=560){ return `https://picsum.photos/seed/${p.img}/${w}/${h}`; }
+function renderBlog(){
+  $('#view').appendChild(el(`<div>
+    <div class="blog-hero"><div class="aurora-bg"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
+      <div class="wrap" style="position:relative;z-index:2"><div class="eyebrow">The Scene · the newsletter</div>
+        <h1 style="font-family:var(--display-hero);font-size:clamp(40px,7vw,84px);text-transform:uppercase;line-height:.86">What's moving<br>in the underground.</h1>
+        <p style="color:var(--muted);max-width:56ch;margin-top:16px;font-size:17px">Dispatches from Australia's creative scene — who's making what, where it's happening, and the rooms, rates and people holding it together.</p>
+        <div class="blog-cats" id="blog-cats">${BLOG_CATS.map((c,i)=>`<button class="blog-cat ${i===0?'on':''}" data-cat="${c}">${c}</button>`).join('')}</div>
+      </div>
+    </div>
+    <div class="wrap section-pad"><div class="blog-grid" id="blog-grid"></div></div>
+  </div>`));
+  const paint = (cat='All') => {
+    const list = SEED_POSTS.filter(p => cat==='All' || p.cat===cat);
+    $('#blog-grid').innerHTML = list.map((p,i)=>`<div class="blog-card ${i===0&&cat==='All'?'feat':''}" data-id="${p.id}">
+      <div class="blog-img" style="background-image:url('${postURL(p)}')"></div>
+      <div class="blog-body"><div class="blog-meta"><span>${esc(p.cat)}</span><span>${esc(p.date)}</span><span>${p.read} min</span></div><h3>${esc(p.title)}</h3><p>${esc(p.excerpt)}</p></div>
+    </div>`).join('');
+    $$('#blog-grid .blog-card').forEach(c => c.addEventListener('click', () => location.hash='#post?id='+c.dataset.id));
+  };
+  $$('#blog-cats .blog-cat').forEach(b => b.addEventListener('click', () => { $$('#blog-cats .blog-cat').forEach(x=>x.classList.toggle('on',x===b)); paint(b.dataset.cat); }));
+  paint();
+}
+function renderPost(){
+  const p = SEED_POSTS.find(x => x.id===ROUTE_PARAMS.get('id'));
+  if(!p){ location.hash='#blog'; return; }
+  $('#view').appendChild(el(`<div class="post-wrap">
+    <a class="btn btn-ghost btn-sm" href="#blog">${ic('arrow','icn')} The Scene</a>
+    <div class="blog-meta" style="margin-top:24px"><span>${esc(p.cat)}</span><span>${esc(p.date)}</span><span>${p.read} min read</span><span>by ${esc(p.author)}</span></div>
+    <h1>${esc(p.title)}</h1>
+    <div class="post-img" style="background-image:url('${postURL(p,1200,700)}')"></div>
+    <p class="body">${esc(p.body)}</p>
+    <p class="body" style="margin-top:18px;color:var(--muted)">More from this story is coming — The Scene is a living newsletter. Want to be featured? <a href="#join" style="color:var(--green)">Get on the map.</a></p>
+  </div>`));
+}
 
 // ============================================================================
 //  VIEW: SPACES  (venue / location hire — browse)
@@ -1495,6 +1700,7 @@ function renderSpace(){
         </div>
         <div class="pf-section-t">Amenities</div>
         <div class="amenities">${s.amenities.map(a=>`<span class="amenity">${ic('check')} ${esc(a)}</span>`).join('')}</div>
+        ${socialsHTML(s)}
         <div class="pf-section-t">The space</div>
         <div class="gallery">${shots}</div>
       </div>
@@ -1592,6 +1798,11 @@ function renderJoin(){
         <div class="form-row two"><div><label class="label">Suburb *</label><input class="field" name="area" required placeholder="Approx suburb — never your address"></div><div><label class="label">Day rate</label><input class="field" name="rate" placeholder="optional"></div></div>
         <div class="form-row two"><div><label class="label">Years experience</label><input class="field" type="number" name="exp" min="0" placeholder="optional"></div><div><label class="label">Gear you own</label><input class="field" name="gear" placeholder="comma separated · optional"></div></div>
         <div class="form-row"><label class="label">Short bio</label><textarea class="field" name="bio" placeholder="What you do and how you work — optional"></textarea></div>
+        <div class="form-row"><label class="label">Socials &amp; following — get connected</label>
+          <div class="form-row two" style="margin-bottom:10px"><div><input class="field" name="ig" placeholder="Instagram @handle"></div><div><input class="field" name="ig_f" type="number" placeholder="IG followers"></div></div>
+          <div class="form-row two" style="margin-bottom:10px"><div><input class="field" name="tt" placeholder="TikTok @handle"></div><div><input class="field" name="tt_f" type="number" placeholder="TikTok followers"></div></div>
+          <div class="form-row two" style="margin:0"><div><input class="field" name="x" placeholder="X / Twitter @handle"></div><div><input class="field" name="li" placeholder="LinkedIn handle"></div></div>
+        </div>
         <button class="btn btn-primary btn-block" type="submit">Put me on the map →</button>
         <div class="hint" style="text-align:center;margin-top:10px">Free forever. We never take a cut of your bookings.</div>
       </form></div></div>
@@ -1601,8 +1812,12 @@ function renderJoin(){
     const roles=$$('#role-picker input:checked').map(i=>i.value);
     if(!roles.length){ toast('Pick at least one role'); return; }
     const ll = near(f.get('city'), (Math.random()-.5)*.05, (Math.random()-.5)*.05);
-    const creator={ id:'u'+Date.now(), name:f.get('name'), roles, city:f.get('city'), area:f.get('area'), lat:ll.lat, lng:ll.lng, rate:f.get('rate')||'On request', exp:+f.get('exp')||0, verified:false, rating:5.0, jobs:0, top:false, gear:(f.get('gear')||'').split(',').map(s=>s.trim()).filter(Boolean), bio:f.get('bio')||'New to the Creative Centre.', tags:roles.slice(0,3) };
+    const clean = s => (s||'').replace(/^@/,'').trim();
+    const socials = { ig:clean(f.get('ig')), tt:clean(f.get('tt')), x:clean(f.get('x')), li:clean(f.get('li')) };
+    const followers = { ig:+f.get('ig_f')||0, tt:+f.get('tt_f')||0, x:0 };
+    const creator={ id:'u'+Date.now(), name:f.get('name'), roles, city:f.get('city'), area:f.get('area'), lat:ll.lat, lng:ll.lng, rate:f.get('rate')||'On request', exp:+f.get('exp')||0, verified:false, rating:5.0, jobs:0, top:false, gear:(f.get('gear')||'').split(',').map(s=>s.trim()).filter(Boolean), bio:f.get('bio')||'New to the Creative Centre.', tags:roles.slice(0,3), socials, followers, connections:0 };
     const mine=LS.get('creators',[]); mine.push(creator); LS.set('creators',mine); state.creators.push(creator); state.city=creator.city;
+    if (state.user){ state.user.creatorId=creator.id; saveUser(); }   // link profile to account
     toast(`You're on the ${creator.city} map, ${creator.name.split(' ')[0]}!`);
     location.hash='#creator?id='+creator.id;
   });
@@ -1638,10 +1853,110 @@ function initReveal(){
   addEventListener('scroll', () => { const y=scrollY; if(y>last && y>320) nav.classList.add('hide'); else nav.classList.remove('hide'); last=y; }, { passive:true });
 })();
 
+// ============================================================================
+//  AUTH (prototype, localStorage) + CONNECTIONS
+//  NOTE: this is a client-side stand-in so the flows work in the demo.
+//  Real accounts need a backend (see Supabase plan) — passwords are NOT stored.
+// ============================================================================
+function numFmt(n){ return n>=1000 ? (n/1000).toFixed(n>=10000?0:1).replace('.0','')+'k' : ''+n; }
+function saveUser(){ LS.set('user', state.user); renderNavCta(); }
+
+function renderNavCta(){
+  const box = $('#nav-cta-area'); if(!box) return;
+  if (state.user){
+    const u = state.user;
+    box.innerHTML = `<div class="acct-chip" id="acct-chip"><span class="av" style="${avatarBg(u.name)}">${initials(u.name)}</span><span class="nm">${esc(u.name.split(' ')[0])}</span></div>`;
+    $('#acct-chip').addEventListener('click', toggleAcctMenu);
+  } else {
+    box.innerHTML = `<a class="btn-nav ghost" id="nav-login">Log in</a><a class="btn-nav solid" href="#join" data-nav>Join free</a><a class="btn-nav ghost" href="#join" data-nav>List your space</a>`;
+    $('#nav-login').addEventListener('click', () => openAuth('login'));
+  }
+}
+function toggleAcctMenu(){
+  if ($('#acct-menu')){ $('#acct-menu').remove(); return; }
+  const u = state.user;
+  const menu = el(`<div class="acct-menu" id="acct-menu">
+    <a class="who2">${esc(u.email||u.name)}</a>
+    ${u.creatorId?`<a href="#creator?id=${u.creatorId}" data-nav>My profile</a>`:`<a href="#join" data-nav>Finish your profile</a>`}
+    <a href="#discover" data-nav>Discover</a>
+    <button id="acct-logout">Log out</button>
+  </div>`);
+  document.body.appendChild(menu);
+  $('#acct-logout').addEventListener('click', () => { state.user=null; LS.set('user',null); menu.remove(); renderNavCta(); toast('Logged out'); });
+  setTimeout(() => document.addEventListener('click', function h(e){ if(!menu.contains(e.target) && e.target.id!=='acct-chip'){ menu.remove(); document.removeEventListener('click',h);} }), 0);
+}
+
+function openAuth(tab='signup'){
+  $('#auth')?.remove();
+  const m = el(`<div class="modal-scrim" id="auth"><div class="modal">
+    <button class="modal-close" id="auth-x">✕</button>
+    <div class="modal-head"><button class="modal-tab" data-t="signup">Sign up</button><button class="modal-tab" data-t="login">Log in</button></div>
+    <div class="modal-body" id="auth-body"></div>
+  </div></div>`);
+  document.body.appendChild(m);
+  m.addEventListener('click', e => { if(e.target===m) m.remove(); });
+  $('#auth-x').addEventListener('click', () => m.remove());
+  const paint = (t) => {
+    $$('.modal-tab').forEach(b => b.classList.toggle('on', b.dataset.t===t));
+    $('#auth-body').innerHTML = t==='signup' ? `
+      <h3>Join the scene</h3><div class="sub">Free for creators. No cut of your bookings, ever.</div>
+      <form id="auth-form">
+        <div class="form-row seg-pick"><label><input type="radio" name="kind" value="creator" checked><span>I'm a creator</span></label><label><input type="radio" name="kind" value="brand"><span>I'm a brand</span></label><label><input type="radio" name="kind" value="host"><span>I host a space</span></label></div>
+        <div class="form-row"><input class="field" name="name" placeholder="Name" required></div>
+        <div class="form-row"><input class="field" type="email" name="email" placeholder="Email" required></div>
+        <div class="form-row"><input class="field" type="password" name="pass" placeholder="Password" required></div>
+        <button class="btn btn-primary btn-block" type="submit">Create account</button>
+      </form>` : `
+      <h3>Welcome back</h3><div class="sub">Log in to connect, book and post.</div>
+      <form id="auth-form">
+        <div class="form-row"><input class="field" type="email" name="email" placeholder="Email" required></div>
+        <div class="form-row"><input class="field" type="password" name="pass" placeholder="Password" required></div>
+        <button class="btn btn-primary btn-block" type="submit">Log in</button>
+      </form>`;
+    $('#auth-form').addEventListener('submit', e => {
+      e.preventDefault(); const f=new FormData(e.target);
+      state.user = { name: f.get('name') || (f.get('email')||'').split('@')[0], email: f.get('email'), kind: f.get('kind')||'creator', creatorId: state.user?.creatorId };
+      saveUser(); m.remove();
+      toast(t==='signup' ? `Welcome, ${state.user.name.split(' ')[0]} — account created` : `Welcome back, ${state.user.name.split(' ')[0]}`);
+      if (t==='signup' && state.user.kind==='creator') setTimeout(()=>{ if(location.hash.indexOf('join')<0) location.hash='#join'; }, 300);
+    });
+  };
+  $$('.modal-tab').forEach(b => b.addEventListener('click', () => paint(b.dataset.t)));
+  paint(tab);
+}
+function requireAuth(then){ if(state.user) then(); else openAuth('signup'); }
+
+// connections
+const isFollowing = id => state.following.has(id);
+function connectBtnHTML(id, block){ const on=isFollowing(id); return `<button class="btn ${block?'btn-block ':''}btn-connect ${on?'is-on btn-ghost':'btn-primary'}" data-connect="${id}">${on?'Disconnect −':'Connect +'}</button>`; }
+function wireConnect(scope=document){
+  $$('[data-connect]', scope).forEach(b => b.addEventListener('click', () => {
+    const id=b.dataset.connect;
+    requireAuth(() => {
+      const c=state.creators.find(x=>x.id===id);
+      if(isFollowing(id)){ state.following.delete(id); if(c)c.connections=Math.max(0,(c.connections||0)-1); }
+      else { state.following.add(id); if(c)c.connections=(c.connections||0)+1; }
+      LS.set('following',[...state.following]);
+      const on=isFollowing(id);
+      $$(`[data-connect="${id}"]`).forEach(btn=>{ btn.textContent=on?'Disconnect −':'Connect +'; btn.classList.toggle('is-on',on); btn.classList.toggle('btn-ghost',on); btn.classList.toggle('btn-primary',!on); });
+      $$(`[data-conncount="${id}"]`).forEach(n=>n.textContent=numFmt(c.connections||0));
+      toast(on?`Connected with ${c.name.split(' ')[0]}`:`Disconnected`);
+    });
+  }));
+}
+const SOCIAL_ICON = { ig:'Instagram', tt:'TikTok', x:'X', li:'LinkedIn' };
+const SOCIAL_URL = { ig:h=>`https://instagram.com/${h}`, tt:h=>`https://tiktok.com/@${h}`, x:h=>`https://x.com/${h}`, li:h=>`https://linkedin.com/in/${h}` };
+function socialsHTML(c){
+  if(!c.socials) return '';
+  const f=c.followers||{};
+  return `<div class="socials">${Object.entries(c.socials).filter(([k,v])=>v).map(([k,v])=>`<a class="social-link" href="${SOCIAL_URL[k](v)}" target="_blank" rel="noopener">${esc(SOCIAL_ICON[k])}${f[k]?` <span class="ct">${numFmt(f[k])}</span>`:''}</a>`).join('')}</div>`;
+}
+
 // ---------- boot ----------
 $('#scrim').addEventListener('click', closeProfile);
 document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeProfile(); $('.lightbox')?.remove(); } });
 $('#burger')?.addEventListener('click', () => { const open=$('.nav-links').classList.toggle('open'); $('#burger').setAttribute('aria-expanded', open); });
+renderNavCta();
 router();
 
   </script>

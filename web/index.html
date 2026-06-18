@@ -8,20 +8,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/coolvetica" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Climate+Crisis&family=Space+Mono:wght@400;700&display=swap" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <!-- ===================== LOADER (Australia outline draws itself) ===================== -->
   <div class="loader" id="loader">
-    <svg class="loader-au" viewBox="0 0 1000 820" aria-label="Loading Australia">
-      <path id="au-path" d="M175,250 L250,182 L340,150 L430,120 L470,165 L505,150 L545,180 L585,120 L610,92 L650,150 L705,235 L740,300 L762,365 L788,430 L802,495 L792,560 L765,612 L700,648 L640,652 L585,632 L548,598 L520,632 L470,648 L380,650 L300,632 L232,602 L165,566 L128,492 L120,420 L138,356 L150,300 Z" />
-      <path id="au-tas" d="M712,690 L742,675 L760,705 L744,738 L712,728 Z" />
-      <circle id="au-tracer" r="7" />
+    <svg class="loader-au" viewBox="0 0 900 820" aria-label="Loading Australia">
+      <path id="au-path" d="M612,60 C645,70 660,96 660,100 C700,140 740,190 770,250 C800,320 810,380 800,440 C790,500 788,540 775,560 C760,600 755,612 730,645 C705,662 700,665 660,668 C625,672 610,662 590,650 C575,652 560,648 555,640 C548,648 540,646 540,620 C530,640 525,650 525,650 C505,655 500,648 500,645 C492,656 485,640 485,615 C475,640 470,648 470,645 C420,650 360,652 300,640 C250,648 230,640 230,640 C190,630 160,620 155,610 C140,595 135,580 135,575 C125,545 120,530 120,520 C125,460 130,440 130,460 C135,400 150,360 195,300 C230,250 250,230 250,230 C280,190 300,172 300,170 C320,150 330,142 360,150 C395,135 405,128 405,130 C420,148 420,150 420,150 C440,130 455,118 455,120 C460,100 470,86 470,86 C495,100 520,108 520,108 C535,120 545,118 545,120 C555,140 560,148 560,150 C580,135 600,118 600,120 C606,90 612,60 612,60 Z" />
+      <path id="au-tas" d="M700,716 C720,706 740,700 752,706 C770,718 772,742 762,752 C750,772 740,778 724,772 C708,762 700,742 700,716 Z" />
     </svg>
     <div class="loader-word">THE CREATIVE CENTRE</div>
-    <div class="loader-sub">Mapping Australia's creative crew</div>
+    <div class="loader-sub">Putting the scene together</div>
   </div>
 
   <!-- ===================== MOUSE-TRACKING AURORA GLOW ===================== -->
@@ -32,7 +31,7 @@
   <header class="nav" id="nav">
     <a class="brand" href="#home" data-nav>
       <span class="brand-mark" aria-hidden="true">
-        <svg viewBox="0 0 1000 820" class="brand-au"><path d="M175,250 L250,182 L340,150 L430,120 L470,165 L505,150 L545,180 L585,120 L610,92 L650,150 L705,235 L740,300 L762,365 L788,430 L802,495 L792,560 L765,612 L700,648 L640,652 L585,632 L548,598 L520,632 L470,648 L380,650 L300,632 L232,602 L165,566 L128,492 L120,420 L138,356 L150,300 Z"/></svg>
+        <svg viewBox="0 0 900 820" class="brand-au"><path d="M612,60 C660,96 740,190 800,440 C788,540 755,612 730,645 C700,665 625,672 590,650 C540,646 500,648 470,645 C360,652 230,640 155,610 C135,580 120,530 120,520 C130,440 150,360 250,230 C300,172 330,142 360,150 C420,150 455,118 470,86 C520,108 560,148 560,150 C600,118 612,60 612,60 Z"/></svg>
       </span>
       <span class="brand-name">THE&nbsp;CREATIVE&nbsp;CENTRE</span>
     </a>
@@ -40,9 +39,9 @@
       <a href="#discover" data-nav data-route="discover">Discover</a>
       <a href="#spaces"   data-nav data-route="spaces">Spaces</a>
       <a href="#jobs"     data-nav data-route="jobs">For brands</a>
-      <a href="#gear"     data-nav data-route="gear">Gear rental</a>
       <a href="#join"     data-nav data-route="join">For creators</a>
-      <a href="#join"     data-nav data-route="join" class="nav-cta">Join free</a>
+      <a href="#blog"     data-nav data-route="blog">Blog</a>
+      <span class="nav-cta-area" id="nav-cta-area"></span>
     </nav>
     <button class="nav-burger" id="burger" aria-label="Open menu" aria-expanded="false">☰</button>
   </header>

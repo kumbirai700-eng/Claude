@@ -14,6 +14,8 @@ const state = {
   shortlist: new Set(LS.get('shortlist', [])),
   spaces: [...LS.get('spaces', []), ...SEED_SPACES],
   map: null, markers: [], mode: 'people',
+  user: LS.get('user', null),
+  following: new Set(LS.get('following', [])),
 };
 let ROUTE_PARAMS = new URLSearchParams();
 
@@ -51,7 +53,7 @@ function filtered(){
 // ============================================================================
 //  ROUTER
 // ============================================================================
-const routes = { home:renderHome, discover:renderDiscover, jobs:renderJobs, gear:renderGear, join:renderJoin, creator:renderCreator, spaces:renderSpaces, space:renderSpace };
+const routes = { home:renderHome, discover:renderDiscover, jobs:renderJobs, gear:renderGear, join:renderJoin, creator:renderCreator, spaces:renderSpaces, space:renderSpace, blog:renderBlog, post:renderPost };
 function router(){
   const raw = location.hash.replace('#','') || 'home';
   const [route, qs] = raw.split('?');
@@ -109,6 +111,8 @@ const CAT_ICON = { talent:'user', camera:'camera', lighting:'bulb', sound:'wave'
 // ============================================================================
 function renderHome(){
   const total = state.creators.length;
+  const bars = (s)=>Array.from({length:7},(_,i)=>`<i style="height:${28+((s*7+i*17)%70)}%"></i>`).join('');
+  const dots = (n,on)=>Array.from({length:n},(_,i)=>`<i class="${i<on?'on':''}"></i>`).join('');
   const tops = state.creators.filter(c => c.top).slice(0, 5);
   const featured = state.creators.filter(c => c.verified).sort((a,b)=>b.jobs-a.jobs).slice(0, 4);
   const featSpaces = [...state.spaces].sort((a,b)=>b.rating-a.rating).slice(0, 3);
@@ -125,10 +129,10 @@ function renderHome(){
           <h1>The crew, the kit,<br>the spot. <em>One map.</em></h1>
           <p class="lede">Models, photographers, gaffers, sound, hair &amp; makeup, editors — plus gear and locations. Every part of a shoot, plotted across Australia. Built for the people who actually make the work.</p>
           <div class="hero-stats">
-            <div><div class="num"><em>${total}+</em></div><div class="lbl">creators</div></div>
-            <div><div class="num">${state.spaces.length}</div><div class="lbl">spaces</div></div>
-            <div><div class="num">${ALL_ROLES.length}</div><div class="lbl">roles</div></div>
-            <div><div class="num">$0</div><div class="lbl">cut of bookings</div></div>
+            <div class="stat-tile lead"><div class="st-fig">${total}<span>+</span></div><div class="st-lbl">creators</div><div class="st-spark">${bars(2)}</div></div>
+            <div class="stat-tile"><div class="st-fig">${state.spaces.length}</div><div class="st-lbl">spaces</div><div class="st-pin">${ic('pin')}${ic('pin')}${ic('pin')}</div></div>
+            <div class="stat-tile"><div class="st-fig">${ALL_ROLES.length}</div><div class="st-lbl">roles</div><div class="st-dots">${dots(12,9)}</div></div>
+            <div class="stat-tile"><div class="st-fig">$0</div><div class="st-lbl">cut of bookings</div><div class="st-spark">${bars(9)}</div></div>
           </div>
         </div>
       </div>
@@ -161,7 +165,7 @@ function renderHome(){
     <!-- CATEGORIES -->
     <section class="sec"><div class="wrap">
       <div class="sec-head reveal"><div class="eyebrow">Every role on the call sheet</div><h2>Find any kind of creative</h2><p>Not just talent and cameras — the full crew, grouped the way a production actually works.</p></div>
-      <div class="cat-grid">${CATEGORIES.map((c,i)=>`<a class="cat-card reveal d${(i%4)+1}" href="#discover?cat=${c.id}"><div class="cat-ico">${ic(CAT_ICON[c.id])}</div><h3>${c.label}</h3><div class="roles">${c.roles.slice(0,4).join(' · ')}${c.roles.length>4?' …':''}</div><div class="cnt">${catCount(c.id)} available →</div></a>`).join('')}</div>
+      <div class="cat-grid">${CATEGORIES.map((c,i)=>`<a class="cat-card reveal d${(i%4)+1}" href="#discover?cat=${c.id}"><div class="cat-ico">${ic(CAT_ICON[c.id])}</div><h3>${c.label}</h3><div class="roles">${c.roles.slice(0,4).join(' · ')}${c.roles.length>4?' …':''}</div><div class="cnt">View near you →</div></a>`).join('')}</div>
     </div></section>
 
     <!-- MAP FEATURE -->
@@ -270,7 +274,7 @@ function renderHome(){
     <!-- FOOTER -->
     <footer class="foot-big">
       <div class="foot-cols">
-        <div class="about"><a class="brand" href="#home" data-nav><span class="brand-mark"><svg viewBox="0 0 1000 820" class="brand-au"><path d="M175,250 L250,182 L340,150 L430,120 L470,165 L505,150 L545,180 L585,120 L610,92 L650,150 L705,235 L740,300 L762,365 L788,430 L802,495 L792,560 L765,612 L700,648 L640,652 L585,632 L548,598 L520,632 L470,648 L380,650 L300,632 L232,602 L165,566 L128,492 L120,420 L138,356 L150,300 Z"/></svg></span><span class="brand-name">THE&nbsp;CREATIVE&nbsp;CENTRE</span></a><p>Australia's map-based marketplace for finding creative crew. Free for creators, density-first by design.</p></div>
+        <div class="about"><a class="brand" href="#home" data-nav><span class="brand-mark"><svg viewBox="0 0 900 820" class="brand-au"><path d="M612,60 C660,96 740,190 800,440 C788,540 755,612 730,645 C700,665 625,672 590,650 C540,646 500,648 470,645 C360,652 230,640 155,610 C135,580 120,530 120,520 C130,440 150,360 250,230 C300,172 330,142 360,150 C420,150 455,118 470,86 C520,108 560,148 560,150 C600,118 612,60 612,60 Z"/></svg></span><span class="brand-name">THE&nbsp;CREATIVE&nbsp;CENTRE</span></a><p>Australia's map-based marketplace for finding creative crew. Free for creators, density-first by design.</p></div>
         <div class="foot-col"><h5>Product</h5><a href="#discover?reset=1">Discover map</a><a href="#spaces">Spaces</a><a href="#jobs">For brands</a><a href="#gear">Gear rental</a><a href="#join">For creators</a></div>
         <div class="foot-col"><h5>Roles</h5><a href="#discover?role=Model">Models</a><a href="#discover?role=Photographer">Photographers</a><a href="#discover?role=Gaffer">Gaffers</a><a href="#discover?role=Sound%20Mixer">Sound</a></div>
         <div class="foot-col"><h5>Cities</h5>${CITIES.slice(0,6).map(c=>`<a href="#discover?city=${encodeURIComponent(c)}">${c}</a>`).join('')}</div>
@@ -450,10 +454,13 @@ function openProfile(id){
       <div class="kv"><div><div class="k">Day rate</div><div class="v">${esc(c.rate)}</div></div><div><div class="k">Rating</div><div class="v">${c.rating.toFixed(1)}★</div></div><div><div class="k">Booked</div><div class="v">${c.jobs}×</div></div></div>
       <div class="mini-gal">${shots}</div>
       <p class="bio">${esc(c.bio)}</p>
-      <div class="drawer-actions"><button class="btn btn-primary" id="d-book">Book / inquire</button><button class="btn btn-ghost" id="d-save">${saved?'✓ Shortlisted':'☆ Shortlist'}</button></div>
+      ${socialsHTML(c)}
+      <div class="drawer-actions">${connectBtnHTML(c.id)}<button class="btn btn-ghost" id="d-save">${saved?'✓ Shortlisted':'☆ Shortlist'}</button></div>
+      <div style="font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:12px;text-transform:uppercase"><b data-conncount="${c.id}" style="color:var(--green)">${numFmt(c.connections||0)}</b> connections</div>
       <a class="view-full" href="#creator?id=${c.id}">View full portfolio →</a>
     </div>`;
   $('#drawer').hidden=false; $('#drawer').setAttribute('aria-hidden','false'); $('#scrim').hidden=false;
+  wireConnect($('#drawer'));
   $('#drawer-close').addEventListener('click', closeProfile);
   $('#d-save').addEventListener('click', () => { state.shortlist.has(id)?state.shortlist.delete(id):state.shortlist.add(id); LS.set('shortlist',[...state.shortlist]); $('#d-save').textContent=state.shortlist.has(id)?'✓ Shortlisted':'☆ Shortlist'; toast(state.shortlist.has(id)?`${c.name} shortlisted`:`Removed ${c.name}`); });
   $('#d-book').addEventListener('click', () => { closeProfile(); location.hash='#jobs'; setTimeout(()=>toast('Post a brief to reach '+c.name.split(' ')[0]),200); });
@@ -481,27 +488,29 @@ function renderCreator(){
         <div class="roles">${esc(c.roles.join(' · '))}</div>
         <div class="loc">${ic('pin','icn')} ${esc(c.area)}, ${esc(c.city)}</div>
       </div>
-      <div class="pf-actions"><button class="btn btn-ghost" id="pf-save">${state.shortlist.has(c.id)?'✓ Shortlisted':'☆ Shortlist'}</button></div>
+      <div class="pf-actions">${connectBtnHTML(c.id)}<button class="btn btn-ghost" id="pf-save">${state.shortlist.has(c.id)?'✓ Shortlisted':'☆ Shortlist'}</button></div>
     </div>
     <div class="pf-body">
       <div class="pf-main">
         <div class="pf-stats">
+          <div class="pf-stat"><div class="v conn"><em data-conncount="${c.id}">${numFmt(c.connections||0)}</em></div><div class="k">Connections</div></div>
           <div class="pf-stat"><div class="v"><em>${c.rating.toFixed(1)}</em>★</div><div class="k">Rating</div></div>
           <div class="pf-stat"><div class="v">${c.jobs}</div><div class="k">Bookings</div></div>
           <div class="pf-stat"><div class="v">${c.exp}<small style="font-size:16px"> yrs</small></div><div class="k">Experience</div></div>
-          <div class="pf-stat"><div class="v">${c.verified?'Verified':'New'}</div><div class="k">Status</div></div>
         </div>
         <div class="pf-section-t">About</div>
         <p class="pf-bio">${esc(c.bio)}</p>
         <div class="pf-tags">${(c.tags||[]).map(t=>`<span class="pf-tag">${esc(t)}</span>`).join('')}</div>
+        ${socialsHTML(c)}
         <div class="pf-section-t">Portfolio</div>
         <div class="gallery">${shots}</div>
       </div>
       <aside class="pf-rail">
         <div class="rate">${esc(c.rate)}</div>
         <div class="avail"><span class="dot"></span> Available for bookings</div>
-        <a class="btn btn-primary btn-block" href="#jobs" id="pf-book">Book / send brief</a>
-        <button class="btn btn-ghost btn-block" id="pf-save2">${state.shortlist.has(c.id)?'✓ Shortlisted':'☆ Shortlist'}</button>
+        ${connectBtnHTML(c.id, true)}
+        <a class="btn btn-primary btn-block" href="#jobs" id="pf-book" style="margin-top:10px">Book / send brief</a>
+        <button class="btn btn-ghost btn-block" id="pf-save2" style="margin-top:10px">${state.shortlist.has(c.id)?'✓ Shortlisted':'☆ Shortlist'}</button>
         ${gearOwned.length?`<div class="pf-section-t" style="margin:24px 0 12px">Gear for hire</div><div class="pf-gear">${gearOwned.map(g=>`<div class="gi"><img loading="lazy" src="${gearURL(g)}" onerror="${IMGERR}" alt=""><div><div class="gt">${esc(g.brand)} ${esc(g.model)}</div><div class="gs">${esc(g.rate)} · ${esc(g.cat)}</div></div></div>`).join('')}</div>`:''}
         <div class="note">Contact opens once a brand posts a brief or unlocks contact — that's the line we monetise. Location shown is an approximate suburb.</div>
       </aside>
@@ -513,8 +522,48 @@ function renderCreator(){
   $('#pf-save2').addEventListener('click', toggleSave);
   $('#pf-book').addEventListener('click', () => setTimeout(()=>toast('Post a brief to reach '+c.name.split(' ')[0]),200));
   $$('.gallery .shot').forEach(s => s.addEventListener('click', () => openLightbox(s.dataset.full)));
+  wireConnect();
 }
 function openLightbox(src){ const lb=el(`<div class="lightbox"><img src="${src}" alt=""></div>`); lb.addEventListener('click', ()=>lb.remove()); document.body.appendChild(lb); }
+
+// ============================================================================
+//  VIEW: BLOG  ("The Scene" — newsletter of underground AU creative culture)
+// ============================================================================
+function postURL(p, w=900, h=560){ return `https://picsum.photos/seed/${p.img}/${w}/${h}`; }
+function renderBlog(){
+  $('#view').appendChild(el(`<div>
+    <div class="blog-hero"><div class="aurora-bg"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
+      <div class="wrap" style="position:relative;z-index:2"><div class="eyebrow">The Scene · the newsletter</div>
+        <h1 style="font-family:var(--display-hero);font-size:clamp(40px,7vw,84px);text-transform:uppercase;line-height:.86">What's moving<br>in the underground.</h1>
+        <p style="color:var(--muted);max-width:56ch;margin-top:16px;font-size:17px">Dispatches from Australia's creative scene — who's making what, where it's happening, and the rooms, rates and people holding it together.</p>
+        <div class="blog-cats" id="blog-cats">${BLOG_CATS.map((c,i)=>`<button class="blog-cat ${i===0?'on':''}" data-cat="${c}">${c}</button>`).join('')}</div>
+      </div>
+    </div>
+    <div class="wrap section-pad"><div class="blog-grid" id="blog-grid"></div></div>
+  </div>`));
+  const paint = (cat='All') => {
+    const list = SEED_POSTS.filter(p => cat==='All' || p.cat===cat);
+    $('#blog-grid').innerHTML = list.map((p,i)=>`<div class="blog-card ${i===0&&cat==='All'?'feat':''}" data-id="${p.id}">
+      <div class="blog-img" style="background-image:url('${postURL(p)}')"></div>
+      <div class="blog-body"><div class="blog-meta"><span>${esc(p.cat)}</span><span>${esc(p.date)}</span><span>${p.read} min</span></div><h3>${esc(p.title)}</h3><p>${esc(p.excerpt)}</p></div>
+    </div>`).join('');
+    $$('#blog-grid .blog-card').forEach(c => c.addEventListener('click', () => location.hash='#post?id='+c.dataset.id));
+  };
+  $$('#blog-cats .blog-cat').forEach(b => b.addEventListener('click', () => { $$('#blog-cats .blog-cat').forEach(x=>x.classList.toggle('on',x===b)); paint(b.dataset.cat); }));
+  paint();
+}
+function renderPost(){
+  const p = SEED_POSTS.find(x => x.id===ROUTE_PARAMS.get('id'));
+  if(!p){ location.hash='#blog'; return; }
+  $('#view').appendChild(el(`<div class="post-wrap">
+    <a class="btn btn-ghost btn-sm" href="#blog">${ic('arrow','icn')} The Scene</a>
+    <div class="blog-meta" style="margin-top:24px"><span>${esc(p.cat)}</span><span>${esc(p.date)}</span><span>${p.read} min read</span><span>by ${esc(p.author)}</span></div>
+    <h1>${esc(p.title)}</h1>
+    <div class="post-img" style="background-image:url('${postURL(p,1200,700)}')"></div>
+    <p class="body">${esc(p.body)}</p>
+    <p class="body" style="margin-top:18px;color:var(--muted)">More from this story is coming — The Scene is a living newsletter. Want to be featured? <a href="#join" style="color:var(--green)">Get on the map.</a></p>
+  </div>`));
+}
 
 // ============================================================================
 //  VIEW: SPACES  (venue / location hire — browse)
@@ -583,6 +632,7 @@ function renderSpace(){
         </div>
         <div class="pf-section-t">Amenities</div>
         <div class="amenities">${s.amenities.map(a=>`<span class="amenity">${ic('check')} ${esc(a)}</span>`).join('')}</div>
+        ${socialsHTML(s)}
         <div class="pf-section-t">The space</div>
         <div class="gallery">${shots}</div>
       </div>
@@ -680,6 +730,11 @@ function renderJoin(){
         <div class="form-row two"><div><label class="label">Suburb *</label><input class="field" name="area" required placeholder="Approx suburb — never your address"></div><div><label class="label">Day rate</label><input class="field" name="rate" placeholder="optional"></div></div>
         <div class="form-row two"><div><label class="label">Years experience</label><input class="field" type="number" name="exp" min="0" placeholder="optional"></div><div><label class="label">Gear you own</label><input class="field" name="gear" placeholder="comma separated · optional"></div></div>
         <div class="form-row"><label class="label">Short bio</label><textarea class="field" name="bio" placeholder="What you do and how you work — optional"></textarea></div>
+        <div class="form-row"><label class="label">Socials &amp; following — get connected</label>
+          <div class="form-row two" style="margin-bottom:10px"><div><input class="field" name="ig" placeholder="Instagram @handle"></div><div><input class="field" name="ig_f" type="number" placeholder="IG followers"></div></div>
+          <div class="form-row two" style="margin-bottom:10px"><div><input class="field" name="tt" placeholder="TikTok @handle"></div><div><input class="field" name="tt_f" type="number" placeholder="TikTok followers"></div></div>
+          <div class="form-row two" style="margin:0"><div><input class="field" name="x" placeholder="X / Twitter @handle"></div><div><input class="field" name="li" placeholder="LinkedIn handle"></div></div>
+        </div>
         <button class="btn btn-primary btn-block" type="submit">Put me on the map →</button>
         <div class="hint" style="text-align:center;margin-top:10px">Free forever. We never take a cut of your bookings.</div>
       </form></div></div>
@@ -689,8 +744,12 @@ function renderJoin(){
     const roles=$$('#role-picker input:checked').map(i=>i.value);
     if(!roles.length){ toast('Pick at least one role'); return; }
     const ll = near(f.get('city'), (Math.random()-.5)*.05, (Math.random()-.5)*.05);
-    const creator={ id:'u'+Date.now(), name:f.get('name'), roles, city:f.get('city'), area:f.get('area'), lat:ll.lat, lng:ll.lng, rate:f.get('rate')||'On request', exp:+f.get('exp')||0, verified:false, rating:5.0, jobs:0, top:false, gear:(f.get('gear')||'').split(',').map(s=>s.trim()).filter(Boolean), bio:f.get('bio')||'New to the Creative Centre.', tags:roles.slice(0,3) };
+    const clean = s => (s||'').replace(/^@/,'').trim();
+    const socials = { ig:clean(f.get('ig')), tt:clean(f.get('tt')), x:clean(f.get('x')), li:clean(f.get('li')) };
+    const followers = { ig:+f.get('ig_f')||0, tt:+f.get('tt_f')||0, x:0 };
+    const creator={ id:'u'+Date.now(), name:f.get('name'), roles, city:f.get('city'), area:f.get('area'), lat:ll.lat, lng:ll.lng, rate:f.get('rate')||'On request', exp:+f.get('exp')||0, verified:false, rating:5.0, jobs:0, top:false, gear:(f.get('gear')||'').split(',').map(s=>s.trim()).filter(Boolean), bio:f.get('bio')||'New to the Creative Centre.', tags:roles.slice(0,3), socials, followers, connections:0 };
     const mine=LS.get('creators',[]); mine.push(creator); LS.set('creators',mine); state.creators.push(creator); state.city=creator.city;
+    if (state.user){ state.user.creatorId=creator.id; saveUser(); }   // link profile to account
     toast(`You're on the ${creator.city} map, ${creator.name.split(' ')[0]}!`);
     location.hash='#creator?id='+creator.id;
   });
@@ -726,8 +785,108 @@ function initReveal(){
   addEventListener('scroll', () => { const y=scrollY; if(y>last && y>320) nav.classList.add('hide'); else nav.classList.remove('hide'); last=y; }, { passive:true });
 })();
 
+// ============================================================================
+//  AUTH (prototype, localStorage) + CONNECTIONS
+//  NOTE: this is a client-side stand-in so the flows work in the demo.
+//  Real accounts need a backend (see Supabase plan) — passwords are NOT stored.
+// ============================================================================
+function numFmt(n){ return n>=1000 ? (n/1000).toFixed(n>=10000?0:1).replace('.0','')+'k' : ''+n; }
+function saveUser(){ LS.set('user', state.user); renderNavCta(); }
+
+function renderNavCta(){
+  const box = $('#nav-cta-area'); if(!box) return;
+  if (state.user){
+    const u = state.user;
+    box.innerHTML = `<div class="acct-chip" id="acct-chip"><span class="av" style="${avatarBg(u.name)}">${initials(u.name)}</span><span class="nm">${esc(u.name.split(' ')[0])}</span></div>`;
+    $('#acct-chip').addEventListener('click', toggleAcctMenu);
+  } else {
+    box.innerHTML = `<a class="btn-nav ghost" id="nav-login">Log in</a><a class="btn-nav solid" href="#join" data-nav>Join free</a><a class="btn-nav ghost" href="#join" data-nav>List your space</a>`;
+    $('#nav-login').addEventListener('click', () => openAuth('login'));
+  }
+}
+function toggleAcctMenu(){
+  if ($('#acct-menu')){ $('#acct-menu').remove(); return; }
+  const u = state.user;
+  const menu = el(`<div class="acct-menu" id="acct-menu">
+    <a class="who2">${esc(u.email||u.name)}</a>
+    ${u.creatorId?`<a href="#creator?id=${u.creatorId}" data-nav>My profile</a>`:`<a href="#join" data-nav>Finish your profile</a>`}
+    <a href="#discover" data-nav>Discover</a>
+    <button id="acct-logout">Log out</button>
+  </div>`);
+  document.body.appendChild(menu);
+  $('#acct-logout').addEventListener('click', () => { state.user=null; LS.set('user',null); menu.remove(); renderNavCta(); toast('Logged out'); });
+  setTimeout(() => document.addEventListener('click', function h(e){ if(!menu.contains(e.target) && e.target.id!=='acct-chip'){ menu.remove(); document.removeEventListener('click',h);} }), 0);
+}
+
+function openAuth(tab='signup'){
+  $('#auth')?.remove();
+  const m = el(`<div class="modal-scrim" id="auth"><div class="modal">
+    <button class="modal-close" id="auth-x">✕</button>
+    <div class="modal-head"><button class="modal-tab" data-t="signup">Sign up</button><button class="modal-tab" data-t="login">Log in</button></div>
+    <div class="modal-body" id="auth-body"></div>
+  </div></div>`);
+  document.body.appendChild(m);
+  m.addEventListener('click', e => { if(e.target===m) m.remove(); });
+  $('#auth-x').addEventListener('click', () => m.remove());
+  const paint = (t) => {
+    $$('.modal-tab').forEach(b => b.classList.toggle('on', b.dataset.t===t));
+    $('#auth-body').innerHTML = t==='signup' ? `
+      <h3>Join the scene</h3><div class="sub">Free for creators. No cut of your bookings, ever.</div>
+      <form id="auth-form">
+        <div class="form-row seg-pick"><label><input type="radio" name="kind" value="creator" checked><span>I'm a creator</span></label><label><input type="radio" name="kind" value="brand"><span>I'm a brand</span></label><label><input type="radio" name="kind" value="host"><span>I host a space</span></label></div>
+        <div class="form-row"><input class="field" name="name" placeholder="Name" required></div>
+        <div class="form-row"><input class="field" type="email" name="email" placeholder="Email" required></div>
+        <div class="form-row"><input class="field" type="password" name="pass" placeholder="Password" required></div>
+        <button class="btn btn-primary btn-block" type="submit">Create account</button>
+      </form>` : `
+      <h3>Welcome back</h3><div class="sub">Log in to connect, book and post.</div>
+      <form id="auth-form">
+        <div class="form-row"><input class="field" type="email" name="email" placeholder="Email" required></div>
+        <div class="form-row"><input class="field" type="password" name="pass" placeholder="Password" required></div>
+        <button class="btn btn-primary btn-block" type="submit">Log in</button>
+      </form>`;
+    $('#auth-form').addEventListener('submit', e => {
+      e.preventDefault(); const f=new FormData(e.target);
+      state.user = { name: f.get('name') || (f.get('email')||'').split('@')[0], email: f.get('email'), kind: f.get('kind')||'creator', creatorId: state.user?.creatorId };
+      saveUser(); m.remove();
+      toast(t==='signup' ? `Welcome, ${state.user.name.split(' ')[0]} — account created` : `Welcome back, ${state.user.name.split(' ')[0]}`);
+      if (t==='signup' && state.user.kind==='creator') setTimeout(()=>{ if(location.hash.indexOf('join')<0) location.hash='#join'; }, 300);
+    });
+  };
+  $$('.modal-tab').forEach(b => b.addEventListener('click', () => paint(b.dataset.t)));
+  paint(tab);
+}
+function requireAuth(then){ if(state.user) then(); else openAuth('signup'); }
+
+// connections
+const isFollowing = id => state.following.has(id);
+function connectBtnHTML(id, block){ const on=isFollowing(id); return `<button class="btn ${block?'btn-block ':''}btn-connect ${on?'is-on btn-ghost':'btn-primary'}" data-connect="${id}">${on?'Disconnect −':'Connect +'}</button>`; }
+function wireConnect(scope=document){
+  $$('[data-connect]', scope).forEach(b => b.addEventListener('click', () => {
+    const id=b.dataset.connect;
+    requireAuth(() => {
+      const c=state.creators.find(x=>x.id===id);
+      if(isFollowing(id)){ state.following.delete(id); if(c)c.connections=Math.max(0,(c.connections||0)-1); }
+      else { state.following.add(id); if(c)c.connections=(c.connections||0)+1; }
+      LS.set('following',[...state.following]);
+      const on=isFollowing(id);
+      $$(`[data-connect="${id}"]`).forEach(btn=>{ btn.textContent=on?'Disconnect −':'Connect +'; btn.classList.toggle('is-on',on); btn.classList.toggle('btn-ghost',on); btn.classList.toggle('btn-primary',!on); });
+      $$(`[data-conncount="${id}"]`).forEach(n=>n.textContent=numFmt(c.connections||0));
+      toast(on?`Connected with ${c.name.split(' ')[0]}`:`Disconnected`);
+    });
+  }));
+}
+const SOCIAL_ICON = { ig:'Instagram', tt:'TikTok', x:'X', li:'LinkedIn' };
+const SOCIAL_URL = { ig:h=>`https://instagram.com/${h}`, tt:h=>`https://tiktok.com/@${h}`, x:h=>`https://x.com/${h}`, li:h=>`https://linkedin.com/in/${h}` };
+function socialsHTML(c){
+  if(!c.socials) return '';
+  const f=c.followers||{};
+  return `<div class="socials">${Object.entries(c.socials).filter(([k,v])=>v).map(([k,v])=>`<a class="social-link" href="${SOCIAL_URL[k](v)}" target="_blank" rel="noopener">${esc(SOCIAL_ICON[k])}${f[k]?` <span class="ct">${numFmt(f[k])}</span>`:''}</a>`).join('')}</div>`;
+}
+
 // ---------- boot ----------
 $('#scrim').addEventListener('click', closeProfile);
 document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeProfile(); $('.lightbox')?.remove(); } });
 $('#burger')?.addEventListener('click', () => { const open=$('.nav-links').classList.toggle('open'); $('#burger').setAttribute('aria-expanded', open); });
+renderNavCta();
 router();
