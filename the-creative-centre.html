@@ -3,507 +3,546 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Creative Centre — find your crew</title>
-  <meta name="description" content="A map-based marketplace for finding creative crew near you — models, photographers, gaffers, sound, hair & makeup, editors and more." />
+  <title>The Creative Centre — Australia's creative crew, on one map</title>
+  <meta name="description" content="Australia's map-based marketplace for finding creative crew — models, photographers, gaffers, sound, hair & makeup, editors, producers and more. Curate a portfolio that gets you booked." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <style>
 /* ============================================================================
-   THE CREATIVE CENTRE — black editorial theme
+   THE CREATIVE CENTRE — "Aurora Australis"
+   Deep ink base · iridescent green→teal→violet · Fraunces + Geist
    ========================================================================= */
 :root {
-  --black:    #050505;
-  --bg:       #0a0a0a;
-  --surface:  #111111;
-  --surface2: #161616;
-  --raised:   #1c1c1c;
-  --border:   #262626;
-  --border2:  #333333;
-  --text:     #f5f5f3;
-  --muted:    #8d8d8a;
-  --muted2:   #5e5e5b;
-  --accent:   #d8ff3e;   /* acid lime */
-  --accent-d: #b6dd1f;
-  --danger:   #ff5a3c;
-  --r:        14px;
-  --r-sm:     9px;
-  --maxw:     1240px;
-  --font:     'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --display:  'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --mono:     'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --ink:      #06080A;
+  --bg:       #080B0E;
+  --surface:  #0E1318;
+  --surface2: #121922;
+  --raised:   #18222C;
+  --line:     rgba(124,196,196,.12);
+  --line2:    rgba(124,196,196,.22);
+  --text:     #EAF1F0;
+  --muted:    #8FA3A6;
+  --muted2:   #5A6A6E;
+
+  --green:    #5BE9B0;
+  --teal:     #2DD4BF;
+  --violet:   #8B7CF6;
+  --green-d:  #3DCB95;
+
+  --aurora:   linear-gradient(115deg, #5BE9B0 0%, #2DD4BF 38%, #4FB8E8 64%, #8B7CF6 100%);
+  --aurora-soft: linear-gradient(115deg, rgba(91,233,176,.9), rgba(45,212,191,.85), rgba(139,124,246,.9));
+
+  --r:   16px;
+  --r-sm:10px;
+  --maxw:1280px;
+  --display:'Fraunces', Georgia, 'Times New Roman', serif;
+  --font:   'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --mono:   'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --ease:   cubic-bezier(.16,1,.3,1);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font);
-  -webkit-font-smoothing: antialiased;
-  line-height: 1.5;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+  background: var(--bg); color: var(--text); font-family: var(--font);
+  -webkit-font-smoothing: antialiased; line-height: 1.55; min-height: 100vh;
+  display: flex; flex-direction: column; overflow-x: hidden;
 }
 a { color: inherit; text-decoration: none; }
 button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
 img, svg { display: block; max-width: 100%; }
-h1, h2, h3, h4 { font-family: var(--display); }
+h1,h2,h3,h4 { font-family: var(--display); font-weight: 600; letter-spacing: -.02em; }
+:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; border-radius: 6px; }
+::selection { background: rgba(91,233,176,.28); color: #fff; }
+@media (prefers-reduced-motion: reduce){ *,*::before,*::after{ animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important; scroll-behavior:auto!important } }
+.icn { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
 
-/* accessibility — focus + reduced motion (per skill checklist) */
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+/* ---------- LOADER : Australia draws itself ---------- */
+.loader {
+  position: fixed; inset: 0; z-index: 1000; display: grid; place-content: center; justify-items: center;
+  gap: 22px; background: radial-gradient(120% 120% at 50% 40%, #0c1f17 0%, #061009 55%, #04070a 100%);
+  transition: opacity .7s var(--ease), visibility .7s;
 }
-.icn { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.loader.done { opacity: 0; visibility: hidden; pointer-events: none; }
+.loader-au { width: min(46vw, 360px); height: auto; overflow: visible; }
+.loader-au path { fill: rgba(91,233,176,.04); stroke: var(--green); stroke-width: 3.5; stroke-linejoin: round;
+  filter: drop-shadow(0 0 10px rgba(91,233,176,.55)); }
+#au-path { stroke-dasharray: 2600; stroke-dashoffset: 2600; animation: draw 3.2s var(--ease) infinite; }
+#au-tas  { stroke-dasharray: 180;  stroke-dashoffset: 180;  animation: draw 3.2s var(--ease) infinite .25s; }
+#au-tracer { fill: #fff; filter: drop-shadow(0 0 12px var(--green)); offset-path: path("M175,250 L250,182 L340,150 L430,120 L470,165 L505,150 L545,180 L585,120 L610,92 L650,150 L705,235 L740,300 L762,365 L788,430 L802,495 L792,560 L765,612 L700,648 L640,652 L585,632 L548,598 L520,632 L470,648 L380,650 L300,632 L232,602 L165,566 L128,492 L120,420 L138,356 L150,300 Z"); animation: trace 3.2s linear infinite; }
+@keyframes draw  { 0%{stroke-dashoffset:2600} 55%{stroke-dashoffset:0} 100%{stroke-dashoffset:0} }
+@keyframes trace { 0%{offset-distance:0%; opacity:0} 6%{opacity:1} 92%{opacity:1} 100%{offset-distance:100%; opacity:0} }
+.loader-word { font-family: var(--display); font-size: 15px; letter-spacing: .42em; color: var(--green); padding-left:.42em; }
+.loader-sub  { font-family: var(--mono); font-size: 11.5px; letter-spacing: .12em; color: rgba(143,163,166,.8); text-transform: uppercase; }
+
+/* ---------- MOUSE GLOW + GRAIN ---------- */
+.glow {
+  position: fixed; top: 0; left: 0; width: 620px; height: 620px; margin: -310px 0 0 -310px;
+  border-radius: 50%; pointer-events: none; z-index: 0; opacity: .55; will-change: transform;
+  background: radial-gradient(circle at 50% 50%, rgba(91,233,176,.22), rgba(45,212,191,.14) 35%, rgba(139,124,246,.12) 60%, transparent 72%);
+  filter: blur(36px); mix-blend-mode: screen; transition: opacity .4s;
+}
+.grain { position: fixed; inset: 0; pointer-events: none; z-index: 1; opacity: .035; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+main, .nav { position: relative; z-index: 2; }
 
 /* ---------- NAV ---------- */
-.nav {
-  position: sticky; top: 0; z-index: 40;
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 24px;
-  padding: 14px 28px;
-  background: rgba(8,8,8,.82);
-  backdrop-filter: blur(14px);
-  border-bottom: 1px solid var(--border);
-}
+.nav { position: sticky; top: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  padding: 14px 30px; background: rgba(8,11,14,.72); backdrop-filter: blur(16px) saturate(1.2); border-bottom: 1px solid var(--line);
+  transition: transform .35s var(--ease); }
+.nav.hide { transform: translateY(-100%); }
 .brand { display: flex; align-items: center; gap: 11px; }
-.brand-mark { color: var(--accent); font-size: 22px; line-height: 1; transform: rotate(-12deg); }
-.brand-name { font-weight: 800; letter-spacing: .14em; font-size: 13px; }
-.nav-links { display: flex; align-items: center; gap: 6px; }
-.nav-links a {
-  padding: 8px 14px; border-radius: 999px; font-size: 14px; font-weight: 500;
-  color: var(--muted); transition: color .15s, background .15s;
-}
+.brand-au { width: 22px; height: 18px; }
+.brand-au path { fill: none; stroke: var(--green); stroke-width: 22; filter: drop-shadow(0 0 6px rgba(91,233,176,.5)); }
+.brand-name { font-family: var(--display); font-weight: 600; letter-spacing: .14em; font-size: 13px; }
+.nav-links { display: flex; align-items: center; gap: 4px; }
+.nav-links a { padding: 9px 15px; border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--muted); transition: color .18s, background .18s; }
 .nav-links a:hover { color: var(--text); }
 .nav-links a.active { color: var(--text); background: var(--surface2); }
-.nav-cta {
-  background: var(--accent) !important; color: #0a0a0a !important;
-  font-weight: 700 !important;
-}
-.nav-cta:hover { background: var(--accent-d) !important; }
-.nav-burger { display: none; font-size: 20px; }
+.nav-cta { color: var(--ink) !important; font-weight: 600 !important; background: var(--aurora); background-size: 180% 180%; animation: shift 7s ease infinite; box-shadow: 0 4px 20px -6px rgba(91,233,176,.6); }
+.nav-cta:hover { filter: brightness(1.08); }
+@keyframes shift { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+.nav-burger { display: none; font-size: 20px; color: var(--text); }
 
-/* ---------- LAYOUT HELPERS ---------- */
+/* ---------- HELPERS ---------- */
 main { flex: 1 0 auto; }
-.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 28px; }
-.eyebrow {
-  font-family: var(--mono); font-size: 11px; letter-spacing: .22em;
-  text-transform: uppercase; color: var(--accent); margin-bottom: 14px;
-}
-.section-pad { padding: 64px 0; }
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 30px; }
+.eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .26em; text-transform: uppercase; margin-bottom: 16px;
+  background: var(--aurora); -webkit-background-clip: text; background-clip: text; color: transparent; display: inline-block; }
+.sec { padding: 96px 0; border-bottom: 1px solid var(--line); position: relative; }
+.sec-head { max-width: 660px; margin-bottom: 48px; }
+.sec-head.center { margin-left: auto; margin-right: auto; text-align: center; }
+.sec-head h2 { font-size: clamp(30px,4.4vw,52px); line-height: 1.02; }
+.sec-head p { color: var(--muted); font-size: clamp(15px,1.6vw,18px); margin-top: 16px; }
 
-/* ---------- HERO ---------- */
-.hero {
-  position: relative; overflow: hidden;
-  border-bottom: 1px solid var(--border);
-  background:
-    radial-gradient(1100px 480px at 78% -8%, rgba(216,255,62,.10), transparent 60%),
-    radial-gradient(700px 420px at 8% 110%, rgba(216,255,62,.05), transparent 55%),
-    var(--black);
-}
-.hero-inner { max-width: var(--maxw); margin: 0 auto; padding: 84px 28px 72px; }
-.hero h1 {
-  font-size: clamp(40px, 6.4vw, 78px); line-height: .98;
-  font-weight: 800; letter-spacing: -.03em; max-width: 13ch;
-}
-.hero h1 em { font-style: normal; color: var(--accent); }
-.hero p { color: var(--muted); font-size: clamp(16px, 2vw, 20px); max-width: 52ch; margin-top: 22px; }
-.hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; }
-.hero-stats { display: flex; gap: 38px; margin-top: 52px; flex-wrap: wrap; }
-.hero-stats .num { font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
-.hero-stats .lbl { color: var(--muted); font-size: 13px; }
+/* scroll reveal */
+.reveal { opacity: 0; transform: translateY(26px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
+.reveal.in { opacity: 1; transform: none; }
+.reveal.d1{transition-delay:.06s}.reveal.d2{transition-delay:.12s}.reveal.d3{transition-delay:.18s}.reveal.d4{transition-delay:.24s}
 
 /* ---------- BUTTONS ---------- */
-.btn {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 13px 22px; border-radius: 999px; font-weight: 600; font-size: 15px;
-  transition: transform .12s, background .15s, border-color .15s;
-  border: 1px solid transparent;
-}
-.btn:active { transform: translateY(1px); }
-.btn-primary { background: var(--accent); color: #0a0a0a; }
-.btn-primary:hover { background: var(--accent-d); }
-.btn-ghost { border-color: var(--border2); color: var(--text); }
-.btn-ghost:hover { border-color: var(--muted); background: var(--surface); }
-.btn-sm { padding: 9px 15px; font-size: 13px; }
+.btn { display: inline-flex; align-items: center; gap: 9px; padding: 13px 24px; border-radius: 999px; font-weight: 600; font-size: 15px;
+  transition: transform .2s var(--ease), box-shadow .2s, background .2s, border-color .2s; border: 1px solid transparent; }
+.btn:active { transform: translateY(1px) scale(.99); }
+.btn-primary { background: var(--aurora); background-size: 180% 180%; color: var(--ink); box-shadow: 0 8px 28px -10px rgba(91,233,176,.7); animation: shift 7s ease infinite; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 36px -10px rgba(91,233,176,.85); }
+.btn-ghost { border-color: var(--line2); color: var(--text); }
+.btn-ghost:hover { border-color: var(--green); background: rgba(91,233,176,.06); transform: translateY(-2px); }
+.btn-sm { padding: 9px 16px; font-size: 13px; }
 .btn-block { width: 100%; justify-content: center; }
-
-/* ---------- DISCOVER / MAP LAYOUT ---------- */
-.discover {
-  display: grid;
-  grid-template-columns: 320px 1fr 360px;
-  gap: 0;
-  height: calc(100vh - 60px);
-  min-height: 600px;
-}
-.panel { background: var(--surface); border-right: 1px solid var(--border); overflow-y: auto; }
-.panel-right { border-right: none; border-left: 1px solid var(--border); }
-.panel-head { padding: 20px 20px 14px; position: sticky; top: 0; background: var(--surface); z-index: 2; border-bottom: 1px solid var(--border); }
-.panel-head h2 { font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
-.panel-head .sub { color: var(--muted); font-size: 12.5px; margin-top: 3px; }
-
-/* search + city */
-.field { width: 100%; padding: 11px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); color: var(--text); font-size: 14px; }
-.field:focus { outline: none; border-color: var(--accent); }
-.field::placeholder { color: var(--muted2); }
-select.field { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 18px) 17px, calc(100% - 13px) 17px; background-size: 5px 5px; background-repeat: no-repeat; }
-.label { display: block; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 8px; font-family: var(--mono); }
-
-/* filter chips */
-.filters { padding: 18px 20px; }
-.filter-group { margin-bottom: 20px; }
-.chips { display: flex; flex-wrap: wrap; gap: 7px; }
-.chip {
-  padding: 7px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 500;
-  background: var(--surface2); border: 1px solid var(--border); color: var(--muted);
-  transition: all .12s;
-}
-.chip:hover { color: var(--text); border-color: var(--border2); }
-.chip.on { background: var(--accent); color: #0a0a0a; border-color: var(--accent); font-weight: 600; }
-.cat-title { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 9px; display:flex; justify-content:space-between; }
-
-/* ---------- MAP ---------- */
-.map-wrap { position: relative; background: var(--black); overflow: hidden; }
-.map {
-  position: absolute; inset: 0;
-  background:
-    linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px) 0 0 / 100% 44px,
-    linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px) 0 0 / 44px 100%,
-    radial-gradient(1200px 700px at 60% 35%, rgba(216,255,62,.05), transparent 60%),
-    var(--black);
-}
-.map-river { position:absolute; inset:0; opacity:.5; }
-.map-overlay-top { position: absolute; top: 16px; left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; z-index: 5; }
-.map-city-tag { pointer-events: auto; background: rgba(10,10,10,.7); backdrop-filter: blur(8px); border: 1px solid var(--border); border-radius: 999px; padding: 8px 14px; font-size: 13px; font-weight: 600; display:flex; align-items:center; gap:8px; }
-.map-count { pointer-events:auto; background: rgba(10,10,10,.7); backdrop-filter: blur(8px); border: 1px solid var(--border); border-radius: 999px; padding: 8px 14px; font-size: 12.5px; color: var(--muted); font-family: var(--mono); }
-.map-count b { color: var(--accent); }
-
-/* pins */
-.pin {
-  position: absolute; transform: translate(-50%, -100%);
-  display: flex; flex-direction: column; align-items: center;
-  cursor: pointer; z-index: 3; transition: z-index 0s, transform .12s;
-}
-.pin:hover, .pin.sel { z-index: 20; }
-.pin-dot {
-  width: 38px; height: 38px; border-radius: 50%;
-  display: grid; place-items: center;
-  font-size: 13px; font-weight: 800; color: #0a0a0a;
-  border: 2px solid var(--black);
-  box-shadow: 0 4px 14px rgba(0,0,0,.6);
-  position: relative;
-}
-.pin:hover .pin-dot, .pin.sel .pin-dot { transform: scale(1.12); box-shadow: 0 0 0 4px rgba(216,255,62,.25), 0 6px 18px rgba(0,0,0,.7); }
-.pin-tail { width: 2px; height: 9px; background: var(--black); margin-top: -1px; }
-.pin-label {
-  margin-top: 6px; font-size: 11px; white-space: nowrap;
-  background: rgba(10,10,10,.85); border: 1px solid var(--border);
-  padding: 3px 8px; border-radius: 999px; opacity: 0; transition: opacity .12s;
-  pointer-events: none; max-width: 130px; overflow: hidden; text-overflow: ellipsis;
-}
-.pin:hover .pin-label, .pin.sel .pin-label { opacity: 1; }
-.map-empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 40px; z-index: 4; }
-.map-empty .big { font-size: 17px; color: var(--text); font-weight: 600; margin-bottom: 6px; }
-
-/* ---------- RESULTS LIST (right panel) ---------- */
-.result {
-  display: flex; gap: 13px; padding: 14px 18px; border-bottom: 1px solid var(--border);
-  cursor: pointer; transition: background .12s;
-}
-.result:hover, .result.sel { background: var(--surface2); }
-.avatar {
-  width: 46px; height: 46px; border-radius: 11px; flex-shrink: 0;
-  display: grid; place-items: center; font-weight: 800; font-size: 15px; color: #0a0a0a;
-}
-.result-body { min-width: 0; flex: 1; }
-.result-name { font-weight: 600; font-size: 14.5px; display: flex; align-items: center; gap: 6px; }
-.verified { color: var(--accent); font-size: 12px; }
-.result-role { color: var(--muted); font-size: 12.5px; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.result-meta { display: flex; gap: 10px; margin-top: 6px; font-size: 11.5px; color: var(--muted2); font-family: var(--mono); }
-.result-meta .rate { color: var(--accent); }
-
-/* ---------- DRAWER (profile) ---------- */
-.drawer-scrim { position: fixed; inset: 0; background: rgba(0,0,0,.62); z-index: 50; backdrop-filter: blur(2px); }
-.drawer {
-  position: fixed; top: 0; right: 0; bottom: 0; width: min(480px, 94vw);
-  background: var(--surface); border-left: 1px solid var(--border); z-index: 51;
-  overflow-y: auto; box-shadow: -20px 0 60px rgba(0,0,0,.5);
-  animation: slideIn .22s ease;
-}
-@keyframes slideIn { from { transform: translateX(30px); opacity: .4; } to { transform: none; opacity: 1; } }
-.drawer-cover { height: 132px; position: relative; display:flex; align-items:flex-end; padding: 18px; }
-.drawer-close { position: absolute; top: 14px; right: 14px; width: 34px; height: 34px; border-radius: 50%; background: rgba(10,10,10,.6); border: 1px solid var(--border); font-size: 16px; display:grid; place-items:center; }
-.drawer-av { width: 76px; height: 76px; border-radius: 16px; display:grid; place-items:center; font-weight:800; font-size:26px; color:#0a0a0a; border: 3px solid var(--surface); }
-.drawer-pad { padding: 18px 24px 40px; }
-.drawer h2 { font-size: 23px; font-weight: 800; letter-spacing: -.02em; display:flex; align-items:center; gap:8px; }
-.drawer .roles { color: var(--accent); font-size: 14px; margin-top: 4px; font-weight: 500; }
-.drawer .loc { color: var(--muted); font-size: 13.5px; margin-top: 2px; }
-.kv { display: flex; gap: 24px; margin: 22px 0; flex-wrap: wrap; }
-.kv .k { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-family: var(--mono); }
-.kv .v { font-size: 17px; font-weight: 700; margin-top: 3px; }
-.drawer .bio { color: #cfcfca; font-size: 14.5px; line-height: 1.6; }
-.tagrow { display:flex; flex-wrap:wrap; gap: 7px; margin: 18px 0; }
-.tag { font-size: 12px; padding: 5px 11px; border-radius: 999px; background: var(--surface2); border:1px solid var(--border); color: var(--muted); }
-.gearlist { margin: 8px 0 0; }
-.gearlist li { list-style: none; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px; display:flex; gap:8px; }
-.gearlist li::before { content:'▸'; color: var(--accent); }
-.drawer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 26px; }
-.divider { height: 1px; background: var(--border); margin: 26px 0; }
-.hr-note { font-size: 12px; color: var(--muted2); margin-top:18px; }
-
-/* ---------- GENERIC PAGE / GRID ---------- */
-.page-head { padding: 56px 0 30px; border-bottom: 1px solid var(--border); }
-.page-head h1 { font-size: clamp(30px, 4.4vw, 46px); font-weight: 800; letter-spacing: -.025em; }
-.page-head p { color: var(--muted); margin-top: 12px; max-width: 56ch; }
-.grid { display: grid; gap: 16px; }
-.grid-2 { grid-template-columns: repeat(2, 1fr); }
-.grid-3 { grid-template-columns: repeat(3, 1fr); }
-
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 22px; transition: border-color .15s, transform .12s; }
-.card:hover { border-color: var(--border2); }
-.card h3 { font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
-.card .meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
-.card .desc { color: #c9c9c4; font-size: 14px; margin-top: 14px; line-height: 1.55; }
-.pill-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:14px; }
-.pill { font-size: 11.5px; padding: 4px 10px; border-radius:999px; background: var(--surface2); border:1px solid var(--border); color: var(--muted); }
-.pill.accent { background: rgba(216,255,62,.12); border-color: rgba(216,255,62,.3); color: var(--accent); }
-.card-foot { display:flex; align-items:center; justify-content: space-between; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); }
-.brandline { font-size: 12px; color: var(--muted); font-family: var(--mono); }
-
-/* ---------- FORMS ---------- */
-.form-card { max-width: 680px; margin: 0 auto; }
-.form-row { margin-bottom: 18px; }
-.form-row.two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-textarea.field { resize: vertical; min-height: 100px; font-family: inherit; }
-.hint { font-size: 12px; color: var(--muted2); margin-top: 6px; }
-.checkrow { display:flex; flex-wrap:wrap; gap: 8px; }
-.check { display:flex; align-items:center; gap:7px; padding:8px 12px; border:1px solid var(--border); border-radius: var(--r-sm); background: var(--surface2); font-size:13px; cursor:pointer; }
-.check input { accent-color: var(--accent); }
-
-/* ---------- TOAST ---------- */
-.toast {
-  position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%);
-  background: var(--accent); color: #0a0a0a; font-weight: 600; font-size: 14px;
-  padding: 13px 22px; border-radius: 999px; z-index: 80;
-  box-shadow: 0 10px 34px rgba(0,0,0,.5); animation: pop .25s ease;
-}
-@keyframes pop { from { transform: translate(-50%, 12px); opacity: 0; } to { transform: translate(-50%,0); opacity:1; } }
-
-/* ---------- HOW IT WORKS (hero page strip) ---------- */
-.strip { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-.steps { display:grid; grid-template-columns: repeat(4,1fr); gap: 0; }
-.step { padding: 34px 26px; border-right: 1px solid var(--border); }
-.step:last-child { border-right: none; }
-.step .n { font-family: var(--mono); color: var(--accent); font-size: 13px; }
-.step h4 { font-size: 16px; margin: 12px 0 7px; font-weight: 700; }
-.step p { color: var(--muted); font-size: 13.5px; }
-
-/* ---------- FOOTER ---------- */
-.foot { flex-shrink: 0; border-top: 1px solid var(--border); padding: 22px 28px; display:flex; justify-content: space-between; align-items:center; font-size: 12.5px; letter-spacing:.04em; }
-.foot span:first-child { font-weight: 700; }
-.foot-dim { color: var(--muted2); }
-
-/* ---------- RESPONSIVE ---------- */
-@media (max-width: 1080px) {
-  .discover { grid-template-columns: 280px 1fr; }
-  .panel-right { display: none; }
-  .grid-3 { grid-template-columns: repeat(2,1fr); }
-  .steps { grid-template-columns: repeat(2,1fr); }
-  .step:nth-child(2) { border-right: none; }
-}
-@media (max-width: 720px) {
-  .nav-links { display: none; }
-  .nav-burger { display: block; }
-  .nav-links.open { display: flex; position: absolute; top: 58px; right: 14px; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 8px; }
-  .discover { grid-template-columns: 1fr; height: auto; }
-  .panel { max-height: 320px; }
-  .map-wrap { height: 60vh; }
-  .grid-2, .grid-3 { grid-template-columns: 1fr; }
-  .form-row.two { grid-template-columns: 1fr; }
-  .steps { grid-template-columns: 1fr; }
-  .step { border-right: none; }
-  .hero-inner { padding: 56px 20px; }
-}
+.btn .icn { width: 17px; height: 17px; }
 
 /* ============================================================================
-   HOME PAGE
+   HOME
    ========================================================================= */
-.home section { position: relative; }
-.sec { padding: 88px 0; border-bottom: 1px solid var(--border); }
-.sec-head { max-width: 640px; margin-bottom: 44px; }
-.sec-head.center { margin-left: auto; margin-right: auto; text-align: center; }
-.sec-head h2 { font-size: clamp(28px, 4vw, 44px); font-weight: 700; letter-spacing: -.025em; line-height: 1.05; }
-.sec-head p { color: var(--muted); font-size: clamp(15px, 1.6vw, 18px); margin-top: 14px; line-height: 1.55; }
+.home-hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
+.aurora-bg { position: absolute; inset: -20% -10% auto -10%; height: 130%; z-index: 0; filter: blur(60px); opacity: .5; pointer-events: none; }
+.aurora-bg span { position: absolute; border-radius: 50%; mix-blend-mode: screen; animation: drift 18s ease-in-out infinite; }
+.aurora-bg .a1 { width: 50vw; height: 50vw; left: 4%; top: -10%; background: radial-gradient(circle, rgba(91,233,176,.55), transparent 65%); }
+.aurora-bg .a2 { width: 46vw; height: 46vw; right: 2%; top: 6%; background: radial-gradient(circle, rgba(139,124,246,.5), transparent 65%); animation-delay: -6s; }
+.aurora-bg .a3 { width: 40vw; height: 40vw; left: 38%; top: 28%; background: radial-gradient(circle, rgba(45,212,191,.45), transparent 65%); animation-delay: -11s; }
+@keyframes drift { 0%,100%{transform:translate(0,0) scale(1)} 33%{transform:translate(6%,4%) scale(1.08)} 66%{transform:translate(-5%,-3%) scale(.95)} }
+.hero-grid { position:absolute; inset:0; z-index:0; opacity:.4;
+  background: linear-gradient(rgba(124,196,196,.05) 1px, transparent 1px) 0 0/100% 56px, linear-gradient(90deg, rgba(124,196,196,.05) 1px, transparent 1px) 0 0/56px 100%;
+  -webkit-mask-image: radial-gradient(900px 560px at 38% 12%, #000, transparent 76%); mask-image: radial-gradient(900px 560px at 38% 12%, #000, transparent 76%); }
+.home-hero-inner { position: relative; z-index: 3; max-width: var(--maxw); margin: 0 auto; padding: 92px 30px 84px; display: grid; grid-template-columns: 1.15fr .85fr; gap: 40px; align-items: center; }
+.badge { display: inline-flex; align-items: center; gap: 9px; font-size: 12.5px; color: var(--muted); background: rgba(14,19,24,.7); border: 1px solid var(--line2); padding: 8px 15px; border-radius: 999px; font-weight: 500; backdrop-filter: blur(8px); }
+.badge .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 12px var(--green); animation: pulse 2.4s ease infinite; }
+@keyframes pulse { 50%{opacity:.4; transform:scale(.8)} }
+.home-hero h1 { font-size: clamp(46px,7vw,92px); line-height: .94; margin-top: 26px; }
+.home-hero h1 em { font-style: italic; background: var(--aurora); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.home-hero .lede { color: #B7C6C7; font-size: clamp(16px,1.9vw,21px); max-width: 50ch; margin-top: 24px; line-height: 1.5; }
 
-/* ---- HERO (search-focused, per skill marketplace pattern) ---- */
-.home-hero {
-  position: relative; overflow: hidden; border-bottom: 1px solid var(--border);
-  background:
-    radial-gradient(1200px 560px at 80% -12%, rgba(216,255,62,.11), transparent 58%),
-    radial-gradient(760px 460px at 4% 116%, rgba(216,255,62,.05), transparent 55%),
-    var(--black);
-}
-.home-hero-grid { position:absolute; inset:0; opacity:.6;
-  background:
-    linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px) 0 0 / 100% 52px,
-    linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px) 0 0 / 52px 100%;
-  -webkit-mask-image: radial-gradient(900px 520px at 50% 8%, #000, transparent 75%);
-  mask-image: radial-gradient(900px 520px at 50% 8%, #000, transparent 75%);
-}
-.home-hero-inner { position: relative; max-width: var(--maxw); margin: 0 auto; padding: 96px 28px 80px; }
-.badge { display:inline-flex; align-items:center; gap:8px; font-size:12.5px; color:var(--muted); background:var(--surface); border:1px solid var(--border); padding:7px 14px; border-radius:999px; font-weight:500; }
-.badge .dot { width:7px; height:7px; border-radius:50%; background:var(--accent); box-shadow:0 0 10px var(--accent); }
-.home-hero h1 { font-size: clamp(42px, 7vw, 86px); line-height:.96; font-weight:700; letter-spacing:-.035em; max-width: 16ch; margin-top: 26px; }
-.home-hero h1 em { font-style: normal; color: var(--accent); }
-.home-hero .lede { color: #b9b9b4; font-size: clamp(16px, 2vw, 21px); max-width: 56ch; margin-top: 24px; line-height: 1.5; }
+.searchbar { display: flex; gap: 8px; margin-top: 32px; max-width: 640px; background: rgba(14,19,24,.85); border: 1px solid var(--line2); border-radius: 18px; padding: 8px; flex-wrap: wrap; backdrop-filter: blur(10px); transition: border-color .2s, box-shadow .2s; }
+.searchbar:focus-within { border-color: var(--green); box-shadow: 0 0 0 4px rgba(91,233,176,.12); }
+.searchbar .seg { display: flex; align-items: center; gap: 10px; padding: 8px 14px; flex: 1 1 170px; min-width: 0; }
+.searchbar .seg + .seg { border-left: 1px solid var(--line); }
+.searchbar .icn { color: var(--green); flex-shrink: 0; }
+.searchbar input, .searchbar select { background: none; border: none; color: var(--text); font-size: 15px; width: 100%; font-family: var(--font); }
+.searchbar input:focus, .searchbar select:focus { outline: none; }
+.searchbar select { appearance: none; cursor: pointer; }
+.searchbar option, .searchbar optgroup { background: var(--surface); color: var(--text); }
+.pop-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; align-items: center; }
+.pop-row .lbl { font-size: 12px; color: var(--muted2); font-family: var(--mono); text-transform: uppercase; letter-spacing: .1em; }
+.pop-tag { font-size: 12.5px; color: var(--muted); border: 1px solid var(--line); background: rgba(14,19,24,.5); padding: 6px 13px; border-radius: 999px; transition: all .18s var(--ease); }
+.pop-tag:hover { color: var(--text); border-color: var(--green); transform: translateY(-2px); }
+.hero-stats { display: flex; gap: 40px; margin-top: 52px; flex-wrap: wrap; }
+.hero-stats .num { font-family: var(--display); font-size: 36px; line-height: 1; }
+.hero-stats .num em { font-style: normal; background: var(--aurora); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero-stats .lbl { color: var(--muted); font-size: 13px; margin-top: 6px; }
 
-/* hero search bar = the primary CTA */
-.searchbar { display:flex; gap:8px; margin-top: 34px; max-width: 720px; background: var(--surface); border:1px solid var(--border2); border-radius: 16px; padding: 8px; flex-wrap: wrap; }
-.searchbar:focus-within { border-color: var(--accent); }
-.searchbar .seg { display:flex; align-items:center; gap:10px; padding: 6px 14px; flex: 1 1 180px; min-width: 0; }
-.searchbar .seg + .seg { border-left: 1px solid var(--border); }
-.searchbar .icn { color: var(--muted); flex-shrink:0; }
-.searchbar input, .searchbar select { background:none; border:none; color:var(--text); font-size:15px; width:100%; }
-.searchbar input:focus, .searchbar select:focus { outline:none; }
-.searchbar select { appearance:none; cursor:pointer; }
-.searchbar option { background: var(--surface); }
-.searchbar .btn { flex: 0 0 auto; }
-.pop-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; align-items:center; }
-.pop-row .lbl { font-size:12.5px; color:var(--muted2); font-family:var(--mono); }
-.pop-tag { font-size:12.5px; color:var(--muted); border:1px solid var(--border); background:var(--surface); padding:5px 11px; border-radius:999px; transition:all .15s; }
-.pop-tag:hover { color:var(--text); border-color:var(--border2); }
+/* floating top-performer cards (hero right) */
+.float-stage { position: relative; height: 480px; }
+.float-card { position: absolute; width: 188px; background: rgba(14,19,24,.78); border: 1px solid var(--line2); border-radius: 16px; padding: 12px; backdrop-filter: blur(12px); box-shadow: 0 20px 50px -22px rgba(0,0,0,.8); animation: bob 7s ease-in-out infinite; cursor: pointer; transition: transform .25s var(--ease), border-color .25s; }
+.float-card:hover { transform: scale(1.05) translateY(-4px) !important; border-color: var(--green); z-index: 9; }
+.float-card .fc-img { height: 116px; border-radius: 10px; background-size: cover; background-position: center; position: relative; overflow: hidden; }
+.float-card .fc-rank { position: absolute; top: 8px; left: 8px; font-family: var(--mono); font-size: 10px; letter-spacing: .1em; background: rgba(6,8,10,.7); border: 1px solid var(--line2); padding: 3px 8px; border-radius: 999px; color: var(--green); }
+.float-card .fc-name { font-weight: 600; font-size: 13.5px; margin-top: 9px; display: flex; align-items: center; gap: 5px; }
+.float-card .fc-role { color: var(--muted); font-size: 11.5px; }
+.float-card .fc-meta { display: flex; justify-content: space-between; margin-top: 8px; font-family: var(--mono); font-size: 11px; color: var(--muted2); }
+.float-card .fc-meta .star { color: var(--green); }
+.float-card.p0 { top: 8%;  left: 2%;  animation-delay: 0s; }
+.float-card.p1 { top: 0;    right: 4%; animation-delay: -2.3s; }
+.float-card.p2 { top: 42%;  left: 22%; animation-delay: -4.1s; z-index: 4; }
+.float-card.p3 { bottom: 2%; right: 0;  animation-delay: -1.2s; }
+.float-card.p4 { bottom: 8%; left: 0;   animation-delay: -5.5s; }
+@keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-14px)} }
+.float-label { position: absolute; top: -8px; left: 50%; transform: translateX(-50%); font-family: var(--mono); font-size: 10.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
 
-.hero-stats { display:flex; gap:46px; margin-top:54px; flex-wrap:wrap; }
-.hero-stats .num { font-family:var(--display); font-size:34px; font-weight:700; letter-spacing:-.02em; }
-.hero-stats .num em { font-style:normal; color:var(--accent); }
-.hero-stats .lbl { color:var(--muted); font-size:13px; margin-top:2px; }
-
-/* ---- marquee strip of disciplines ---- */
-.marquee { overflow:hidden; border-bottom:1px solid var(--border); background:var(--surface); padding: 16px 0; -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent); mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent); }
-.marquee-track { display:flex; gap:38px; white-space:nowrap; width:max-content; animation: scroll 38s linear infinite; }
-.marquee-track span { font-family:var(--display); font-size:15px; font-weight:600; color:var(--muted); display:flex; align-items:center; gap:38px; }
-.marquee-track span::after { content:'✦'; color:var(--accent); font-size:11px; }
+/* marquee */
+.marquee { overflow: hidden; border-bottom: 1px solid var(--line); background: rgba(14,19,24,.4); padding: 18px 0;
+  -webkit-mask-image: linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent); mask-image: linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent); }
+.marquee-track { display: flex; gap: 40px; white-space: nowrap; width: max-content; animation: scroll 42s linear infinite; }
+.marquee-track span { font-family: var(--display); font-style: italic; font-size: 17px; color: var(--muted); display: flex; align-items: center; gap: 40px; }
+.marquee-track span::after { content: '✦'; color: var(--teal); font-size: 11px; font-style: normal; }
 @keyframes scroll { to { transform: translateX(-50%); } }
 
-/* ---- categories grid ---- */
-.cat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
-.cat-card { text-align:left; background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:22px; transition:border-color .15s, transform .12s, background .15s; cursor:pointer; }
-.cat-card:hover { border-color:var(--border2); transform:translateY(-3px); background:var(--surface2); }
-.cat-ico { width:42px; height:42px; border-radius:11px; background:var(--surface2); border:1px solid var(--border); display:grid; place-items:center; color:var(--accent); margin-bottom:16px; }
-.cat-ico .icn { width:22px; height:22px; }
-.cat-card h3 { font-size:16px; font-weight:600; }
-.cat-card .roles { color:var(--muted); font-size:12.5px; margin-top:6px; line-height:1.5; }
-.cat-card .cnt { font-family:var(--mono); font-size:12px; color:var(--accent); margin-top:12px; }
+/* categories */
+.cat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; }
+.cat-card { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 24px; transition: transform .25s var(--ease), border-color .25s, background .25s; cursor: pointer; }
+.cat-card:hover { border-color: var(--line2); transform: translateY(-5px); background: var(--surface2); }
+.cat-ico { width: 46px; height: 46px; border-radius: 12px; background: rgba(91,233,176,.08); border: 1px solid var(--line2); display: grid; place-items: center; color: var(--green); margin-bottom: 18px; transition: transform .25s var(--ease); }
+.cat-card:hover .cat-ico { transform: rotate(-6deg) scale(1.08); }
+.cat-ico .icn { width: 23px; height: 23px; }
+.cat-card h3 { font-size: 17px; }
+.cat-card .roles { color: var(--muted); font-size: 12.5px; margin-top: 8px; line-height: 1.5; }
+.cat-card .cnt { font-family: var(--mono); font-size: 12px; color: var(--green); margin-top: 14px; }
 
-/* ---- map feature (one feature, not the whole thing) ---- */
-.feature { display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center; }
-.feature-copy .kicker { font-family:var(--mono); font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); }
-.feature-copy h2 { font-size:clamp(26px,3.4vw,40px); font-weight:700; letter-spacing:-.02em; margin:14px 0 16px; line-height:1.08; }
-.feature-copy p { color:var(--muted); font-size:16px; line-height:1.6; }
-.feature-list { list-style:none; margin:22px 0; display:grid; gap:12px; }
-.feature-list li { display:flex; gap:12px; align-items:flex-start; font-size:14.5px; color:#cfcfca; }
-.feature-list .icn { color:var(--accent); flex-shrink:0; margin-top:1px; }
-.feature-visual { aspect-ratio: 4/3.4; border-radius:18px; border:1px solid var(--border); overflow:hidden; position:relative; background:var(--black); }
-.fv-map { position:absolute; inset:0; background:
-  linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px) 0 0 / 100% 40px,
-  linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px) 0 0 / 40px 100%,
-  radial-gradient(700px 400px at 55% 40%, rgba(216,255,62,.06), transparent 60%), var(--black); }
-.fv-pin { position:absolute; width:34px; height:34px; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:800; color:#0a0a0a; border:2px solid var(--black); box-shadow:0 4px 12px rgba(0,0,0,.6); }
-.fv-pin::after { content:''; position:absolute; inset:-6px; border-radius:50%; border:1px solid rgba(216,255,62,.3); animation:ping 2.6s ease-out infinite; }
-@keyframes ping { 0%{transform:scale(.8);opacity:.8} 100%{transform:scale(1.6);opacity:0} }
+/* feature (map = one feature) */
+.feature { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+.feature-copy .kicker { font-family: var(--mono); font-size: 12px; letter-spacing: .2em; text-transform: uppercase; color: var(--teal); }
+.feature-copy h2 { font-size: clamp(28px,3.6vw,44px); margin: 16px 0 18px; line-height: 1.06; }
+.feature-copy p { color: var(--muted); font-size: 16px; }
+.feature-list { list-style: none; margin: 24px 0; display: grid; gap: 13px; }
+.feature-list li { display: flex; gap: 12px; align-items: flex-start; font-size: 14.5px; color: #CBD8D8; }
+.feature-list .icn { color: var(--green); flex-shrink: 0; margin-top: 1px; width: 18px; height: 18px; }
+.feature-visual { aspect-ratio: 4/3.5; border-radius: 20px; border: 1px solid var(--line2); overflow: hidden; position: relative; background: var(--ink); box-shadow: 0 30px 70px -30px rgba(0,0,0,.8); }
+.fv-map { position: absolute; inset: 0; background:
+  linear-gradient(rgba(124,196,196,.05) 1px, transparent 1px) 0 0/100% 42px,
+  linear-gradient(90deg, rgba(124,196,196,.05) 1px, transparent 1px) 0 0/42px 100%,
+  radial-gradient(700px 420px at 55% 42%, rgba(91,233,176,.08), transparent 60%), var(--ink); }
+.fv-pin { position: absolute; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 4px 14px rgba(0,0,0,.6); }
+.fv-pin::after { content: ''; position: absolute; inset: -7px; border-radius: 50%; border: 1px solid rgba(91,233,176,.4); animation: ping 2.8s ease-out infinite; }
+@keyframes ping { 0%{transform:scale(.8); opacity:.8} 100%{transform:scale(1.7); opacity:0} }
 
-/* ---- how it works (two audiences) ---- */
-.dual { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
-.dual-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:32px; }
-.dual-card .tag { font-family:var(--mono); font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); }
-.dual-card h3 { font-size:22px; font-weight:700; margin:10px 0 22px; letter-spacing:-.01em; }
-.flow { list-style:none; display:grid; gap:18px; }
-.flow li { display:flex; gap:16px; }
-.flow .step-n { flex:0 0 32px; height:32px; border-radius:9px; background:var(--surface2); border:1px solid var(--border); display:grid; place-items:center; font-family:var(--mono); font-size:13px; color:var(--accent); }
-.flow h4 { font-size:15px; font-weight:600; }
-.flow p { color:var(--muted); font-size:13.5px; margin-top:3px; line-height:1.5; }
-.dual-card .btn { margin-top:26px; }
+/* dual how-it-works */
+.dual { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.dual-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 34px; transition: border-color .25s; }
+.dual-card:hover { border-color: var(--line2); }
+.dual-card .tag { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--teal); }
+.dual-card h3 { font-size: 24px; margin: 12px 0 24px; }
+.flow { list-style: none; display: grid; gap: 20px; }
+.flow li { display: flex; gap: 16px; }
+.flow .step-n { flex: 0 0 34px; height: 34px; border-radius: 10px; background: rgba(91,233,176,.08); border: 1px solid var(--line2); display: grid; place-items: center; font-family: var(--mono); font-size: 13px; color: var(--green); }
+.flow h4 { font-family: var(--font); font-weight: 600; font-size: 15px; letter-spacing: 0; }
+.flow p { color: var(--muted); font-size: 13.5px; margin-top: 3px; }
+.dual-card .btn { margin-top: 28px; }
 
-/* ---- featured creators ---- */
-.feat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
-.feat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); overflow:hidden; cursor:pointer; transition:border-color .15s, transform .12s; }
-.feat-card:hover { border-color:var(--border2); transform:translateY(-3px); }
-.feat-cover { height:120px; position:relative; }
-.feat-av { position:absolute; left:18px; bottom:-22px; width:54px; height:54px; border-radius:13px; display:grid; place-items:center; font-weight:800; color:#0a0a0a; border:3px solid var(--surface); }
-.feat-body { padding:30px 18px 18px; }
-.feat-body .nm { font-weight:600; font-size:15px; display:flex; align-items:center; gap:6px; }
-.feat-body .rl { color:var(--muted); font-size:12.5px; margin-top:2px; }
-.feat-body .mt { display:flex; justify-content:space-between; margin-top:14px; font-family:var(--mono); font-size:12px; color:var(--muted2); }
-.feat-body .mt .rate { color:var(--accent); }
+/* featured creators */
+.feat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 18px; }
+.feat-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; cursor: pointer; transition: transform .25s var(--ease), border-color .25s; }
+.feat-card:hover { border-color: var(--green); transform: translateY(-6px); }
+.feat-cover { height: 168px; background-size: cover; background-position: center; position: relative; }
+.feat-cover::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, rgba(8,11,14,.85), transparent 55%); }
+.feat-av { position: absolute; left: 18px; bottom: -22px; width: 56px; height: 56px; border-radius: 14px; display: grid; place-items: center; font-family: var(--display); font-weight: 600; color: var(--ink); border: 3px solid var(--surface); z-index: 2; }
+.feat-body { padding: 32px 18px 18px; }
+.feat-body .nm { font-weight: 600; font-size: 15.5px; display: flex; align-items: center; gap: 6px; }
+.feat-body .rl { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.feat-body .mt { display: flex; justify-content: space-between; margin-top: 14px; font-family: var(--mono); font-size: 12px; color: var(--muted2); }
+.feat-body .mt .rate { color: var(--green); }
+.verified-ico { color: var(--green); }
+.verified-ico .icn { width: 15px; height: 15px; stroke-width: 2.5; }
 
-/* ---- pricing (staged model) ---- */
-.price-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; align-items:stretch; }
-.price-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r); padding:30px; display:flex; flex-direction:column; }
-.price-card.hl { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent), 0 20px 50px -20px rgba(216,255,62,.25); }
-.price-card .who { font-family:var(--mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
-.price-card.hl .who { color:var(--accent); }
-.price-card .amt { font-family:var(--display); font-size:40px; font-weight:700; letter-spacing:-.02em; margin:14px 0 4px; }
-.price-card .amt small { font-size:15px; color:var(--muted); font-weight:500; }
-.price-card .stage { font-size:13px; color:var(--muted); margin-bottom:20px; }
-.price-card ul { list-style:none; display:grid; gap:11px; margin-bottom:24px; }
-.price-card li { display:flex; gap:10px; font-size:13.5px; color:#cfcfca; }
-.price-card li .icn { color:var(--accent); width:17px; height:17px; flex-shrink:0; margin-top:1px; }
-.price-card .btn { margin-top:auto; }
+/* pricing */
+.price-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; align-items: stretch; }
+.price-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 32px; display: flex; flex-direction: column; position: relative; transition: transform .25s var(--ease); }
+.price-card:hover { transform: translateY(-5px); }
+.price-card.hl { border-color: transparent; background: linear-gradient(var(--surface),var(--surface)) padding-box, var(--aurora) border-box; box-shadow: 0 24px 60px -26px rgba(91,233,176,.5); }
+.price-card .who { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.price-card.hl .who { color: var(--green); }
+.price-card .amt { font-family: var(--display); font-size: 42px; margin: 14px 0 4px; }
+.price-card .amt small { font-size: 15px; color: var(--muted); font-weight: 400; font-family: var(--font); }
+.price-card .stage { font-size: 13px; color: var(--muted); margin-bottom: 22px; }
+.price-card ul { list-style: none; display: grid; gap: 12px; margin-bottom: 26px; }
+.price-card li { display: flex; gap: 10px; font-size: 13.5px; color: #CBD8D8; }
+.price-card li .icn { color: var(--green); width: 17px; height: 17px; flex-shrink: 0; margin-top: 2px; }
+.price-card .btn { margin-top: auto; }
 
-/* ---- trust / safety ---- */
-.trust-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
-.trust-card { padding:26px; border:1px solid var(--border); border-radius:var(--r); background:var(--surface); }
-.trust-card .icn { color:var(--accent); width:26px; height:26px; margin-bottom:14px; }
-.trust-card h4 { font-size:16px; font-weight:600; }
-.trust-card p { color:var(--muted); font-size:13.5px; margin-top:8px; line-height:1.55; }
+/* trust */
+.trust-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+.trust-card { padding: 28px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); transition: border-color .25s; }
+.trust-card:hover { border-color: var(--line2); }
+.trust-card .ti { width: 46px; height: 46px; border-radius: 12px; background: rgba(139,124,246,.1); border: 1px solid var(--line2); display: grid; place-items: center; color: var(--violet); margin-bottom: 16px; }
+.trust-card h4 { font-family: var(--font); font-weight: 600; font-size: 16px; letter-spacing: 0; }
+.trust-card p { color: var(--muted); font-size: 13.5px; margin-top: 8px; }
 
-/* ---- FAQ ---- */
-.faq { max-width:760px; margin:0 auto; }
-.faq details { border:1px solid var(--border); border-radius:var(--r-sm); background:var(--surface); margin-bottom:10px; overflow:hidden; }
-.faq summary { padding:18px 20px; font-weight:600; font-size:15px; cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; gap:16px; }
-.faq summary::-webkit-details-marker { display:none; }
-.faq summary::after { content:'+'; color:var(--accent); font-size:20px; font-weight:400; transition:transform .2s; }
-.faq details[open] summary::after { transform:rotate(45deg); }
-.faq .ans { padding:0 20px 20px; color:var(--muted); font-size:14px; line-height:1.6; }
+/* faq */
+.faq { max-width: 780px; margin: 0 auto; }
+.faq details { border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); margin-bottom: 10px; overflow: hidden; transition: border-color .2s; }
+.faq details[open] { border-color: var(--line2); }
+.faq summary { padding: 19px 22px; font-weight: 600; font-size: 15.5px; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: '+'; color: var(--green); font-size: 22px; font-weight: 300; transition: transform .25s var(--ease); }
+.faq details[open] summary::after { transform: rotate(135deg); }
+.faq .ans { padding: 0 22px 22px; color: var(--muted); font-size: 14px; line-height: 1.65; }
 
-/* ---- final CTA ---- */
-.cta-band { text-align:center; padding:96px 28px; background:
-  radial-gradient(800px 400px at 50% 120%, rgba(216,255,62,.12), transparent 60%), var(--black); border-bottom:1px solid var(--border); }
-.cta-band h2 { font-size:clamp(32px,5vw,58px); font-weight:700; letter-spacing:-.03em; line-height:1; max-width:18ch; margin:0 auto; }
-.cta-band p { color:var(--muted); font-size:17px; margin:18px auto 32px; max-width:48ch; }
-.cta-actions { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+/* final cta */
+.cta-band { text-align: center; padding: 110px 30px; position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
+.cta-band .aurora-bg { opacity: .42; }
+.cta-band-inner { position: relative; z-index: 2; }
+.cta-band h2 { font-size: clamp(34px,5.5vw,66px); line-height: 1; max-width: 18ch; margin: 0 auto; }
+.cta-band p { color: var(--muted); font-size: 17px; margin: 20px auto 34px; max-width: 50ch; }
+.cta-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
-/* ---- big footer ---- */
-.foot-big { background:var(--black); border-top:1px solid var(--border); padding:60px 28px 0; }
-.foot-cols { max-width:var(--maxw); margin:0 auto; display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:40px; padding-bottom:48px; }
-.foot-cols .about { max-width:30ch; }
-.foot-cols .about p { color:var(--muted); font-size:13.5px; margin-top:14px; line-height:1.6; }
-.foot-col h5 { font-size:12px; font-family:var(--mono); letter-spacing:.12em; text-transform:uppercase; color:var(--muted2); margin-bottom:14px; }
-.foot-col a { display:block; color:var(--muted); font-size:14px; padding:5px 0; transition:color .15s; }
-.foot-col a:hover { color:var(--text); }
-.foot-bar { max-width:var(--maxw); margin:0 auto; border-top:1px solid var(--border); padding:22px 0; display:flex; justify-content:space-between; font-size:12.5px; color:var(--muted2); flex-wrap:wrap; gap:10px; }
+/* footer */
+.foot-big { background: var(--ink); border-top: 1px solid var(--line); padding: 64px 30px 0; position: relative; z-index: 2; }
+.foot-cols { max-width: var(--maxw); margin: 0 auto; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 44px; padding-bottom: 52px; }
+.foot-cols .about { max-width: 32ch; }
+.foot-cols .about p { color: var(--muted); font-size: 13.5px; margin-top: 16px; }
+.foot-col h5 { font-size: 12px; font-family: var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted2); margin-bottom: 16px; }
+.foot-col a { display: block; color: var(--muted); font-size: 14px; padding: 6px 0; transition: color .18s; }
+.foot-col a:hover { color: var(--green); }
+.foot-bar { max-width: var(--maxw); margin: 0 auto; border-top: 1px solid var(--line); padding: 24px 0; display: flex; justify-content: space-between; font-size: 12.5px; color: var(--muted2); flex-wrap: wrap; gap: 10px; }
 
-@media (max-width:1080px){
-  .cat-grid{grid-template-columns:repeat(2,1fr)} .feat-grid{grid-template-columns:repeat(2,1fr)}
-  .price-grid{grid-template-columns:1fr} .trust-grid{grid-template-columns:1fr}
-  .foot-cols{grid-template-columns:1fr 1fr}
+/* ============================================================================
+   DISCOVER (real MapLibre map)
+   ========================================================================= */
+.discover { display: grid; grid-template-columns: 340px 1fr 380px; height: calc(100vh - 59px); min-height: 600px; }
+.panel { background: var(--surface); border-right: 1px solid var(--line); overflow-y: auto; }
+.panel-right { border-right: none; border-left: 1px solid var(--line); }
+.panel-head { padding: 22px 22px 16px; position: sticky; top: 0; background: var(--surface); z-index: 2; border-bottom: 1px solid var(--line); }
+.panel-head h2 { font-size: 19px; }
+.panel-head .sub { color: var(--muted); font-size: 12.5px; margin-top: 4px; }
+.field { width: 100%; padding: 12px 14px; background: var(--surface2); border: 1px solid var(--line); border-radius: var(--r-sm); color: var(--text); font-size: 14px; font-family: var(--font); }
+.field:focus { outline: none; border-color: var(--green); }
+.field::placeholder { color: var(--muted2); }
+select.field { appearance: none; background-image: linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%); background-position: calc(100% - 18px) 18px, calc(100% - 13px) 18px; background-size: 5px 5px; background-repeat: no-repeat; }
+.label { display: block; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 0 9px; font-family: var(--mono); }
+.filters { padding: 20px 22px; }
+.filter-group { margin-bottom: 22px; }
+.chips { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip { padding: 7px 13px; border-radius: 999px; font-size: 12.5px; font-weight: 500; background: var(--surface2); border: 1px solid var(--line); color: var(--muted); transition: all .15s; }
+.chip:hover { color: var(--text); border-color: var(--line2); }
+.chip.on { background: var(--aurora); color: var(--ink); border-color: transparent; font-weight: 600; }
+.cat-title { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 10px; }
+
+.map-wrap { position: relative; background: var(--ink); }
+#map { position: absolute; inset: 0; }
+.maplibregl-ctrl-attrib { background: rgba(8,11,14,.7) !important; }
+.maplibregl-ctrl-attrib a { color: var(--muted) !important; }
+.maplibregl-ctrl-group { background: var(--surface2) !important; border: 1px solid var(--line2) !important; }
+.maplibregl-ctrl-group button { filter: invert(1) hue-rotate(120deg); }
+.map-overlay-top { position: absolute; top: 16px; left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: flex-start; pointer-events: none; z-index: 5; }
+.map-city-tag, .map-count { pointer-events: auto; background: rgba(8,11,14,.78); backdrop-filter: blur(10px); border: 1px solid var(--line2); border-radius: 999px; padding: 9px 15px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.map-count { color: var(--muted); font-weight: 500; font-family: var(--mono); font-size: 12px; }
+.map-count b { color: var(--green); }
+.map-empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 40px; z-index: 4; background: rgba(6,8,10,.5); }
+.map-empty .big { font-family: var(--display); font-size: 20px; color: var(--text); margin-bottom: 8px; }
+
+/* custom map markers */
+.mk { width: 40px; height: 40px; cursor: pointer; }
+.mk-dot { width: 40px; height: 40px; border-radius: 50% 50% 50% 12px; transform: rotate(45deg); display: grid; place-items: center; border: 2px solid var(--ink); box-shadow: 0 6px 16px rgba(0,0,0,.7); transition: transform .2s var(--ease); }
+.mk-dot span { transform: rotate(-45deg); font-size: 12px; font-weight: 700; color: var(--ink); }
+.mk:hover .mk-dot, .mk.sel .mk-dot { transform: rotate(45deg) scale(1.18); }
+.mk.sel .mk-dot { box-shadow: 0 0 0 4px rgba(91,233,176,.3), 0 6px 16px rgba(0,0,0,.7); }
+
+/* results list */
+.result { display: flex; gap: 13px; padding: 15px 20px; border-bottom: 1px solid var(--line); cursor: pointer; transition: background .15s; }
+.result:hover, .result.sel { background: var(--surface2); }
+.avatar { width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0; display: grid; place-items: center; font-family: var(--display); font-weight: 600; font-size: 16px; color: var(--ink); background-size: cover; background-position: center; }
+.result-body { min-width: 0; flex: 1; }
+.result-name { font-weight: 600; font-size: 14.5px; display: flex; align-items: center; gap: 6px; }
+.result-role { color: var(--muted); font-size: 12.5px; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.result-meta { display: flex; gap: 11px; margin-top: 6px; font-size: 11.5px; color: var(--muted2); font-family: var(--mono); }
+.result-meta .rate { color: var(--green); }
+.result-meta .star { color: var(--teal); }
+
+/* ============================================================================
+   CREATOR PORTFOLIO PAGE  (the crown jewel)
+   ========================================================================= */
+.profile { position: relative; }
+.pf-hero { position: relative; height: 360px; overflow: hidden; border-bottom: 1px solid var(--line); }
+.pf-hero-bg { position: absolute; inset: 0; background-size: cover; background-position: center; transform: scale(1.05); filter: saturate(1.05); }
+.pf-hero-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, var(--bg) 4%, rgba(8,11,14,.4) 50%, rgba(8,11,14,.6)); }
+.pf-back { position: absolute; top: 22px; left: 30px; z-index: 5; }
+.pf-head { max-width: var(--maxw); margin: -120px auto 0; padding: 0 30px; position: relative; z-index: 3; display: flex; gap: 26px; align-items: flex-end; }
+.pf-av { width: 132px; height: 132px; border-radius: 24px; flex-shrink: 0; display: grid; place-items: center; font-family: var(--display); font-size: 46px; color: var(--ink); border: 4px solid var(--bg); background-size: cover; background-position: center; box-shadow: 0 20px 50px -20px rgba(0,0,0,.8); }
+.pf-id { flex: 1; padding-bottom: 8px; }
+.pf-id h1 { font-size: clamp(32px,4.4vw,52px); line-height: 1; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pf-id .roles { background: var(--aurora); -webkit-background-clip: text; background-clip: text; color: transparent; font-size: 17px; font-weight: 500; margin-top: 8px; font-family: var(--mono); }
+.pf-id .loc { color: var(--muted); font-size: 14.5px; margin-top: 6px; display: flex; align-items: center; gap: 7px; }
+.pf-actions { display: flex; gap: 10px; padding-bottom: 10px; }
+.pf-verified { font-size: 13px; font-weight: 600; color: var(--green); display: inline-flex; align-items: center; gap: 5px; border: 1px solid var(--line2); padding: 5px 11px; border-radius: 999px; background: rgba(91,233,176,.06); }
+.pf-verified .icn { width: 15px; height: 15px; stroke-width: 2.5; }
+
+.pf-body { max-width: var(--maxw); margin: 0 auto; padding: 44px 30px 90px; display: grid; grid-template-columns: 1fr 320px; gap: 48px; align-items: start; }
+.pf-stats { display: flex; gap: 36px; margin: 30px 0 34px; flex-wrap: wrap; }
+.pf-stat .v { font-family: var(--display); font-size: 30px; line-height: 1; }
+.pf-stat .v em { font-style: normal; color: var(--green); }
+.pf-stat .k { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin-top: 6px; }
+.pf-section-t { font-family: var(--mono); font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--teal); margin: 40px 0 18px; }
+.pf-bio { font-size: 16.5px; line-height: 1.7; color: #CBD8D8; max-width: 60ch; }
+.pf-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.pf-tag { font-size: 12.5px; padding: 6px 13px; border-radius: 999px; background: var(--surface2); border: 1px solid var(--line); color: var(--muted); }
+
+/* portfolio gallery — masonry */
+.gallery { column-count: 3; column-gap: 12px; }
+.gallery .shot { break-inside: avoid; margin-bottom: 12px; border-radius: 12px; overflow: hidden; position: relative; cursor: zoom-in; background: var(--surface2); }
+.gallery .shot img { width: 100%; display: block; transition: transform .5s var(--ease); }
+.gallery .shot:hover img { transform: scale(1.06); }
+.gallery .shot::after { content: ''; position: absolute; inset: 0; box-shadow: inset 0 0 0 1px var(--line); border-radius: 12px; pointer-events: none; }
+
+/* sticky booking rail */
+.pf-rail { position: sticky; top: 80px; background: var(--surface); border: 1px solid var(--line2); border-radius: var(--r); padding: 26px; }
+.pf-rail .rate { font-family: var(--display); font-size: 34px; }
+.pf-rail .rate small { font-size: 14px; color: var(--muted); font-family: var(--font); }
+.pf-rail .avail { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--green); margin: 10px 0 20px; }
+.pf-rail .avail .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); }
+.pf-rail .btn { margin-bottom: 10px; }
+.pf-rail .note { font-size: 12px; color: var(--muted2); margin-top: 14px; line-height: 1.5; }
+.pf-gear { display: grid; gap: 10px; margin-top: 6px; }
+.pf-gear .gi { display: flex; gap: 12px; align-items: center; padding: 10px; background: var(--surface2); border: 1px solid var(--line); border-radius: var(--r-sm); }
+.pf-gear .gi img { width: 52px; height: 40px; object-fit: cover; border-radius: 7px; flex-shrink: 0; }
+.pf-gear .gi .gt { font-size: 13px; font-weight: 500; }
+.pf-gear .gi .gs { font-size: 11.5px; color: var(--muted); }
+
+/* lightbox */
+.lightbox { position: fixed; inset: 0; z-index: 90; background: rgba(4,6,9,.94); display: grid; place-items: center; padding: 40px; cursor: zoom-out; backdrop-filter: blur(6px); }
+.lightbox img { max-width: 92vw; max-height: 88vh; border-radius: 12px; box-shadow: 0 30px 80px rgba(0,0,0,.7); }
+
+/* ============================================================================
+   DRAWER (quick view from map)
+   ========================================================================= */
+.drawer-scrim { position: fixed; inset: 0; background: rgba(4,6,9,.66); z-index: 50; backdrop-filter: blur(3px); }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(440px,94vw); background: var(--surface); border-left: 1px solid var(--line2); z-index: 51; overflow-y: auto; box-shadow: -24px 0 70px rgba(0,0,0,.6); animation: slideIn .3s var(--ease); }
+@keyframes slideIn { from { transform: translateX(40px); opacity: .3; } to { transform: none; opacity: 1; } }
+.drawer-cover { height: 150px; position: relative; background-size: cover; background-position: center; }
+.drawer-cover::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to top, var(--surface), transparent 60%); }
+.drawer-close { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border-radius: 50%; background: rgba(6,8,10,.7); border: 1px solid var(--line2); font-size: 16px; display: grid; place-items: center; z-index: 3; color: var(--text); }
+.drawer-av { position: absolute; left: 22px; bottom: -28px; width: 78px; height: 78px; border-radius: 18px; display: grid; place-items: center; font-family: var(--display); font-size: 27px; color: var(--ink); border: 3px solid var(--surface); background-size: cover; background-position: center; z-index: 3; }
+.drawer-pad { padding: 40px 24px 40px; }
+.drawer h2 { font-size: 24px; display: flex; align-items: center; gap: 8px; }
+.drawer .roles { color: var(--green); font-size: 14px; margin-top: 4px; font-family: var(--mono); }
+.drawer .loc { color: var(--muted); font-size: 13.5px; margin-top: 4px; }
+.kv { display: flex; gap: 26px; margin: 22px 0; flex-wrap: wrap; }
+.kv .k { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); font-family: var(--mono); }
+.kv .v { font-family: var(--display); font-size: 19px; margin-top: 4px; }
+.drawer .mini-gal { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin: 16px 0; }
+.drawer .mini-gal img { width: 100%; height: 72px; object-fit: cover; border-radius: 8px; }
+.drawer .bio { color: #CBD8D8; font-size: 14.5px; line-height: 1.6; }
+.drawer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px; }
+.drawer .view-full { display: block; text-align: center; margin-top: 12px; font-size: 13px; color: var(--green); }
+
+/* ============================================================================
+   JOBS / GEAR / JOIN  (shared page bits)
+   ========================================================================= */
+.page-head { padding: 64px 0 34px; border-bottom: 1px solid var(--line); }
+.page-head h1 { font-size: clamp(34px,5vw,56px); line-height: 1.02; }
+.page-head p { color: var(--muted); margin-top: 14px; max-width: 58ch; font-size: 17px; }
+.grid { display: grid; gap: 18px; }
+.section-pad { padding: 56px 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 24px; transition: border-color .2s, transform .2s var(--ease); }
+.card:hover { border-color: var(--line2); }
+.card h3 { font-size: 19px; }
+.card .meta { color: var(--muted); font-size: 13px; margin-top: 5px; }
+.card .desc { color: #CBD8D8; font-size: 14px; margin-top: 14px; }
+.pill-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+.pill { font-size: 11.5px; padding: 5px 11px; border-radius: 999px; background: var(--surface2); border: 1px solid var(--line); color: var(--muted); }
+.pill.accent { background: rgba(91,233,176,.1); border-color: var(--line2); color: var(--green); }
+.card-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+.brandline { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+
+/* gear cards with imagery */
+.gear-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 18px; }
+.gear-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; transition: transform .25s var(--ease), border-color .25s; }
+.gear-card:hover { transform: translateY(-5px); border-color: var(--line2); }
+.gear-img { height: 180px; background-size: cover; background-position: center; position: relative; background-color: var(--surface2); }
+.gear-img .cat { position: absolute; top: 12px; left: 12px; font-size: 11px; font-family: var(--mono); letter-spacing: .08em; text-transform: uppercase; background: rgba(6,8,10,.78); border: 1px solid var(--line2); color: var(--green); padding: 4px 10px; border-radius: 999px; }
+.gear-info { padding: 18px; }
+.gear-info .brand { font-family: var(--mono); font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.gear-info h3 { font-size: 17px; margin-top: 4px; }
+.gear-info .gf { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.gear-info .gf .rate { font-family: var(--display); font-size: 20px; color: var(--green); }
+
+/* forms */
+.form-card { max-width: 700px; margin: 0 auto; }
+.form-row { margin-bottom: 18px; }
+.form-row.two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+textarea.field { resize: vertical; min-height: 100px; }
+.hint { font-size: 12px; color: var(--muted2); margin-top: 6px; }
+.checkrow { display: flex; flex-wrap: wrap; gap: 8px; max-height: 220px; overflow-y: auto; padding: 4px; }
+.check { display: flex; align-items: center; gap: 7px; padding: 8px 13px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface2); font-size: 13px; cursor: pointer; transition: border-color .15s; }
+.check:hover { border-color: var(--line2); }
+.check input { accent-color: var(--green); }
+.price-row { background: var(--surface2); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 14px; display: flex; justify-content: space-between; align-items: center; }
+.price-row .amt2 { font-family: var(--display); font-size: 20px; color: var(--green); }
+
+/* hero on join page */
+.hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
+.hero-inner { position: relative; z-index: 2; max-width: var(--maxw); margin: 0 auto; padding: 80px 30px 64px; }
+.hero h1 { font-size: clamp(40px,6vw,76px); line-height: .96; max-width: 15ch; }
+.hero h1 em { font-style: italic; background: var(--aurora); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero p { color: #B7C6C7; font-size: clamp(16px,2vw,20px); max-width: 54ch; margin-top: 22px; }
+.strip { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: rgba(14,19,24,.4); }
+.steps { display: grid; grid-template-columns: repeat(4,1fr); }
+.step { padding: 36px 28px; border-right: 1px solid var(--line); }
+.step:last-child { border-right: none; }
+.step .n { font-family: var(--mono); color: var(--green); font-size: 13px; }
+.step h4 { font-family: var(--font); font-size: 16px; margin: 12px 0 7px; font-weight: 600; letter-spacing: 0; }
+.step p { color: var(--muted); font-size: 13.5px; }
+
+/* toast */
+.toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: var(--aurora); color: var(--ink); font-weight: 600; font-size: 14px; padding: 14px 24px; border-radius: 999px; z-index: 95; box-shadow: 0 14px 40px -10px rgba(91,233,176,.6); animation: pop .3s var(--ease); }
+@keyframes pop { from { transform: translate(-50%,14px); opacity: 0; } to { transform: translate(-50%,0); opacity: 1; } }
+
+/* ---------- RESPONSIVE ---------- */
+@media (max-width: 1080px){
+  .discover { grid-template-columns: 300px 1fr; } .panel-right { display: none; }
+  .home-hero-inner { grid-template-columns: 1fr; } .float-stage { display: none; }
+  .cat-grid, .feat-grid { grid-template-columns: repeat(2,1fr); }
+  .price-grid, .trust-grid, .gear-grid { grid-template-columns: 1fr; }
+  .foot-cols { grid-template-columns: 1fr 1fr; }
+  .pf-body { grid-template-columns: 1fr; } .pf-rail { position: static; }
+  .gallery { column-count: 2; }
 }
-@media (max-width:720px){
-  .feature{grid-template-columns:1fr; gap:32px} .dual{grid-template-columns:1fr}
-  .cat-grid{grid-template-columns:1fr} .feat-grid{grid-template-columns:1fr}
-  .hero-stats{gap:28px} .foot-cols{grid-template-columns:1fr} .sec{padding:60px 0}
-  .home-hero-inner{padding:64px 20px 56px}
+@media (max-width: 720px){
+  .nav-links { display: none; } .nav-burger { display: block; }
+  .nav-links.open { display: flex; position: absolute; top: 58px; right: 14px; flex-direction: column; background: var(--surface); border: 1px solid var(--line2); border-radius: var(--r); padding: 10px; min-width: 180px; }
+  .discover { grid-template-columns: 1fr; height: auto; } .panel { max-height: 300px; } .map-wrap { height: 64vh; }
+  .feature, .dual { grid-template-columns: 1fr; gap: 32px; }
+  .cat-grid, .feat-grid { grid-template-columns: 1fr; }
+  .steps { grid-template-columns: 1fr 1fr; } .step:nth-child(2){border-right:none}
+  .form-row.two { grid-template-columns: 1fr; } .foot-cols { grid-template-columns: 1fr; }
+  .pf-head { flex-direction: column; align-items: flex-start; gap: 16px; } .pf-av { width: 100px; height: 100px; }
+  .gallery { column-count: 1; } .sec { padding: 64px 0; }
 }
 
 </style>
 </head>
 <body>
+  <!-- ===================== LOADER (Australia outline draws itself) ===================== -->
+  <div class="loader" id="loader">
+    <svg class="loader-au" viewBox="0 0 1000 820" aria-label="Loading Australia">
+      <path id="au-path" d="M175,250 L250,182 L340,150 L430,120 L470,165 L505,150 L545,180 L585,120 L610,92 L650,150 L705,235 L740,300 L762,365 L788,430 L802,495 L792,560 L765,612 L700,648 L640,652 L585,632 L548,598 L520,632 L470,648 L380,650 L300,632 L232,602 L165,566 L128,492 L120,420 L138,356 L150,300 Z" />
+      <path id="au-tas" d="M712,690 L742,675 L760,705 L744,738 L712,728 Z" />
+      <circle id="au-tracer" r="7" />
+    </svg>
+    <div class="loader-word">THE CREATIVE CENTRE</div>
+    <div class="loader-sub">Mapping Australia's creative crew</div>
+  </div>
+
+  <!-- ===================== MOUSE-TRACKING AURORA GLOW ===================== -->
+  <div class="glow" id="glow" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
   <!-- ===================== NAV ===================== -->
-  <header class="nav">
+  <header class="nav" id="nav">
     <a class="brand" href="#home" data-nav>
-      <span class="brand-mark" aria-hidden="true">◐</span>
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 1000 820" class="brand-au"><path d="M175,250 L250,182 L340,150 L430,120 L470,165 L505,150 L545,180 L585,120 L610,92 L650,150 L705,235 L740,300 L762,365 L788,430 L802,495 L792,560 L765,612 L700,648 L640,652 L585,632 L548,598 L520,632 L470,648 L380,650 L300,632 L232,602 L165,566 L128,492 L120,420 L138,356 L150,300 Z"/></svg>
+      </span>
       <span class="brand-name">THE&nbsp;CREATIVE&nbsp;CENTRE</span>
     </a>
     <nav class="nav-links">
@@ -517,140 +556,159 @@ textarea.field { resize: vertical; min-height: 100px; font-family: inherit; }
   </header>
 
   <!-- ===================== APP ROOT ===================== -->
-  <main id="view"><!-- views render here --></main>
+  <main id="view"></main>
 
-  <!-- ===================== PROFILE DRAWER ===================== -->
+  <!-- ===================== PROFILE DRAWER (quick view) ===================== -->
   <div class="drawer-scrim" id="scrim" hidden></div>
   <aside class="drawer" id="drawer" hidden aria-hidden="true"></aside>
 
   <!-- ===================== TOAST ===================== -->
   <div class="toast" id="toast" hidden></div>
 
-  <footer class="foot">
-    <span>THE CREATIVE CENTRE</span>
-    <span class="foot-dim">Free for creators, always. Built density-first.</span>
-  </footer>
-
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <script>
 // ============================================================================
-//  THE CREATIVE CENTRE — seed data
-//  A map-based marketplace for finding creative crew near you.
-//  All data is local/seed; user-created records persist to localStorage.
+//  THE CREATIVE CENTRE — data (Australia)
+//  Map-based marketplace for finding creative crew across Australia.
+//  Real geo-coordinates so talent plots accurately on the live map.
 // ============================================================================
 
-// --- Disciplines, grouped into the categories used by the filter rail -------
+// --- Disciplines, grouped into filter categories ---------------------------
 const CATEGORIES = [
-  { id: 'talent',    label: 'Talent',           roles: ['Model', 'Actor', 'Dancer', 'Presenter', 'Extra'] },
-  { id: 'camera',    label: 'Camera',           roles: ['Photographer', 'Videographer', 'Cinematographer / DP', 'Camera Operator', 'Drone Operator', 'Assistant Camera'] },
-  { id: 'lighting',  label: 'Lighting & Grip',  roles: ['Gaffer', 'Grip', 'Best Boy', 'Lighting Technician'] },
-  { id: 'sound',     label: 'Sound',            roles: ['Sound Mixer', 'Boom Operator', 'Composer', 'Music Producer'] },
-  { id: 'glam',      label: 'Hair, Makeup & Style', roles: ['Makeup Artist', 'Hair Stylist', 'Wardrobe Stylist', 'Nail Artist', 'Groomer'] },
+  { id: 'talent',    label: 'Talent',                 roles: ['Model', 'Actor', 'Dancer', 'Presenter', 'Extra'] },
+  { id: 'camera',    label: 'Camera',                 roles: ['Photographer', 'Videographer', 'Cinematographer / DP', 'Camera Operator', 'Drone Operator', 'Assistant Camera'] },
+  { id: 'lighting',  label: 'Lighting & Grip',        roles: ['Gaffer', 'Grip', 'Best Boy', 'Lighting Technician'] },
+  { id: 'sound',     label: 'Sound',                  roles: ['Sound Mixer', 'Boom Operator', 'Composer', 'Music Producer'] },
+  { id: 'glam',      label: 'Hair, Makeup & Style',   roles: ['Makeup Artist', 'Hair Stylist', 'Wardrobe Stylist', 'Nail Artist', 'Groomer'] },
   { id: 'direction', label: 'Direction & Production', roles: ['Director', 'Creative Director', 'Art Director', 'Producer', 'Production Assistant', 'Casting Director'] },
-  { id: 'post',      label: 'Post-Production',   roles: ['Editor', 'Colorist', 'Retoucher', 'VFX Artist', 'Motion Designer'] },
-  { id: 'design',    label: 'Design & Build',    roles: ['Set Designer', 'Prop Stylist', 'Production Designer', 'Illustrator'] },
+  { id: 'post',      label: 'Post-Production',         roles: ['Editor', 'Colorist', 'Retoucher', 'VFX Artist', 'Motion Designer'] },
+  { id: 'design',    label: 'Design & Build',          roles: ['Set Designer', 'Prop Stylist', 'Production Designer', 'Illustrator'] },
 ];
-
-// Flat lookup: role -> category id
 const ROLE_CATEGORY = {};
 CATEGORIES.forEach(c => c.roles.forEach(r => (ROLE_CATEGORY[r] = c.id)));
 const ALL_ROLES = CATEGORIES.flatMap(c => c.roles);
 
-const CITIES = ['Lagos', 'London', 'New York', 'Johannesburg'];
+// --- Australian cities, with map centre + default zoom ----------------------
+const CITY_COORDS = {
+  'Sydney':          { lat: -33.8688, lng: 151.2093, zoom: 11.4 },
+  'Melbourne':       { lat: -37.8136, lng: 144.9631, zoom: 11.4 },
+  'Brisbane':        { lat: -27.4698, lng: 153.0251, zoom: 11.4 },
+  'Perth':           { lat: -31.9523, lng: 115.8613, zoom: 11.4 },
+  'Adelaide':        { lat: -34.9285, lng: 138.6007, zoom: 11.6 },
+  'Gold Coast':      { lat: -28.0167, lng: 153.4000, zoom: 11.4 },
+  'Canberra':        { lat: -35.2809, lng: 149.1300, zoom: 11.6 },
+  'Newcastle':       { lat: -32.9283, lng: 151.7817, zoom: 11.8 },
+  'Hobart':          { lat: -42.8821, lng: 147.3272, zoom: 11.8 },
+  'Darwin':          { lat: -12.4634, lng: 130.8456, zoom: 11.8 },
+  'Wollongong':      { lat: -34.4248, lng: 150.8931, zoom: 11.8 },
+  'Sunshine Coast':  { lat: -26.6500, lng: 153.0667, zoom: 11.4 },
+  'Cairns':          { lat: -16.9186, lng: 145.7781, zoom: 12.0 },
+  'Geelong':         { lat: -38.1499, lng: 144.3617, zoom: 12.0 },
+};
+const CITIES = Object.keys(CITY_COORDS);
 
-// --- Seed creators ----------------------------------------------------------
-// x / y are percentage coordinates (0-100) on the stylised city map.
-// avatarSeed drives the generated monogram colour.
+// jitter a creator near a city centre for a believable pin position
+function near(city, dLat, dLng) {
+  const c = CITY_COORDS[city];
+  return { lat: +(c.lat + dLat).toFixed(5), lng: +(c.lng + dLng).toFixed(5) };
+}
+
+// --- Seed creators (Australian) --------------------------------------------
+// rating 0-5, jobs = completed bookings, top = featured top-performer
 const SEED_CREATORS = [
-  { id:'c01', name:'Amara Okafor',     roles:['Model'],                       city:'Lagos',        area:'Lekki Phase 1',  x:64, y:38, rate:'₦180k/day',  exp:5,  verified:true,  gear:[],                              bio:'Editorial & runway. Comfortable in studio and on location. Repped, but books direct here.', tags:['Editorial','Runway','Beauty'] },
-  { id:'c02', name:'Tunde Bello',      roles:['Photographer'],                city:'Lagos',        area:'Yaba',           x:42, y:52, rate:'₦250k/day',  exp:8,  verified:true,  gear:['Sony A7IV','24-70 f2.8','Profoto B10'], bio:'Fashion and portrait. Own studio in Yaba with cyc wall available.', tags:['Fashion','Portrait','Studio'] },
-  { id:'c03', name:'Zanele Dlamini',   roles:['Makeup Artist'],               city:'Johannesburg', area:'Maboneng',       x:55, y:60, rate:'R3 500/day',  exp:6,  verified:true,  gear:[],                              bio:'Clean beauty, editorial, SFX on request. Kit travels.', tags:['Beauty','Editorial','SFX'] },
-  { id:'c04', name:'Marcus Reid',      roles:['Gaffer'],                      city:'London',       area:'Hackney Wick',   x:48, y:30, rate:'£420/day',   exp:12, verified:true,  gear:['Aputure 600x','Astera tubes ×8'], bio:'Commercials and music videos. Can package a small lighting van.', tags:['Commercial','Music Video'] },
-  { id:'c05', name:'Lola Adeyemi',     roles:['Videographer','Editor'],       city:'Lagos',        area:'Ikeja',          x:30, y:44, rate:'₦300k/day',  exp:7,  verified:false, gear:['FX3','Ronin RS3','MacBook Pro M3'], bio:'Run-and-gun docs and brand films. Shoot-to-edit one-stop.', tags:['Documentary','Brand Film'] },
-  { id:'c06', name:'Daniel Mensah',    roles:['Sound Mixer','Boom Operator'], city:'London',       area:'Peckham',        x:52, y:66, rate:'£380/day',   exp:9,  verified:true,  gear:['Sound Devices MixPre','Sennheiser 416','Lav kit ×4'], bio:'Location sound for film & TV. Calm on set.', tags:['Film','TV','Location'] },
-  { id:'c07', name:'Priya Nair',       roles:['Creative Director'],           city:'New York',     area:'Bushwick',       x:38, y:34, rate:'$1 200/day',  exp:11, verified:true,  gear:[],                              bio:'Builds campaign worlds end-to-end. Decks, casting, on-set direction.', tags:['Campaign','Branding'] },
-  { id:'c08', name:'Kwame Asante',     roles:['Model'],                       city:'London',       area:'Dalston',        x:60, y:42, rate:'£300/day',   exp:3,  verified:false, gear:[],                              bio:'Commercial and streetwear. Strong movement.', tags:['Commercial','Streetwear'] },
-  { id:'c09', name:'Sofia Bianchi',    roles:['Wardrobe Stylist'],            city:'New York',     area:'SoHo',           x:46, y:50, rate:'$900/day',    exp:8,  verified:true,  gear:[],                              bio:'Fashion editorial and e-comm. Showroom relationships in NYC.', tags:['Fashion','E-comm'] },
-  { id:'c10', name:'Chidi Eze',        roles:['Colorist','Editor'],           city:'Lagos',        area:'Victoria Island',x:70, y:50, rate:'₦220k/day',  exp:10, verified:true,  gear:['DaVinci suite','Calibrated monitor'], bio:'Grade and finish for music videos & ads. Remote sessions available.', tags:['Grade','Finishing'] },
-  { id:'c11', name:'Naledi Khumalo',   roles:['Dancer','Choreographer'],      city:'Johannesburg', area:'Braamfontein',   x:40, y:48, rate:'R2 800/day',  exp:6,  verified:false, gear:[],                              bio:'Afro-fusion, commercial, music video. Can bring a crew.', tags:['Commercial','Music Video'] },
-  { id:'c12', name:'James Holloway',   roles:['Drone Operator','Cinematographer / DP'], city:'London', area:'Greenwich',  x:66, y:58, rate:'£550/day',   exp:9,  verified:true,  gear:['DJI Inspire 3','A7S III','Ronin'], bio:'Licensed (A2 CofC). Aerials + ground unit DP.', tags:['Aerial','Licensed'] },
-  { id:'c13', name:'Fatima Sow',       roles:['Hair Stylist'],                city:'Lagos',        area:'Surulere',       x:36, y:62, rate:'₦150k/day',  exp:5,  verified:false, gear:[],                              bio:'Natural hair, wigs, editorial. Kit on hand.', tags:['Natural Hair','Editorial'] },
-  { id:'c14', name:'Elena Petrova',    roles:['Retoucher'],                   city:'New York',     area:'LES',            x:54, y:40, rate:'$60/image',   exp:7,  verified:true,  gear:['Wacom','Calibrated display'], bio:'High-end beauty and skin retouch. Fast turnaround.', tags:['Beauty','High-end'] },
-  { id:'c15', name:'Obi Nwosu',        roles:['Producer'],                    city:'Lagos',        area:'Ikoyi',          x:58, y:46, rate:'₦400k/day',  exp:13, verified:true,  gear:[],                              bio:'Line producing commercials and music videos across Lagos. Permits handled.', tags:['Commercial','Line Producer'] },
-  { id:'c16', name:'Ruth Carter',      roles:['Set Designer','Prop Stylist'], city:'London',       area:'Tottenham',      x:44, y:24, rate:'£480/day',   exp:10, verified:true,  gear:['Workshop access'], bio:'Builds and styles sets for stills & motion. Workshop in N17.', tags:['Build','Stills'] },
-  { id:'c17', name:'Aiden Walsh',      roles:['Grip'],                        city:'New York',     area:'Long Island City',x:62, y:62, rate:'$500/day',   exp:8,  verified:false, gear:['Dana dolly','C-stands','Flags'], bio:'Dolly, rigging, all things grip. Truck available.', tags:['Rigging','Dolly'] },
-  { id:'c18', name:'Thandiwe Mokoena', roles:['Model'],                       city:'Johannesburg', area:'Sandton',        x:64, y:40, rate:'R4 000/day',  exp:7,  verified:true,  gear:[],                              bio:'Beauty and commercial. International tear sheets.', tags:['Beauty','Commercial'] },
-  { id:'c19', name:'Leon Mbeki',       roles:['Motion Designer','VFX Artist'],city:'Johannesburg', area:'Rosebank',       x:50, y:52, rate:'R3 200/day',  exp:6,  verified:false, gear:['After Effects','Cinema 4D'], bio:'Title design, mograph, light VFX cleanup for ads.', tags:['Mograph','Titles'] },
-  { id:'c20', name:'Grace Adeniyi',    roles:['Casting Director'],            city:'Lagos',        area:'Lekki Phase 1',  x:67, y:36, rate:'₦200k/job',  exp:9,  verified:true,  gear:[],                              bio:'Street and agency casting. Deep talent network in Lagos.', tags:['Casting','Street'] },
-  { id:'c21', name:'Noah Bennett',     roles:['Photographer'],                city:'New York',     area:'Williamsburg',   x:42, y:44, rate:'$1 500/day',  exp:12, verified:true,  gear:['Phase One','Profoto Pro-11'], bio:'Advertising stills and luxury still life. Capture one tethered.', tags:['Advertising','Still Life'] },
-  { id:'c22', name:'Ife Balogun',      roles:['Art Director'],                city:'Lagos',        area:'Yaba',           x:40, y:50, rate:'₦280k/day',  exp:8,  verified:false, gear:[],                              bio:'Album art, campaigns, set concepts. Strong on Afro-contemporary visual language.', tags:['Album Art','Campaign'] },
+  { id:'c01', name:'Mia Nguyen',       roles:['Model'],                        city:'Sydney',    area:'Surry Hills',   ...near('Sydney',  .010,-.015), rate:'$1,400/day', exp:6,  verified:true,  rating:4.9, jobs:84, top:true,  gear:[],                                          tags:['Editorial','Runway','Beauty'],     bio:'Editorial & runway, repped internationally but books direct here. Equally at home in a studio or shooting golden-hour on Bondi.' },
+  { id:'c02', name:'Jackson Lee',      roles:['Photographer'],                 city:'Sydney',    area:'Marrickville',  ...near('Sydney', -.018, .010), rate:'$2,200/day', exp:9,  verified:true,  rating:4.8, jobs:120, top:true, gear:['Sony A7 IV','24-70mm f2.8 GM','Profoto B10'], tags:['Fashion','Portrait','Studio'],     bio:'Fashion and portrait photographer with a daylight studio in the Inner West. Cyc wall and tethered Capture One on every shoot.' },
+  { id:'c03', name:'Ruby Fitzgerald',  roles:['Makeup Artist'],                city:'Melbourne', area:'Fitzroy',       ...near('Melbourne', .012, .008), rate:'$850/day',  exp:7,  verified:true,  rating:5.0, jobs:73, top:true,  gear:[],                                          tags:['Beauty','Editorial','SFX'],        bio:'Clean beauty, editorial and SFX on request. Kit travels. Known for skin that reads flawless on camera without looking done.' },
+  { id:'c04', name:'Tom Bradley',      roles:['Gaffer'],                       city:'Melbourne', area:'Brunswick',     ...near('Melbourne',-.014,-.012), rate:'$780/day',  exp:13, verified:true,  rating:4.9, jobs:96, top:false, gear:['Aputure 600x ×2','Astera Titan tubes ×8'], tags:['Commercial','Music Video'],        bio:'Commercials and music videos. Can package a small lighting van at short notice across greater Melbourne.' },
+  { id:'c05', name:'Aisha Rahman',     roles:['Videographer','Editor'],        city:'Sydney',    area:'Newtown',       ...near('Sydney',  .004, .020), rate:'$1,600/day', exp:7,  verified:false, rating:4.7, jobs:41, top:false, gear:['Sony FX3','Ronin RS3','MacBook Pro M3 Max'], tags:['Documentary','Brand Film'],     bio:'Run-and-gun docs and brand films, shoot-to-edit. One contact from brief to delivery.' },
+  { id:'c06', name:'Liam O\'Connor',   roles:['Sound Mixer','Boom Operator'],  city:'Brisbane',  area:'West End',      ...near('Brisbane', .008,-.010), rate:'$720/day',  exp:10, verified:true,  rating:4.9, jobs:88, top:false, gear:['Sound Devices MixPre-6','Sennheiser MKH 416','Wireless lav ×4'], tags:['Film','TV','Location'], bio:'Location sound for film & TV. Calm on set, clean tracks, fast turnarounds.' },
+  { id:'c07', name:'Priya Anand',      roles:['Creative Director'],            city:'Melbourne', area:'Collingwood',   ...near('Melbourne', .006,-.006), rate:'$2,400/day',exp:12, verified:true,  rating:5.0, jobs:64, top:true,  gear:[],                                          tags:['Campaign','Branding'],             bio:'Builds campaign worlds end-to-end — decks, casting, on-set direction. Past lives at two of Melbourne\'s best agencies.' },
+  { id:'c08', name:'Noah Williams',    roles:['Model'],                        city:'Gold Coast',area:'Burleigh Heads',...near('Gold Coast',.010,.012), rate:'$900/day',  exp:3,  verified:false, rating:4.6, jobs:22, top:false, gear:[],                                          tags:['Commercial','Surf','Lifestyle'],   bio:'Commercial, surf and lifestyle. Strong in water and movement work.' },
+  { id:'c09', name:'Sofia Romano',     roles:['Wardrobe Stylist'],             city:'Sydney',    area:'Paddington',    ...near('Sydney', -.006,-.008), rate:'$1,100/day', exp:8,  verified:true,  rating:4.8, jobs:59, top:false, gear:[],                                          tags:['Fashion','E-comm'],                bio:'Fashion editorial and e-comm with deep showroom relationships across Sydney.' },
+  { id:'c10', name:'Daniel Tan',       roles:['Colorist','Editor'],            city:'Sydney',    area:'Alexandria',    ...near('Sydney', -.012, .004), rate:'$1,300/day', exp:11, verified:true,  rating:4.9, jobs:77, top:false, gear:['DaVinci Resolve suite','Calibrated grade monitor'], tags:['Grade','Finishing'], bio:'Grade and finish for commercials and music videos. Remote sessions available nationwide.' },
+  { id:'c11', name:'Indi Walker',      roles:['Dancer'],                       city:'Melbourne', area:'St Kilda',      ...near('Melbourne',-.008, .014), rate:'$650/day',  exp:6,  verified:false, rating:4.7, jobs:34, top:false, gear:[],                                          tags:['Commercial','Music Video'],        bio:'Contemporary and commercial. Can bring a trained crew for ensemble work.' },
+  { id:'c12', name:'Hugo Mertens',     roles:['Drone Operator','Cinematographer / DP'], city:'Perth', area:'Fremantle', ...near('Perth', .010,-.008), rate:'$1,800/day',exp:9, verified:true,  rating:4.9, jobs:51, top:false, gear:['DJI Inspire 3','Sony A7S III','Ronin 4D'], tags:['Aerial','CASA Licensed'], bio:'CASA-licensed remote pilot and ground-unit DP. Aerials plus ground in one booking.' },
+  { id:'c13', name:'Amara Okeke',      roles:['Hair Stylist'],                 city:'Brisbane',  area:'New Farm',      ...near('Brisbane',-.006, .008), rate:'$700/day',  exp:5,  verified:false, rating:4.8, jobs:29, top:false, gear:[],                                          tags:['Afro & Textured','Editorial'],     bio:'Afro and textured hair, wigs, editorial. Kit always on hand.' },
+  { id:'c14', name:'Ella Petersen',    roles:['Retoucher'],                    city:'Melbourne', area:'Richmond',      ...near('Melbourne', .002, .010), rate:'$70/image', exp:7,  verified:true,  rating:5.0, jobs:140, top:true, gear:['Wacom Cintiq','Calibrated display'],        tags:['Beauty','High-end'],               bio:'High-end beauty and skin retouch with same-week turnaround. Trusted by Melbourne\'s top studios.' },
+  { id:'c15', name:'Marcus Reid',      roles:['Producer'],                     city:'Sydney',    area:'Redfern',       ...near('Sydney',  .000,-.004), rate:'$2,000/day',exp:14, verified:true,  rating:4.9, jobs:103, top:false,gear:[],                                          tags:['Commercial','Line Producer'],      bio:'Line producing commercials and content across NSW. Permits, insurance and logistics handled.' },
+  { id:'c16', name:'Grace Thompson',   roles:['Set Designer','Prop Stylist'],  city:'Melbourne', area:'Abbotsford',    ...near('Melbourne', .016, .002), rate:'$980/day',  exp:10, verified:true,  rating:4.8, jobs:47, top:false, gear:['Workshop access'],                          tags:['Build','Stills'],                  bio:'Builds and styles sets for stills and motion. Workshop in Abbotsford.' },
+  { id:'c17', name:'Jye Anderson',     roles:['Grip'],                         city:'Brisbane',  area:'Newstead',      ...near('Brisbane', .004, .002), rate:'$640/day',  exp:8,  verified:false, rating:4.7, jobs:38, top:false, gear:['Dana dolly','C-stands','Flags & nets'],     tags:['Rigging','Dolly'],                 bio:'Dolly, rigging, all things grip. Truck available across SE Queensland.' },
+  { id:'c18', name:'Talia Brooks',     roles:['Model'],                        city:'Melbourne', area:'South Yarra',   ...near('Melbourne',-.004,-.008), rate:'$1,300/day',exp:7,  verified:true,  rating:4.9, jobs:69, top:true,  gear:[],                                          tags:['Beauty','Commercial'],             bio:'Beauty and commercial with international tear sheets. Reliable, expressive, fast to direction.' },
+  { id:'c19', name:'Kai Edwards',      roles:['Motion Designer','VFX Artist'], city:'Sydney',    area:'Chippendale',   ...near('Sydney', -.002, .012), rate:'$1,200/day',exp:6,  verified:false, rating:4.8, jobs:44, top:false, gear:['After Effects','Cinema 4D','Houdini'],      tags:['Mograph','Titles'],                bio:'Title design, mograph and light VFX cleanup for ads and music.' },
+  { id:'c20', name:'Isla Murphy',      roles:['Casting Director'],             city:'Sydney',    area:'Bondi',         ...near('Sydney',  .020, .026), rate:'$1,000/job',exp:9,  verified:true,  rating:4.9, jobs:62, top:false, gear:[],                                          tags:['Street','Agency'],                 bio:'Street and agency casting with a deep talent network across Sydney.' },
+  { id:'c21', name:'Oliver Chen',      roles:['Photographer'],                 city:'Perth',     area:'Leederville',   ...near('Perth', -.006, .006), rate:'$1,900/day',exp:12, verified:true,  rating:5.0, jobs:91, top:true,  gear:['Phase One IQ4','Profoto Pro-11'],          tags:['Advertising','Still Life'],        bio:'Advertising stills and luxury still life. Capture One tethered, immaculate lighting.' },
+  { id:'c22', name:'Zara Haddad',      roles:['Art Director'],                 city:'Brisbane',  area:'Fortitude Valley',...near('Brisbane',-.002,-.004), rate:'$1,500/day',exp:8, verified:false, rating:4.7, jobs:36, top:false, gear:[],                                          tags:['Album Art','Campaign'],            bio:'Album art, campaigns and set concepts with a bold contemporary visual language.' },
+  { id:'c23', name:'Charlie Walsh',    roles:['Director'],                     city:'Melbourne', area:'Carlton',       ...near('Melbourne', .010,-.002), rate:'$3,000/day',exp:13, verified:true,  rating:5.0, jobs:58, top:true,  gear:[],                                          tags:['Commercial','Narrative'],          bio:'Commercial and narrative director. Story-led, performance-focused, award-listed.' },
+  { id:'c24', name:'Maya Solomon',     roles:['Producer','Casting Director'],  city:'Adelaide',  area:'Bowden',        ...near('Adelaide', .006, .006), rate:'$1,400/day',exp:9,  verified:true,  rating:4.8, jobs:40, top:false, gear:[],                                          tags:['Content','Casting'],               bio:'Content production and casting across South Australia. Calm, organised, well-connected.' },
+  { id:'c25', name:'Finn Gallagher',   roles:['Cinematographer / DP'],         city:'Gold Coast',area:'Mermaid Beach', ...near('Gold Coast',-.006,.004), rate:'$2,100/day',exp:11, verified:true,  rating:4.9, jobs:67, top:false, gear:['ARRI Alexa Mini LF','Signature Primes'],   tags:['Commercial','Film'],               bio:'Cinematographer for commercials and film. Owns an Alexa Mini LF package.' },
+  { id:'c26', name:'Sienna Park',      roles:['Makeup Artist','Hair Stylist'], city:'Perth',     area:'Mount Lawley',  ...near('Perth',  .004,-.002), rate:'$820/day',  exp:6,  verified:false, rating:4.8, jobs:31, top:false, gear:[],                                          tags:['Beauty','Bridal','Editorial'],     bio:'Beauty, bridal and editorial. Double-threat hair and makeup for lean crews.' },
 ];
 
 // --- Seed jobs (brand-posted briefs) ---------------------------------------
 const SEED_JOBS = [
-  { id:'j01', brand:'Mavin Records',  title:'Music video — lead dancers & DP', city:'Lagos',   roles:['Dancer','Cinematographer / DP'], date:'2026-07-02', budget:'₦2.5M total', usage:'Social + broadcast, 12 months', brief:'High-energy Afrobeats video. Need 4 dancers and a DP comfortable with low-light club scenes.', posted:'2026-06-15' },
-  { id:'j02', brand:'Studio Noir',    title:'Beauty campaign — MUA + retoucher', city:'London',  roles:['Makeup Artist','Retoucher'], date:'2026-06-28', budget:'£3,000 total', usage:'Web + OOH, 6 months', brief:'Clean skin-forward beauty story, 6 looks. Same-week retouch turnaround.', posted:'2026-06-16' },
-  { id:'j03', brand:'Aerodyne',       title:'Brand film — full crew', city:'New York', roles:['Cinematographer / DP','Gaffer','Sound Mixer','Producer'], date:'2026-07-10', budget:'$18,000 total', usage:'All media, perpetuity', brief:'2-day brand film for a drone startup. Small package crew, some aerial.', posted:'2026-06-17' },
+  { id:'j01', brand:'Aje Athletica', title:'Activewear campaign — model + photographer', city:'Sydney',    roles:['Model','Photographer'],                          date:'2026-07-04', budget:'$8,000 total',  usage:'Social + web, 12 months', brief:'Sunrise activewear shoot at Bondi. Need a model comfortable in movement and a photographer who shoots fast in changing light.', posted:'2026-06-15' },
+  { id:'j02', brand:'Mecca Beauty',  title:'Beauty content — MUA + retoucher',           city:'Melbourne', roles:['Makeup Artist','Retoucher'],                     date:'2026-06-30', budget:'$5,500 total',  usage:'Web + OOH, 6 months',    brief:'Skin-forward beauty story, 6 looks. Same-week retouch turnaround required.', posted:'2026-06-16' },
+  { id:'j03', brand:'Tourism WA',    title:'Brand film — full crew',                     city:'Perth',     roles:['Cinematographer / DP','Gaffer','Sound Mixer','Producer'], date:'2026-07-12', budget:'$32,000 total', usage:'All media, perpetuity', brief:'Two-day brand film across Fremantle and the coast. Small package crew, some aerial.', posted:'2026-06-17' },
 ];
 
-// --- Seed gear listings (Stage 3) ------------------------------------------
+// --- Seed gear listings (Stage 3) — with category + visual ------------------
+// img = picsum seed (royalty-free); swap for verified product shots later.
 const SEED_GEAR = [
-  { id:'g01', owner:'Tunde Bello',   city:'Lagos',  item:'Sony A7IV body', cat:'Camera',   rate:'₦25k/day',  deposit:'₦100k', area:'Yaba' },
-  { id:'g02', owner:'Marcus Reid',   city:'London', item:'Aputure 600x + softbox', cat:'Lighting', rate:'£70/day', deposit:'£300', area:'Hackney Wick' },
-  { id:'g03', owner:'James Holloway', city:'London', item:'DJI Inspire 3 (pilot optional)', cat:'Aerial', rate:'£220/day', deposit:'£1,000', area:'Greenwich' },
-  { id:'g04', owner:'Aiden Walsh',   city:'New York', item:'Dana Dolly kit', cat:'Grip', rate:'$90/day', deposit:'$400', area:'Long Island City' },
+  { id:'g01', owner:'Jackson Lee',   city:'Sydney',    cat:'Camera',   brand:'Sony',     model:'A7 IV body',              rate:'$120/day', deposit:'$800',   area:'Marrickville', img:'gear-sony-a7iv' },
+  { id:'g02', owner:'Tom Bradley',   city:'Melbourne', cat:'Lighting', brand:'Aputure',  model:'600x + softbox',          rate:'$95/day',  deposit:'$500',   area:'Brunswick',    img:'gear-aputure-600x' },
+  { id:'g03', owner:'Hugo Mertens',  city:'Perth',     cat:'Drone',    brand:'DJI',      model:'Inspire 3 (pilot opt.)',  rate:'$320/day', deposit:'$2,000', area:'Fremantle',    img:'gear-dji-inspire3' },
+  { id:'g04', owner:'Jye Anderson',  city:'Brisbane',  cat:'Grip',     brand:'Dana',     model:'Dana Dolly kit',          rate:'$110/day', deposit:'$600',   area:'Newstead',     img:'gear-dana-dolly' },
+  { id:'g05', owner:'Finn Gallagher',city:'Gold Coast',cat:'Camera',   brand:'ARRI',     model:'Alexa Mini LF package',   rate:'$650/day', deposit:'$5,000', area:'Mermaid Beach',img:'gear-arri-alexa' },
+  { id:'g06', owner:'Oliver Chen',   city:'Perth',     cat:'Lens',     brand:'Profoto',  model:'Pro-11 + 2 heads',        rate:'$180/day', deposit:'$1,200', area:'Leederville',  img:'gear-profoto-pro11' },
+  { id:'g07', owner:'Liam O\'Connor',city:'Brisbane',  cat:'Audio',    brand:'Sound Devices', model:'MixPre-6 + 416 + lavs', rate:'$130/day', deposit:'$700', area:'West End',     img:'gear-sound-devices' },
+  { id:'g08', owner:'Aisha Rahman',  city:'Sydney',    cat:'Camera',   brand:'Sony',     model:'FX3 cine kit',            rate:'$200/day', deposit:'$1,500', area:'Newtown',      img:'gear-sony-fx3' },
 ];
 
 // ---- app ----
 // ============================================================================
-//  THE CREATIVE CENTRE — app
-//  Vanilla SPA. No build step, no external deps. Open index.html and go.
+//  THE CREATIVE CENTRE — app (Australia)  ·  Aurora Australis
 // ============================================================================
 
-// ---------- persistent state ----------
 const LS = {
   get(k, fb) { try { return JSON.parse(localStorage.getItem('tcc_' + k)) ?? fb; } catch { return fb; } },
   set(k, v) { localStorage.setItem('tcc_' + k, JSON.stringify(v)); },
 };
-
 const state = {
-  city: 'Lagos',
-  query: '',
-  roles: new Set(),          // active discipline filters
-  selected: null,            // selected creator id
+  city: 'Sydney', query: '', roles: new Set(), selected: null,
   creators: [...SEED_CREATORS, ...LS.get('creators', [])],
   jobs: [...LS.get('jobs', []), ...SEED_JOBS],
   gear: [...LS.get('gear', []), ...SEED_GEAR],
   shortlist: new Set(LS.get('shortlist', [])),
+  map: null, markers: [],
 };
+let ROUTE_PARAMS = new URLSearchParams();
 
-// ---------- tiny helpers ----------
+// ---------- helpers ----------
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-const el = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
+const el = (h) => { const t = document.createElement('template'); t.innerHTML = h.trim(); return t.content.firstElementChild; };
 const esc = (s = '') => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+function hashHue(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))%360; return h; }
+function avatarBg(name){ const h=hashHue(name); return `background:linear-gradient(135deg,hsl(${h} 70% 58%),hsl(${(h+50)%360} 75% 48%))`; }
+function initials(n){ return n.split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase(); }
 
-function hashHue(str) { let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 360; return h; }
-function avatarStyle(name) {
-  const h = hashHue(name);
-  return `background:linear-gradient(135deg, hsl(${h} 80% 62%), hsl(${(h + 38) % 360} 85% 52%))`;
-}
-function initials(name) { return name.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase(); }
+// royalty-free imagery (Picsum) with deterministic seeds + graceful fallback
+function shotURL(id, n, w = 600, h = 700){ return `https://picsum.photos/seed/tcc-${id}-${n}/${w}/${h}`; }
+function coverURL(c){ return `https://picsum.photos/seed/tcc-${c.id}-cv/1200/520`; }
+function gearURL(g){ return `https://picsum.photos/seed/${g.img}/640/420`; }
+const SHOT_H = [620,470,760,540,690,450,720,520,600];           // masonry variety
+const portfolioCount = c => Math.min(9, 5 + (c.jobs % 5));
+const IMGERR = "this.style.display='none';this.parentElement.style.background='var(--aurora)';this.parentElement.style.opacity='.5'";
 
-function toast(msg) {
-  const t = $('#toast'); t.textContent = msg; t.hidden = false;
-  clearTimeout(t._t); t._t = setTimeout(() => (t.hidden = true), 2600);
-}
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.hidden=false; clearTimeout(t._t); t._t=setTimeout(()=>t.hidden=true,2600); }
 
 // ---------- filtering ----------
-function filtered() {
+function filtered(){
   const q = state.query.trim().toLowerCase();
   return state.creators.filter(c => {
     if (c.city !== state.city) return false;
     if (state.roles.size && !c.roles.some(r => state.roles.has(r))) return false;
-    if (q) {
-      const hay = (c.name + ' ' + c.roles.join(' ') + ' ' + (c.tags || []).join(' ') + ' ' + (c.area || '')).toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
+    if (q){ const hay=(c.name+' '+c.roles.join(' ')+' '+(c.tags||[]).join(' ')+' '+(c.area||'')).toLowerCase(); if(!hay.includes(q)) return false; }
     return true;
   });
 }
@@ -658,722 +716,498 @@ function filtered() {
 // ============================================================================
 //  ROUTER
 // ============================================================================
-const routes = { home: renderHome, discover: renderDiscover, jobs: renderJobs, gear: renderGear, join: renderJoin };
-
-function router() {
-  const raw = location.hash.replace('#', '') || 'home';
+const routes = { home:renderHome, discover:renderDiscover, jobs:renderJobs, gear:renderGear, join:renderJoin, creator:renderCreator };
+function router(){
+  const raw = location.hash.replace('#','') || 'home';
   const [route, qs] = raw.split('?');
-  const params = new URLSearchParams(qs || '');
+  ROUTE_PARAMS = new URLSearchParams(qs || '');
 
-  // pre-filter the discover view when arriving from home (search bar / category cards)
-  if (route === 'discover') {
-    if (params.get('city')) state.city = params.get('city');
-    if (params.has('q')) state.query = params.get('q');
-    if (params.has('cat')) {
-      const cat = CATEGORIES.find(c => c.id === params.get('cat'));
-      state.roles = new Set(cat ? cat.roles : []);
-    } else if (params.has('role')) {
-      state.roles = new Set([params.get('role')]);
-    } else if (params.has('reset')) {
-      state.roles = new Set(); state.query = '';
-    }
+  if (route === 'discover'){
+    if (ROUTE_PARAMS.get('city')) state.city = ROUTE_PARAMS.get('city');
+    if (ROUTE_PARAMS.has('q')) state.query = ROUTE_PARAMS.get('q');
+    if (ROUTE_PARAMS.has('cat')){ const cat=CATEGORIES.find(c=>c.id===ROUTE_PARAMS.get('cat')); state.roles=new Set(cat?cat.roles:[]); }
+    else if (ROUTE_PARAMS.has('role')) state.roles=new Set([ROUTE_PARAMS.get('role')]);
+    else if (ROUTE_PARAMS.has('reset')){ state.roles=new Set(); state.query=''; }
   }
+  // tear down a live map when leaving discover
+  if (route !== 'discover' && state.map){ try{ state.map.remove(); }catch{} state.map=null; state.markers=[]; }
 
   const fn = routes[route] || renderHome;
   $$('.nav-links a').forEach(a => a.classList.toggle('active', a.dataset.route === route));
   $('#view').innerHTML = '';
   fn();
-  window.scrollTo(0, 0);
+  if (route !== 'discover') window.scrollTo(0,0);
   $('.nav-links')?.classList.remove('open');
+  initReveal();
 }
 window.addEventListener('hashchange', router);
 
-// ----- inline SVG icon set (no emoji-as-icon, per skill checklist) -----
+// ---------- inline SVG icons ----------
 const ICONS = {
-  search:  '<path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/>',
-  pin:     '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
-  arrow:   '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
-  check:   '<path d="M20 6 9 17l-5-5"/>',
-  spark:   '<path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/>',
-  camera:  '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/>',
-  user:    '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
-  bulb:    '<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1h6c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/>',
-  wave:    '<path d="M2 12h2l2-7 4 16 4-13 2 6h6"/>',
-  brush:   '<path d="M9.06 11.9 16.5 4.5a2.1 2.1 0 0 1 3 3l-7.4 7.4M9 12a3 3 0 0 0-3 3c0 1.3-1 2-2 2 1 1.5 3 2 4.5 2A3.5 3.5 0 0 0 12 17a3 3 0 0 0-3-5Z"/>',
-  clap:    '<path d="m4 11 16-3M4 11l-1 8a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-8M4 11 3 7l16-3 1 4M9 6.5l1 3M14 5.5l1 3"/>',
-  layers:  '<path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/>',
-  film:    '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 8h4M3 16h4M17 8h4M17 16h4"/>',
-  shield:  '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>',
-  wallet:  '<path d="M19 7H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/><path d="M16 13h.01M3 9V7a2 2 0 0 1 2-2h11"/>',
-  eye:     '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>',
+  pin:'<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  arrow:'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>', check:'<path d="M20 6 9 17l-5-5"/>',
+  star:'<path d="m12 2 3 6.5 7 .9-5 4.8 1.2 7L12 18l-6.4 3.2L6.8 14l-5-4.8 7-.9L12 2Z"/>',
+  camera:'<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/>',
+  user:'<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  bulb:'<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1h6c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/>',
+  wave:'<path d="M2 12h2l2-7 4 16 4-13 2 6h6"/>',
+  brush:'<path d="M9.06 11.9 16.5 4.5a2.1 2.1 0 0 1 3 3l-7.4 7.4M9 12a3 3 0 0 0-3 3c0 1.3-1 2-2 2 1 1.5 3 2 4.5 2A3.5 3.5 0 0 0 12 17a3 3 0 0 0-3-5Z"/>',
+  clap:'<path d="m4 11 16-3M4 11l-1 8a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-8M4 11 3 7l16-3 1 4M9 6.5l1 3M14 5.5l1 3"/>',
+  layers:'<path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/>',
+  film:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 8h4M3 16h4M17 8h4M17 16h4"/>',
+  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>',
+  wallet:'<path d="M19 7H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/><path d="M16 13h.01M3 9V7a2 2 0 0 1 2-2h11"/>',
+  layout:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
 };
-const ic = (name, cls = 'icn') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
-
-// category -> icon
+const ic = (n, cls='icn') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]||''}</svg>`;
 const CAT_ICON = { talent:'user', camera:'camera', lighting:'bulb', sound:'wave', glam:'brush', direction:'clap', post:'film', design:'layers' };
 
 // ============================================================================
-//  VIEW: HOME  (the landing page — the map is just ONE section of it)
+//  VIEW: HOME
 // ============================================================================
-function renderHome() {
+function renderHome(){
   const total = state.creators.length;
-  const featured = state.creators.filter(c => c.verified).slice(0, 4);
-  const catCount = id => state.creators.filter(c => c.roles.some(r => ROLE_CATEGORY[r] === id)).length;
+  const tops = state.creators.filter(c => c.top).slice(0, 5);
+  const featured = state.creators.filter(c => c.verified).sort((a,b)=>b.jobs-a.jobs).slice(0, 4);
+  const catCount = id => state.creators.filter(c => c.roles.some(r => ROLE_CATEGORY[r]===id)).length;
 
-  $('#view').appendChild(el(`
-    <div class="home">
-
-      <!-- ============ HERO ============ -->
-      <section class="home-hero">
-        <div class="home-hero-grid"></div>
-        <div class="home-hero-inner">
-          <span class="badge"><span class="dot"></span> Live in ${CITIES.length} cities · free for creators</span>
-          <h1>The whole crew, <em>on one map.</em></h1>
-          <p class="lede">Models, photographers, gaffers, sound, hair &amp; makeup, editors, producers — every role on a shoot, discoverable near you. Brands post a brief; creators get found without cold-pitching.</p>
-
-          <form class="searchbar" id="hero-search" role="search" aria-label="Find creative crew">
-            <div class="seg">
-              ${ic('search')}
-              <select id="hs-role" aria-label="Role">
-                <option value="">Any role</option>
-                ${CATEGORIES.map(c => `<optgroup label="${c.label}">${c.roles.map(r => `<option>${esc(r)}</option>`).join('')}</optgroup>`).join('')}
-              </select>
-            </div>
-            <div class="seg">
-              ${ic('pin')}
-              <select id="hs-city" aria-label="City">${CITIES.map(c => `<option ${c === state.city ? 'selected' : ''}>${c}</option>`).join('')}</select>
-            </div>
+  $('#view').appendChild(el(`<div class="home">
+    <!-- HERO -->
+    <section class="home-hero">
+      <div class="aurora-bg"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
+      <div class="hero-grid"></div>
+      <div class="home-hero-inner">
+        <div class="hero-copy">
+          <span class="badge"><span class="dot"></span> Live across ${CITIES.length} Australian cities · free for creators</span>
+          <h1>Australia's creative crew, <em>on one map.</em></h1>
+          <p class="lede">Models, photographers, gaffers, sound, hair &amp; makeup, editors, producers — every role on a shoot, discoverable near you. Curate a portfolio that gets you booked.</p>
+          <form class="searchbar" id="hero-search" role="search">
+            <div class="seg">${ic('search')}<select id="hs-role" aria-label="Role"><option value="">Any role</option>${CATEGORIES.map(c=>`<optgroup label="${c.label}">${c.roles.map(r=>`<option>${esc(r)}</option>`).join('')}</optgroup>`).join('')}</select></div>
+            <div class="seg">${ic('pin')}<select id="hs-city" aria-label="City">${CITIES.map(c=>`<option ${c===state.city?'selected':''}>${c}</option>`).join('')}</select></div>
             <button class="btn btn-primary" type="submit">Search ${ic('arrow')}</button>
           </form>
-
-          <div class="pop-row">
-            <span class="lbl">Popular:</span>
+          <div class="pop-row"><span class="lbl">Popular</span>
             <a class="pop-tag" href="#discover?role=Model">Models</a>
             <a class="pop-tag" href="#discover?role=Photographer">Photographers</a>
             <a class="pop-tag" href="#discover?role=Gaffer">Gaffers</a>
             <a class="pop-tag" href="#discover?role=Sound%20Mixer">Sound</a>
             <a class="pop-tag" href="#discover?role=Makeup%20Artist">MUAs</a>
-            <a class="pop-tag" href="#discover?role=Editor">Editors</a>
           </div>
-
           <div class="hero-stats">
             <div><div class="num"><em>${total}+</em></div><div class="lbl">creators on the map</div></div>
             <div><div class="num">${ALL_ROLES.length}</div><div class="lbl">creative roles</div></div>
-            <div><div class="num">${CATEGORIES.length}</div><div class="lbl">crew categories</div></div>
-            <div><div class="num">£0</div><div class="lbl">cut of your bookings</div></div>
+            <div><div class="num">$0</div><div class="lbl">cut of your bookings</div></div>
           </div>
         </div>
-      </section>
-
-      <!-- ============ MARQUEE ============ -->
-      <div class="marquee"><div class="marquee-track">
-        ${[1,2].map(() => `<span>${ALL_ROLES.slice(0,18).join('</span><span>')}</span>`).join('')}
-      </div></div>
-
-      <!-- ============ CATEGORIES ============ -->
-      <section class="sec"><div class="wrap">
-        <div class="sec-head">
-          <div class="eyebrow">Every role on the call sheet</div>
-          <h2>Find any kind of creative</h2>
-          <p>Not just talent and cameras — the full crew, grouped the way a production actually works.</p>
-        </div>
-        <div class="cat-grid">
-          ${CATEGORIES.map(c => `
-            <a class="cat-card" href="#discover?cat=${c.id}">
-              <div class="cat-ico">${ic(CAT_ICON[c.id] || 'spark')}</div>
-              <h3>${c.label}</h3>
-              <div class="roles">${c.roles.slice(0,4).join(' · ')}${c.roles.length>4?' …':''}</div>
-              <div class="cnt">${catCount(c.id)} available →</div>
-            </a>`).join('')}
-        </div>
-      </div></section>
-
-      <!-- ============ MAP FEATURE (one feature) ============ -->
-      <section class="sec"><div class="wrap">
-        <div class="feature">
-          <div class="feature-copy">
-            <div class="kicker">The discovery map</div>
-            <h2>See who's actually near you</h2>
-            <p>The map is how discovery works — but it's one part of the platform, not the whole thing. Filter by role and distance, preview portfolios from the pin, and shortlist before you ever send a message.</p>
-            <ul class="feature-list">
-              <li>${ic('check')} Filter the full crew by category, distance &amp; availability</li>
-              <li>${ic('check')} Approximate location only — exact addresses are never shown</li>
-              <li>${ic('check')} Never a dead empty map — coverage widens automatically</li>
-            </ul>
-            <a class="btn btn-primary" href="#discover?reset=1">Open the map ${ic('arrow')}</a>
-          </div>
-          <div class="feature-visual">
-            <div class="fv-map"></div>
-            ${featured.map((c,i) => `<div class="fv-pin" style="${avatarStyle(c.name)};left:${[22,62,40,75][i]}%;top:${[30,40,66,22][i]}%">${initials(c.name)}</div>`).join('')}
-          </div>
-        </div>
-      </div></section>
-
-      <!-- ============ HOW IT WORKS (two audiences) ============ -->
-      <section class="sec"><div class="wrap">
-        <div class="sec-head center">
-          <div class="eyebrow">How it works</div>
-          <h2>Two sides, one map</h2>
-          <p>Creators join free and get found. Brands post a brief and book. Density makes both sides worth more.</p>
-        </div>
-        <div class="dual">
-          <div class="dual-card">
-            <div class="tag">For creators · always free</div>
-            <h3>Get on the map &amp; get found</h3>
-            <ul class="flow">
-              <li><span class="step-n">1</span><div><h4>Drop your pin</h4><p>Name, role, city, one piece of work. Four fields and you're discoverable.</p></div></li>
-              <li><span class="step-n">2</span><div><h4>Get discovered</h4><p>Brands find you by role and distance — no cold DMs, no agency gatekeeping.</p></div></li>
-              <li><span class="step-n">3</span><div><h4>Get booked direct</h4><p>Briefs land in your city; express interest and book. We never take a cut.</p></div></li>
-            </ul>
-            <a class="btn btn-ghost" href="#join">Create your profile ${ic('arrow')}</a>
-          </div>
-          <div class="dual-card">
-            <div class="tag">For brands · pay per post</div>
-            <h3>Post a brief, book the crew</h3>
-            <ul class="flow">
-              <li><span class="step-n">1</span><div><h4>Browse free</h4><p>Explore the live map before you ever create an account. Feel the density first.</p></div></li>
-              <li><span class="step-n">2</span><div><h4>Post a brief</h4><p>One job post notifies every matching creator in the city. No subscription to start.</p></div></li>
-              <li><span class="step-n">3</span><div><h4>Review &amp; book</h4><p>Shortlist responders, confirm the shoot, and keep the relationship.</p></div></li>
-            </ul>
-            <a class="btn btn-ghost" href="#jobs">Post a brief ${ic('arrow')}</a>
-          </div>
-        </div>
-      </div></section>
-
-      <!-- ============ FEATURED CREATORS ============ -->
-      <section class="sec"><div class="wrap">
-        <div class="sec-head"><div class="eyebrow">On the map now</div><h2>Featured creators</h2></div>
-        <div class="feat-grid">
-          ${featured.map(c => `
-            <div class="feat-card" data-id="${c.id}">
-              <div class="feat-cover" style="${avatarStyle(c.name)}"><div class="feat-av" style="${avatarStyle(c.roles.join(''))}">${initials(c.name)}</div></div>
-              <div class="feat-body">
-                <div class="nm">${esc(c.name)} <span class="verified" title="Verified">${ic('check','icn')}</span></div>
-                <div class="rl">${esc(c.roles.join(' · '))}</div>
-                <div class="mt"><span>${esc(c.area)}, ${esc(c.city)}</span><span class="rate">${esc(c.rate)}</span></div>
-              </div>
+        <!-- floating top performers -->
+        <div class="float-stage">
+          <div class="float-label">★ Top performers this week</div>
+          ${tops.map((c,i)=>`
+            <div class="float-card p${i}" data-id="${c.id}">
+              <div class="fc-img" style="background-image:url('${coverURL(c)}')"><span class="fc-rank">#${i+1} · ${esc(c.city)}</span></div>
+              <div class="fc-name">${esc(c.name.split(' ')[0])} ${esc(c.name.split(' ')[1]||'')} <span class="verified-ico">${ic('check')}</span></div>
+              <div class="fc-role">${esc(c.roles[0])}</div>
+              <div class="fc-meta"><span class="star">${ic('star')} ${c.rating.toFixed(1)}</span><span>${c.jobs} jobs</span></div>
             </div>`).join('')}
         </div>
-      </div></section>
+      </div>
+    </section>
 
-      <!-- ============ PRICING (staged model) ============ -->
-      <section class="sec"><div class="wrap">
-        <div class="sec-head center">
-          <div class="eyebrow">Pricing</div>
-          <h2>Free where it has to be. Paid where it makes sense.</h2>
-          <p>Creators are free forever — density is the product. Brands pay only when they hire. Gear earns as that market matures.</p>
-        </div>
-        <div class="price-grid">
-          <div class="price-card">
-            <div class="who">Creators</div>
-            <div class="amt">Free <small>forever</small></div>
-            <div class="stage">Stage 0 · live</div>
-            <ul>
-              <li>${ic('check')} Unlimited profile &amp; portfolio</li>
-              <li>${ic('check')} Discoverable on the map</li>
-              <li>${ic('check')} Apply to briefs in your city</li>
-              <li>${ic('check')} 0% cut of your bookings</li>
-            </ul>
-            <a class="btn btn-ghost btn-block" href="#join">Join free</a>
-          </div>
-          <div class="price-card hl">
-            <div class="who">Brands</div>
-            <div class="amt">£39 <small>/ job post</small></div>
-            <div class="stage">Stage 1 · live</div>
-            <ul>
-              <li>${ic('check')} Browse the full map free</li>
-              <li>${ic('check')} Post a brief, notify matching crew</li>
-              <li>${ic('check')} Shortlist &amp; contact unlock</li>
-              <li>${ic('check')} Post 3+ → switch to a saver plan</li>
-            </ul>
-            <a class="btn btn-primary btn-block" href="#jobs">Post a brief</a>
-          </div>
-          <div class="price-card">
-            <div class="who">Gear rental</div>
-            <div class="amt">Commission <small>only</small></div>
-            <div class="stage">Stage 3 · rolling out</div>
-            <ul>
-              <li>${ic('check')} List gear you already own</li>
-              <li>${ic('check')} No listing fee</li>
-              <li>${ic('check')} Deposit &amp; calendar handled</li>
-              <li>${ic('check')} Opens city-by-city</li>
-            </ul>
-            <a class="btn btn-ghost btn-block" href="#gear">Browse gear</a>
-          </div>
-        </div>
-      </div></section>
+    <!-- MARQUEE -->
+    <div class="marquee"><div class="marquee-track">${[1,2].map(()=>`<span>${ALL_ROLES.slice(0,18).join('</span><span>')}</span>`).join('')}</div></div>
 
-      <!-- ============ TRUST / SAFETY ============ -->
-      <section class="sec"><div class="wrap">
-        <div class="sec-head center"><div class="eyebrow">Trust &amp; safety</div><h2>Built so the map feels safe</h2></div>
-        <div class="trust-grid">
-          <div class="trust-card">${ic('pin')}<h4>Approximate location</h4><p>Pins show a neighbourhood, never a home address. Exact coordinates are never exposed.</p></div>
-          <div class="trust-card">${ic('shield')}<h4>Verified creators</h4><p>A verification badge signals creators we've checked, so brands know who they're booking.</p></div>
-          <div class="trust-card">${ic('wallet')}<h4>No cut of bookings</h4><p>Creators keep 100%. We make money from brands and gear — never from your day rate.</p></div>
-        </div>
-      </div></section>
+    <!-- CATEGORIES -->
+    <section class="sec"><div class="wrap">
+      <div class="sec-head reveal"><div class="eyebrow">Every role on the call sheet</div><h2>Find any kind of creative</h2><p>Not just talent and cameras — the full crew, grouped the way a production actually works.</p></div>
+      <div class="cat-grid">${CATEGORIES.map((c,i)=>`<a class="cat-card reveal d${(i%4)+1}" href="#discover?cat=${c.id}"><div class="cat-ico">${ic(CAT_ICON[c.id])}</div><h3>${c.label}</h3><div class="roles">${c.roles.slice(0,4).join(' · ')}${c.roles.length>4?' …':''}</div><div class="cnt">${catCount(c.id)} available →</div></a>`).join('')}</div>
+    </div></section>
 
-      <!-- ============ FAQ ============ -->
-      <section class="sec"><div class="wrap">
-        <div class="sec-head center"><div class="eyebrow">FAQ</div><h2>Questions, answered</h2></div>
-        <div class="faq">
-          <details open><summary>Is it really free for creators?</summary><div class="ans">Yes — free forever, and we never take a percentage of your bookings. Density is the product, so getting every kind of creative onto the map without friction matters more than charging you.</div></details>
-          <details><summary>Who can I find on here?</summary><div class="ans">The whole call sheet: models, actors and dancers; photographers, videographers and DPs; gaffers, grips and sound; hair, makeup and wardrobe; producers, directors and casting; editors, colorists and retouchers; set and prop designers — ${ALL_ROLES.length} roles in total.</div></details>
-          <details><summary>How do brands pay?</summary><div class="ans">Pay-per-job-post — a small fee per brief, no subscription to start. Browsing the map is always free. Brands who post repeatedly get offered a monthly plan that saves money.</div></details>
-          <details><summary>What about gear rental?</summary><div class="ans">It's rolling out city-by-city as crew density grows. Creators list gear they already own, renters request dates, and we take a commission on completed rentals — no listing fee.</div></details>
-          <details><summary>Which cities are live?</summary><div class="ans">${CITIES.join(', ')} today, with more opening as coverage builds. Joining in a new city helps it reach the density that makes the map worth using.</div></details>
-        </div>
-      </div></section>
+    <!-- MAP FEATURE -->
+    <section class="sec"><div class="wrap"><div class="feature">
+      <div class="feature-copy reveal"><div class="kicker">The discovery map</div><h2>See who's actually near you</h2>
+        <p>An accurate, live map of Australia — one part of the platform, not the whole thing. Filter by role and distance, preview portfolios from the pin, shortlist before you message.</p>
+        <ul class="feature-list"><li>${ic('check')} Real geography, smooth zoom, talent plotted by city</li><li>${ic('check')} Approximate location only — exact addresses never shown</li><li>${ic('check')} Never a dead empty map — coverage widens automatically</li></ul>
+        <a class="btn btn-primary" href="#discover?reset=1">Open the map ${ic('arrow')}</a>
+      </div>
+      <div class="feature-visual reveal d2"><div class="fv-map"></div>${featured.map((c,i)=>`<div class="fv-pin" style="${avatarBg(c.name)};left:${[24,62,40,74][i]}%;top:${[30,42,66,22][i]}%">${initials(c.name)}</div>`).join('')}</div>
+    </div></div></section>
 
-      <!-- ============ FINAL CTA ============ -->
-      <section class="cta-band">
-        <h2>Your next shoot starts on the map.</h2>
-        <p>Join free as a creator, or post your first brief in minutes.</p>
-        <div class="cta-actions">
-          <a class="btn btn-primary" href="#join">Join free as a creator</a>
-          <a class="btn btn-ghost" href="#jobs">I'm a brand — post a brief</a>
-        </div>
-      </section>
+    <!-- HOW IT WORKS -->
+    <section class="sec"><div class="wrap">
+      <div class="sec-head center reveal"><div class="eyebrow">How it works</div><h2>Two sides, one map</h2><p>Creators join free and get found. Brands post a brief and book. Density makes both sides worth more.</p></div>
+      <div class="dual">
+        <div class="dual-card reveal"><div class="tag">For creators · always free</div><h3>Curate a profile that gets you booked</h3>
+          <ul class="flow"><li><span class="step-n">1</span><div><h4>Build your portfolio</h4><p>A profile worth showing — gallery, credits, rates, gear. Made to feel like your folio, not a form.</p></div></li><li><span class="step-n">2</span><div><h4>Get discovered</h4><p>Brands find you by role and distance. No cold DMs, no agency gatekeeping.</p></div></li><li><span class="step-n">3</span><div><h4>Get booked direct</h4><p>Briefs land in your city; book directly. We never take a cut.</p></div></li></ul>
+          <a class="btn btn-ghost" href="#join">Create your profile ${ic('arrow')}</a></div>
+        <div class="dual-card reveal d2"><div class="tag">For brands · pay per post</div><h3>Post a brief, book the crew</h3>
+          <ul class="flow"><li><span class="step-n">1</span><div><h4>Browse free</h4><p>Explore the live map before you ever sign up. Feel the density first.</p></div></li><li><span class="step-n">2</span><div><h4>Post a brief</h4><p>One job post notifies every matching creator in the city. No subscription to start.</p></div></li><li><span class="step-n">3</span><div><h4>Review &amp; book</h4><p>Shortlist responders, confirm the shoot, keep the relationship.</p></div></li></ul>
+          <a class="btn btn-ghost" href="#jobs">Post a brief ${ic('arrow')}</a></div>
+      </div>
+    </div></section>
 
-      <!-- ============ BIG FOOTER ============ -->
-      <footer class="foot-big">
-        <div class="foot-cols">
-          <div class="about">
-            <a class="brand" href="#home" data-nav><span class="brand-mark" aria-hidden="true">◐</span><span class="brand-name">THE&nbsp;CREATIVE&nbsp;CENTRE</span></a>
-            <p>A map-based marketplace for finding creative crew near you. Free for creators, density-first by design.</p>
-          </div>
-          <div class="foot-col"><h5>Product</h5><a href="#discover?reset=1">Discover map</a><a href="#jobs">For brands</a><a href="#gear">Gear rental</a><a href="#join">For creators</a></div>
-          <div class="foot-col"><h5>Roles</h5><a href="#discover?role=Model">Models</a><a href="#discover?role=Photographer">Photographers</a><a href="#discover?role=Gaffer">Gaffers</a><a href="#discover?role=Sound%20Mixer">Sound</a></div>
-          <div class="foot-col"><h5>Cities</h5>${CITIES.map(c => `<a href="#discover?city=${encodeURIComponent(c)}">${c}</a>`).join('')}</div>
-        </div>
-        <div class="foot-bar"><span>© 2026 The Creative Centre</span><span>Free for creators, always.</span></div>
-      </footer>
-    </div>
-  `));
+    <!-- FEATURED -->
+    <section class="sec"><div class="wrap">
+      <div class="sec-head reveal"><div class="eyebrow">On the map now</div><h2>Featured creators</h2></div>
+      <div class="feat-grid">${featured.map((c,i)=>`<div class="feat-card reveal d${(i%4)+1}" data-id="${c.id}"><div class="feat-cover" style="background-image:url('${coverURL(c)}')"><div class="feat-av" style="${avatarBg(c.name)}">${initials(c.name)}</div></div><div class="feat-body"><div class="nm">${esc(c.name)} <span class="verified-ico">${ic('check')}</span></div><div class="rl">${esc(c.roles.join(' · '))}</div><div class="mt"><span>${esc(c.city)}</span><span class="rate">${esc(c.rate)}</span></div></div></div>`).join('')}</div>
+    </div></section>
 
-  // wire hero search → discover, prefiltered
+    <!-- PRICING -->
+    <section class="sec"><div class="wrap">
+      <div class="sec-head center reveal"><div class="eyebrow">Pricing</div><h2>Free where it has to be. Paid where it makes sense.</h2><p>Creators are free forever — density is the product. Brands pay only when they hire. Gear earns as that market matures.</p></div>
+      <div class="price-grid">
+        <div class="price-card reveal"><div class="who">Creators</div><div class="amt">Free <small>forever</small></div><div class="stage">Stage 0 · live</div><ul><li>${ic('check')} Unlimited portfolio &amp; gallery</li><li>${ic('check')} Discoverable on the map</li><li>${ic('check')} Apply to briefs in your city</li><li>${ic('check')} 0% cut of your bookings</li></ul><a class="btn btn-ghost btn-block" href="#join">Join free</a></div>
+        <div class="price-card hl reveal d2"><div class="who">Brands</div><div class="amt">$49 <small>/ job post</small></div><div class="stage">Stage 1 · live</div><ul><li>${ic('check')} Browse the full map free</li><li>${ic('check')} Post a brief, notify matching crew</li><li>${ic('check')} Shortlist &amp; contact unlock</li><li>${ic('check')} Post 3+ → switch to a saver plan</li></ul><a class="btn btn-primary btn-block" href="#jobs">Post a brief</a></div>
+        <div class="price-card reveal d3"><div class="who">Gear rental</div><div class="amt">Commission <small>only</small></div><div class="stage">Stage 3 · rolling out</div><ul><li>${ic('check')} List gear you already own</li><li>${ic('check')} No listing fee</li><li>${ic('check')} Deposit &amp; calendar handled</li><li>${ic('check')} Opens city-by-city</li></ul><a class="btn btn-ghost btn-block" href="#gear">Browse gear</a></div>
+      </div>
+    </div></section>
+
+    <!-- TRUST -->
+    <section class="sec"><div class="wrap">
+      <div class="sec-head center reveal"><div class="eyebrow">Trust &amp; safety</div><h2>Built so the map feels safe</h2></div>
+      <div class="trust-grid">
+        <div class="trust-card reveal"><div class="ti">${ic('pin')}</div><h4>Approximate location</h4><p>Pins show a suburb, never a home address. Exact coordinates are never exposed.</p></div>
+        <div class="trust-card reveal d2"><div class="ti">${ic('shield')}</div><h4>Verified creators</h4><p>A verification badge signals creators we've checked, so brands know who they're booking.</p></div>
+        <div class="trust-card reveal d3"><div class="ti">${ic('wallet')}</div><h4>No cut of bookings</h4><p>Creators keep 100%. We earn from brands and gear — never from your day rate.</p></div>
+      </div>
+    </div></section>
+
+    <!-- FAQ -->
+    <section class="sec"><div class="wrap">
+      <div class="sec-head center reveal"><div class="eyebrow">FAQ</div><h2>Questions, answered</h2></div>
+      <div class="faq reveal">
+        <details open><summary>Is it really free for creators?</summary><div class="ans">Yes — free forever, and we never take a percentage of your bookings. Density is the product, so getting every kind of creative onto the map without friction matters more than charging you.</div></details>
+        <details><summary>Who can I find on here?</summary><div class="ans">The whole call sheet: models, actors and dancers; photographers, videographers and DPs; gaffers, grips and sound; hair, makeup and wardrobe; producers, directors and casting; editors, colorists and retouchers; set and prop designers — ${ALL_ROLES.length} roles in total.</div></details>
+        <details><summary>How do brands pay?</summary><div class="ans">Pay-per-job-post — a small fee per brief, no subscription to start. Browsing the map is always free. Brands who post repeatedly get offered a monthly plan that saves money.</div></details>
+        <details><summary>What about gear rental?</summary><div class="ans">It's rolling out city-by-city as crew density grows. Creators list gear they already own, renters request dates, and we take a commission on completed rentals — no listing fee.</div></details>
+        <details><summary>Which cities are live?</summary><div class="ans">${CITIES.join(', ')} — with more opening as coverage builds. Joining in a new city helps it reach the density that makes the map worth using.</div></details>
+      </div>
+    </div></section>
+
+    <!-- CTA -->
+    <section class="cta-band"><div class="aurora-bg"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
+      <div class="cta-band-inner reveal"><h2>Your next shoot starts on the map.</h2><p>Join free as a creator, or post your first brief in minutes.</p>
+        <div class="cta-actions"><a class="btn btn-primary" href="#join">Join free as a creator</a><a class="btn btn-ghost" href="#jobs">I'm a brand — post a brief</a></div></div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="foot-big">
+      <div class="foot-cols">
+        <div class="about"><a class="brand" href="#home" data-nav><span class="brand-mark"><svg viewBox="0 0 1000 820" class="brand-au"><path d="M175,250 L250,182 L340,150 L430,120 L470,165 L505,150 L545,180 L585,120 L610,92 L650,150 L705,235 L740,300 L762,365 L788,430 L802,495 L792,560 L765,612 L700,648 L640,652 L585,632 L548,598 L520,632 L470,648 L380,650 L300,632 L232,602 L165,566 L128,492 L120,420 L138,356 L150,300 Z"/></svg></span><span class="brand-name">THE&nbsp;CREATIVE&nbsp;CENTRE</span></a><p>Australia's map-based marketplace for finding creative crew. Free for creators, density-first by design.</p></div>
+        <div class="foot-col"><h5>Product</h5><a href="#discover?reset=1">Discover map</a><a href="#jobs">For brands</a><a href="#gear">Gear rental</a><a href="#join">For creators</a></div>
+        <div class="foot-col"><h5>Roles</h5><a href="#discover?role=Model">Models</a><a href="#discover?role=Photographer">Photographers</a><a href="#discover?role=Gaffer">Gaffers</a><a href="#discover?role=Sound%20Mixer">Sound</a></div>
+        <div class="foot-col"><h5>Cities</h5>${CITIES.slice(0,6).map(c=>`<a href="#discover?city=${encodeURIComponent(c)}">${c}</a>`).join('')}</div>
+      </div>
+      <div class="foot-bar"><span>© 2026 The Creative Centre · Australia</span><span>Free for creators, always.</span></div>
+    </footer>
+  </div>`));
+
   $('#hero-search').addEventListener('submit', e => {
     e.preventDefault();
-    const role = $('#hs-role').value, city = $('#hs-city').value;
-    const p = new URLSearchParams(); p.set('city', city);
-    if (role) p.set('role', role);
-    location.hash = '#discover?' + p.toString();
+    const role=$('#hs-role').value, city=$('#hs-city').value;
+    const p=new URLSearchParams(); p.set('city',city); if(role) p.set('role',role);
+    location.hash='#discover?'+p.toString();
   });
-  // featured cards → open profile (after navigating to discover so the drawer has context)
-  $$('.feat-card').forEach(card => card.addEventListener('click', () => {
-    const c = state.creators.find(x => x.id === card.dataset.id);
-    if (c) { state.city = c.city; location.hash = '#discover'; setTimeout(() => openProfile(card.dataset.id), 60); }
-  }));
+  $$('.home [data-id]').forEach(n => n.addEventListener('click', () => location.hash='#creator?id='+n.dataset.id));
   $$('.home [data-nav]').forEach(a => a.addEventListener('click', () => $('.nav-links')?.classList.remove('open')));
 }
 
 // ============================================================================
-//  VIEW: DISCOVER  (the map — one feature, reached from Discover / home)
+//  VIEW: DISCOVER (real MapLibre map)
 // ============================================================================
-function renderDiscover() {
-  const view = $('#view');
-  view.appendChild(el(`
-    <section class="discover">
-      <!-- LEFT: filters -->
-      <div class="panel" id="panel-left">
-        <div class="panel-head">
-          <h2>Find your crew</h2>
-          <div class="sub">Models, camera, lighting, sound, glam, post — near you.</div>
-        </div>
-        <div class="filters">
-          <div class="filter-group">
-            <label class="label">City</label>
-            <select class="field" id="city-select">
-              ${CITIES.map(c => `<option ${c === state.city ? 'selected' : ''}>${c}</option>`).join('')}
-            </select>
-          </div>
-          <div class="filter-group">
-            <label class="label">Search</label>
-            <input class="field" id="search" placeholder="name, role, vibe…" value="${esc(state.query)}" />
-          </div>
-          <div class="filter-group" id="cat-filters"></div>
-        </div>
-      </div>
-
-      <!-- CENTER: map -->
-      <div class="map-wrap" id="map-wrap">
-        <div class="map"></div>
-        ${riverSVG()}
-        <div class="map-overlay-top">
-          <div class="map-city-tag"><span class="brand-mark">◉</span> <span id="map-city">${state.city}</span></div>
-          <div class="map-count" id="map-count"></div>
-        </div>
-        <div id="pins"></div>
-      </div>
-
-      <!-- RIGHT: results -->
-      <div class="panel panel-right">
-        <div class="panel-head">
-          <h2 id="results-title">Creators</h2>
-          <div class="sub" id="results-sub"></div>
-        </div>
-        <div id="results"></div>
-      </div>
-    </section>
-  `));
-
-  // category filter rail
-  $('#cat-filters').innerHTML = CATEGORIES.map(cat => `
-    <div style="margin-bottom:18px">
-      <div class="cat-title">${cat.label}</div>
-      <div class="chips">
-        ${cat.roles.map(r => `<button class="chip ${state.roles.has(r) ? 'on' : ''}" data-role="${esc(r)}">${esc(r)}</button>`).join('')}
+function renderDiscover(){
+  $('#view').appendChild(el(`<section class="discover">
+    <div class="panel">
+      <div class="panel-head"><h2>Find your crew</h2><div class="sub">Filter the full crew across ${esc(state.city)} and beyond.</div></div>
+      <div class="filters">
+        <div class="filter-group"><label class="label">City</label><select class="field" id="city-select">${CITIES.map(c=>`<option ${c===state.city?'selected':''}>${c}</option>`).join('')}</select></div>
+        <div class="filter-group"><label class="label">Search</label><input class="field" id="search" placeholder="name, role, vibe…" value="${esc(state.query)}" /></div>
+        <div class="filter-group" id="cat-filters"></div>
       </div>
     </div>
-  `).join('');
+    <div class="map-wrap" id="map-wrap">
+      <div id="map"></div>
+      <div class="map-overlay-top"><div class="map-city-tag">${ic('pin','icn')} <span id="map-city">${esc(state.city)}</span></div><div class="map-count" id="map-count"></div></div>
+    </div>
+    <div class="panel panel-right">
+      <div class="panel-head"><h2 id="results-title">Creators</h2><div class="sub" id="results-sub"></div></div>
+      <div id="results"></div>
+    </div>
+  </section>`));
 
-  // wire events
-  $('#city-select').addEventListener('change', e => { state.city = e.target.value; state.selected = null; refreshDiscover(); });
-  $('#search').addEventListener('input', e => { state.query = e.target.value; refreshDiscover(); });
-  $$('#cat-filters .chip').forEach(ch => ch.addEventListener('click', () => {
-    const r = ch.dataset.role;
-    state.roles.has(r) ? state.roles.delete(r) : state.roles.add(r);
-    ch.classList.toggle('on');
-    refreshDiscover();
-  }));
+  $('#cat-filters').innerHTML = CATEGORIES.map(cat => `<div style="margin-bottom:18px"><div class="cat-title">${cat.label}</div><div class="chips">${cat.roles.map(r=>`<button class="chip ${state.roles.has(r)?'on':''}" data-role="${esc(r)}">${esc(r)}</button>`).join('')}</div></div>`).join('');
 
+  $('#city-select').addEventListener('change', e => { state.city=e.target.value; flyToCity(); refreshDiscover(); });
+  $('#search').addEventListener('input', e => { state.query=e.target.value; refreshDiscover(); });
+  $$('#cat-filters .chip').forEach(ch => ch.addEventListener('click', () => { const r=ch.dataset.role; state.roles.has(r)?state.roles.delete(r):state.roles.add(r); ch.classList.toggle('on'); refreshDiscover(); }));
+
+  initMap();
   refreshDiscover();
 }
 
-function refreshDiscover() {
+function initMap(){
+  const c = CITY_COORDS[state.city];
+  if (typeof maplibregl === 'undefined'){
+    $('#map').innerHTML = `<div class="map-empty"><div><div class="big">Map needs a connection</div><div>The live map loads from the internet. Results still work in the list →</div></div></div>`;
+    return;
+  }
+  state.map = new maplibregl.Map({
+    container: 'map',
+    style: {
+      version: 8,
+      sources: { carto: { type:'raster', tileSize:256,
+        tiles:['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png','https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png','https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'],
+        attribution:'© OpenStreetMap · © CARTO' } },
+      layers: [{ id:'carto', type:'raster', source:'carto' }],
+    },
+    center: [c.lng, c.lat], zoom: c.zoom, attributionControl: true,
+  });
+  state.map.addControl(new maplibregl.NavigationControl({ showCompass:false }), 'bottom-right');
+  state.map.on('load', () => state.map.resize());
+}
+function flyToCity(){ const c=CITY_COORDS[state.city]; if(state.map) state.map.flyTo({ center:[c.lng,c.lat], zoom:c.zoom, speed:1.2, curve:1.5 }); $('#map-city').textContent=state.city; }
+
+function refreshDiscover(){
   const list = filtered();
-  $('#map-city').textContent = state.city;
   $('#map-count').innerHTML = `<b>${list.length}</b>&nbsp;available`;
-  $('#results-title').textContent = state.roles.size ? [...state.roles].slice(0, 2).join(', ') + (state.roles.size > 2 ? '…' : '') : 'Creators';
+  $('#results-title').textContent = state.roles.size ? [...state.roles].slice(0,2).join(', ')+(state.roles.size>2?'…':'') : 'Creators';
   $('#results-sub').textContent = `${list.length} in ${state.city}`;
-  renderPins(list);
+  drawMarkers(list);
   renderResults(list);
 }
 
-function renderPins(list) {
-  const pins = $('#pins');
-  if (!list.length) {
-    pins.innerHTML = `
-      <div class="map-empty">
-        <div>
-          <div class="big">No one here yet — that's the cold start.</div>
-          <div>Try clearing filters or switching city. Every creator who joins makes this map worth more.</div>
-          <div style="margin-top:18px"><a class="btn btn-primary btn-sm" href="#join">Be the first here →</a></div>
-        </div>
-      </div>`;
-    return;
-  }
-  pins.innerHTML = list.map(c => `
-    <div class="pin ${state.selected === c.id ? 'sel' : ''}" data-id="${c.id}" style="left:${c.x}%;top:${c.y}%">
-      <div class="pin-dot" style="${avatarStyle(c.name)}">${initials(c.name)}</div>
-      <div class="pin-tail"></div>
-      <div class="pin-label">${esc(c.name)} · ${esc(c.roles[0])}</div>
-    </div>`).join('');
-  $$('#pins .pin').forEach(p => p.addEventListener('click', () => openProfile(p.dataset.id)));
+function drawMarkers(list){
+  state.markers.forEach(m => m.remove()); state.markers = [];
+  if (!state.map) return;
+  list.forEach(c => {
+    const node = el(`<div class="mk ${state.selected===c.id?'sel':''}" data-id="${c.id}"><div class="mk-dot" style="${avatarBg(c.name)}"><span>${initials(c.name)}</span></div></div>`);
+    node.addEventListener('click', () => openProfile(c.id));
+    const mk = new maplibregl.Marker({ element:node, anchor:'bottom' }).setLngLat([c.lng, c.lat]).addTo(state.map);
+    state.markers.push(mk);
+  });
 }
 
-function renderResults(list) {
+function renderResults(list){
   const box = $('#results');
-  if (!list.length) { box.innerHTML = `<div style="padding:28px 20px;color:var(--muted);font-size:13.5px">No matches in ${state.city}. Widen your filters.</div>`; return; }
-  box.innerHTML = list.map(c => `
-    <div class="result ${state.selected === c.id ? 'sel' : ''}" data-id="${c.id}">
-      <div class="avatar" style="${avatarStyle(c.name)}">${initials(c.name)}</div>
-      <div class="result-body">
-        <div class="result-name">${esc(c.name)} ${c.verified ? '<span class="verified" title="Verified">✦</span>' : ''}</div>
-        <div class="result-role">${esc(c.roles.join(' · '))}</div>
-        <div class="result-meta"><span>${esc(c.area)}</span><span class="rate">${esc(c.rate)}</span><span>${c.exp}y</span></div>
-      </div>
-    </div>`).join('');
+  if (!list.length){ box.innerHTML = `<div style="padding:30px 20px;color:var(--muted);font-size:13.5px">No matches in ${esc(state.city)}. Widen your filters, or <a href="#join" style="color:var(--green)">be the first here →</a></div>`; return; }
+  box.innerHTML = list.map(c => `<div class="result ${state.selected===c.id?'sel':''}" data-id="${c.id}"><div class="avatar" style="${avatarBg(c.name)}">${initials(c.name)}</div><div class="result-body"><div class="result-name">${esc(c.name)} ${c.verified?`<span class="verified-ico">${ic('check')}</span>`:''}</div><div class="result-role">${esc(c.roles.join(' · '))}</div><div class="result-meta"><span>${esc(c.area)}</span><span class="rate">${esc(c.rate)}</span><span class="star">${ic('star')} ${c.rating.toFixed(1)}</span></div></div></div>`).join('');
   $$('#results .result').forEach(r => r.addEventListener('click', () => openProfile(r.dataset.id)));
 }
 
-// stylised "river" so the map reads as a city, not a void
-function riverSVG() {
-  return `<svg class="map-river" viewBox="0 0 100 100" preserveAspectRatio="none">
-    <path d="M-5,72 C20,64 35,80 52,70 C70,60 82,76 105,66" fill="none" stroke="#151515" stroke-width="6"/>
-    <path d="M-5,72 C20,64 35,80 52,70 C70,60 82,76 105,66" fill="none" stroke="#0d0d0d" stroke-width="2"/>
-  </svg>`;
-}
-
 // ============================================================================
-//  PROFILE DRAWER
+//  PROFILE DRAWER (quick view from the map)
 // ============================================================================
-function openProfile(id) {
-  const c = state.creators.find(x => x.id === id);
-  if (!c) return;
+function openProfile(id){
+  const c = state.creators.find(x => x.id===id); if(!c) return;
   state.selected = id;
-  $$('.pin, .result').forEach(n => n.classList.toggle('sel', n.dataset.id === id));
-
+  $$('.mk, .result').forEach(n => n.classList.toggle('sel', n.dataset.id===id));
+  if (state.map){ state.map.flyTo({ center:[c.lng,c.lat], zoom:Math.max(state.map.getZoom(),12.5), speed:.8 }); }
   const saved = state.shortlist.has(id);
-  const drawer = $('#drawer');
-  drawer.innerHTML = `
-    <div class="drawer-cover" style="${avatarStyle(c.name)}">
-      <button class="drawer-close" id="drawer-close">✕</button>
-      <div class="drawer-av" style="${avatarStyle(c.roles.join(''))}">${initials(c.name)}</div>
-    </div>
+  const shots = Array.from({length:3}, (_,i)=>`<img loading="lazy" src="${shotURL(c.id,i+1,300,300)}" onerror="${IMGERR}" alt="">`).join('');
+  $('#drawer').innerHTML = `
+    <div class="drawer-cover" style="background-image:url('${coverURL(c)}')"><button class="drawer-close" id="drawer-close" aria-label="Close">✕</button><div class="drawer-av" style="${avatarBg(c.name)}">${initials(c.name)}</div></div>
     <div class="drawer-pad">
-      <h2>${esc(c.name)} ${c.verified ? '<span class="verified" title="Verified">✦</span>' : ''}</h2>
+      <h2>${esc(c.name)} ${c.verified?`<span class="verified-ico">${ic('check')}</span>`:''}</h2>
       <div class="roles">${esc(c.roles.join(' · '))}</div>
       <div class="loc">${esc(c.area)}, ${esc(c.city)}</div>
-
-      <div class="kv">
-        <div><div class="k">Day rate</div><div class="v">${esc(c.rate)}</div></div>
-        <div><div class="k">Experience</div><div class="v">${c.exp} yrs</div></div>
-        <div><div class="k">Status</div><div class="v">${c.verified ? 'Verified' : 'New'}</div></div>
-      </div>
-
+      <div class="kv"><div><div class="k">Day rate</div><div class="v">${esc(c.rate)}</div></div><div><div class="k">Rating</div><div class="v">${c.rating.toFixed(1)}★</div></div><div><div class="k">Booked</div><div class="v">${c.jobs}×</div></div></div>
+      <div class="mini-gal">${shots}</div>
       <p class="bio">${esc(c.bio)}</p>
-
-      ${(c.tags && c.tags.length) ? `<div class="tagrow">${c.tags.map(t => `<span class="tag">${esc(t)}</span>`).join('')}</div>` : ''}
-
-      ${(c.gear && c.gear.length) ? `
-        <div class="divider"></div>
-        <div class="label">Owns gear</div>
-        <ul class="gearlist">${c.gear.map(g => `<li>${esc(g)}</li>`).join('')}</ul>
-        <div class="hr-note">Gear they own can be listed for rental once that opens in their city.</div>
-      ` : ''}
-
-      <div class="drawer-actions">
-        <button class="btn btn-primary" id="btn-book">Send booking inquiry</button>
-        <button class="btn btn-ghost" id="btn-save">${saved ? '✓ Shortlisted' : '☆ Shortlist'}</button>
-      </div>
-      <div class="hr-note">Contact opens after the brand posts a brief or unlocks contact — that's the line we monetise. Exact location is never shown; the pin is an approximate area.</div>
+      <div class="drawer-actions"><button class="btn btn-primary" id="d-book">Book / inquire</button><button class="btn btn-ghost" id="d-save">${saved?'✓ Shortlisted':'☆ Shortlist'}</button></div>
+      <a class="view-full" href="#creator?id=${c.id}">View full portfolio →</a>
     </div>`;
-
-  $('#drawer').hidden = false; $('#drawer').setAttribute('aria-hidden', 'false');
-  $('#scrim').hidden = false;
+  $('#drawer').hidden=false; $('#drawer').setAttribute('aria-hidden','false'); $('#scrim').hidden=false;
   $('#drawer-close').addEventListener('click', closeProfile);
-  $('#btn-save').addEventListener('click', () => {
-    if (state.shortlist.has(id)) state.shortlist.delete(id); else state.shortlist.add(id);
-    LS.set('shortlist', [...state.shortlist]);
-    $('#btn-save').textContent = state.shortlist.has(id) ? '✓ Shortlisted' : '☆ Shortlist';
-    toast(state.shortlist.has(id) ? `${c.name} shortlisted` : `Removed ${c.name}`);
-  });
-  $('#btn-book').addEventListener('click', () => { closeProfile(); location.hash = '#jobs'; setTimeout(() => toast('Post a brief to reach ' + c.name.split(' ')[0]), 200); });
+  $('#d-save').addEventListener('click', () => { state.shortlist.has(id)?state.shortlist.delete(id):state.shortlist.add(id); LS.set('shortlist',[...state.shortlist]); $('#d-save').textContent=state.shortlist.has(id)?'✓ Shortlisted':'☆ Shortlist'; toast(state.shortlist.has(id)?`${c.name} shortlisted`:`Removed ${c.name}`); });
+  $('#d-book').addEventListener('click', () => { closeProfile(); location.hash='#jobs'; setTimeout(()=>toast('Post a brief to reach '+c.name.split(' ')[0]),200); });
+  $('.view-full').addEventListener('click', closeProfile);
 }
-function closeProfile() {
-  $('#drawer').hidden = true; $('#drawer').setAttribute('aria-hidden', 'true');
-  $('#scrim').hidden = true;
-  state.selected = null;
-  $$('.pin, .result').forEach(n => n.classList.remove('sel'));
-}
+function closeProfile(){ $('#drawer').hidden=true; $('#drawer').setAttribute('aria-hidden','true'); $('#scrim').hidden=true; state.selected=null; $$('.mk,.result').forEach(n=>n.classList.remove('sel')); }
 
 // ============================================================================
-//  VIEW: JOBS  (brand search & posting — Stage 1)
+//  VIEW: CREATOR PORTFOLIO PAGE  (the crown jewel)
 // ============================================================================
-function renderJobs() {
-  const view = $('#view');
-  view.appendChild(el(`
-    <div class="wrap">
-      <div class="page-head">
-        <div class="eyebrow">For brands · Stage 1</div>
-        <h1>Post a brief. The right crew comes to you.</h1>
-        <p>Pay per job post — no subscription to start. Browse the map free; you only pay when you're ready to hire. Matching creators in your city get notified the moment you post.</p>
-      </div>
+function renderCreator(){
+  const id = ROUTE_PARAMS.get('id');
+  const c = state.creators.find(x => x.id===id);
+  if (!c){ location.hash='#discover'; return; }
+  const gearOwned = state.gear.filter(g => g.owner===c.name);
+  const shots = Array.from({length:portfolioCount(c)}, (_,i)=>{ const h=SHOT_H[i%SHOT_H.length]; return `<div class="shot" data-full="${shotURL(c.id,i+1,1000,Math.round(h*1.6))}"><img loading="lazy" src="${shotURL(c.id,i+1,600,h)}" onerror="${IMGERR}" alt="Work by ${esc(c.name)}"></div>`; }).join('');
 
-      <div class="section-pad grid" style="grid-template-columns: 1.1fr .9fr; gap:40px; align-items:start;">
-        <div>
-          <div class="label" style="margin-bottom:16px">Open briefs</div>
-          <div id="jobs-list" class="grid"></div>
-        </div>
-        <div>
-          <div class="card form-card" style="position:sticky;top:80px">
-            <div class="eyebrow">New brief</div>
-            <h3 style="margin-bottom:18px">Post a job</h3>
-            <form id="job-form">
-              <div class="form-row"><label class="label">Brand / company</label><input class="field" name="brand" required placeholder="Studio Noir" /></div>
-              <div class="form-row"><label class="label">Title</label><input class="field" name="title" required placeholder="Beauty campaign — MUA + retoucher" /></div>
-              <div class="form-row two">
-                <div><label class="label">City</label><select class="field" name="city">${CITIES.map(c => `<option>${c}</option>`).join('')}</select></div>
-                <div><label class="label">Shoot date</label><input class="field" type="date" name="date" required /></div>
-              </div>
-              <div class="form-row"><label class="label">Roles needed</label>
-                <select class="field" name="role">${ALL_ROLES.map(r => `<option>${r}</option>`).join('')}</select>
-                <div class="hint">Add the lead role; you can list more in the brief.</div>
-              </div>
-              <div class="form-row two">
-                <div><label class="label">Budget</label><input class="field" name="budget" placeholder="£3,000 total" /></div>
-                <div><label class="label">Usage</label><input class="field" name="usage" placeholder="Web + OOH, 6 mo" /></div>
-              </div>
-              <div class="form-row"><label class="label">The brief</label><textarea class="field" name="brief" placeholder="What you're making, the vibe, what you need on the day…"></textarea></div>
-              <div class="form-row" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-sm);padding:14px;display:flex;justify-content:space-between;align-items:center">
-                <div><div style="font-weight:600;font-size:14px">Job post</div><div class="hint" style="margin:0">Single brief · first-timer rate</div></div>
-                <div style="font-weight:800;font-size:18px;color:var(--accent)">£39</div>
-              </div>
-              <button class="btn btn-primary btn-block" type="submit">Post brief & notify crew</button>
-              <div class="hint" style="text-align:center;margin-top:10px">Post 3+ and we'll offer a monthly plan that saves you money.</div>
-            </form>
-          </div>
-        </div>
+  $('#view').appendChild(el(`<div class="profile">
+    <div class="pf-hero"><div class="pf-hero-bg" style="background-image:url('${coverURL(c)}')"></div>
+      <a class="pf-back btn btn-ghost btn-sm" href="#discover">${ic('arrow','icn')} Back to map</a></div>
+    <div class="pf-head">
+      <div class="pf-av" style="${avatarBg(c.name)}">${initials(c.name)}</div>
+      <div class="pf-id">
+        <h1>${esc(c.name)} ${c.verified?`<span class="pf-verified">${ic('check')} Verified</span>`:''}</h1>
+        <div class="roles">${esc(c.roles.join(' · '))}</div>
+        <div class="loc">${ic('pin','icn')} ${esc(c.area)}, ${esc(c.city)}</div>
       </div>
+      <div class="pf-actions"><button class="btn btn-ghost" id="pf-save">${state.shortlist.has(c.id)?'✓ Shortlisted':'☆ Shortlist'}</button></div>
     </div>
-  `));
+    <div class="pf-body">
+      <div class="pf-main">
+        <div class="pf-stats">
+          <div class="pf-stat"><div class="v"><em>${c.rating.toFixed(1)}</em>★</div><div class="k">Rating</div></div>
+          <div class="pf-stat"><div class="v">${c.jobs}</div><div class="k">Bookings</div></div>
+          <div class="pf-stat"><div class="v">${c.exp}<small style="font-size:16px"> yrs</small></div><div class="k">Experience</div></div>
+          <div class="pf-stat"><div class="v">${c.verified?'Verified':'New'}</div><div class="k">Status</div></div>
+        </div>
+        <div class="pf-section-t">About</div>
+        <p class="pf-bio">${esc(c.bio)}</p>
+        <div class="pf-tags">${(c.tags||[]).map(t=>`<span class="pf-tag">${esc(t)}</span>`).join('')}</div>
+        <div class="pf-section-t">Portfolio</div>
+        <div class="gallery">${shots}</div>
+      </div>
+      <aside class="pf-rail">
+        <div class="rate">${esc(c.rate)}</div>
+        <div class="avail"><span class="dot"></span> Available for bookings</div>
+        <a class="btn btn-primary btn-block" href="#jobs" id="pf-book">Book / send brief</a>
+        <button class="btn btn-ghost btn-block" id="pf-save2">${state.shortlist.has(c.id)?'✓ Shortlisted':'☆ Shortlist'}</button>
+        ${gearOwned.length?`<div class="pf-section-t" style="margin:24px 0 12px">Gear for hire</div><div class="pf-gear">${gearOwned.map(g=>`<div class="gi"><img loading="lazy" src="${gearURL(g)}" onerror="${IMGERR}" alt=""><div><div class="gt">${esc(g.brand)} ${esc(g.model)}</div><div class="gs">${esc(g.rate)} · ${esc(g.cat)}</div></div></div>`).join('')}</div>`:''}
+        <div class="note">Contact opens once a brand posts a brief or unlocks contact — that's the line we monetise. Location shown is an approximate suburb.</div>
+      </aside>
+    </div>
+  </div>`));
 
+  const toggleSave = () => { state.shortlist.has(c.id)?state.shortlist.delete(c.id):state.shortlist.add(c.id); LS.set('shortlist',[...state.shortlist]); const t=state.shortlist.has(c.id)?'✓ Shortlisted':'☆ Shortlist'; $('#pf-save').textContent=t; $('#pf-save2').textContent=t; toast(state.shortlist.has(c.id)?`${c.name} shortlisted`:`Removed ${c.name}`); };
+  $('#pf-save').addEventListener('click', toggleSave);
+  $('#pf-save2').addEventListener('click', toggleSave);
+  $('#pf-book').addEventListener('click', () => setTimeout(()=>toast('Post a brief to reach '+c.name.split(' ')[0]),200));
+  $$('.gallery .shot').forEach(s => s.addEventListener('click', () => openLightbox(s.dataset.full)));
+}
+function openLightbox(src){ const lb=el(`<div class="lightbox"><img src="${src}" alt=""></div>`); lb.addEventListener('click', ()=>lb.remove()); document.body.appendChild(lb); }
+
+// ============================================================================
+//  VIEW: JOBS
+// ============================================================================
+function renderJobs(){
+  $('#view').appendChild(el(`<div class="wrap">
+    <div class="page-head reveal"><div class="eyebrow">For brands · Stage 1</div><h1>Post a brief. The right crew comes to you.</h1><p>Pay per job post — no subscription to start. Browse the map free; you only pay when you're ready to hire. Matching creators in your city get notified the moment you post.</p></div>
+    <div class="section-pad grid" style="grid-template-columns:1.1fr .9fr;gap:40px;align-items:start">
+      <div><div class="label" style="margin-bottom:16px">Open briefs</div><div id="jobs-list" class="grid"></div></div>
+      <div><div class="card form-card reveal" style="position:sticky;top:80px"><div class="eyebrow">New brief</div><h3 style="margin-bottom:18px">Post a job</h3>
+        <form id="job-form">
+          <div class="form-row"><label class="label">Brand / company</label><input class="field" name="brand" required placeholder="Studio Noir"></div>
+          <div class="form-row"><label class="label">Title</label><input class="field" name="title" required placeholder="Beauty campaign — MUA + retoucher"></div>
+          <div class="form-row two"><div><label class="label">City</label><select class="field" name="city">${CITIES.map(c=>`<option ${c===state.city?'selected':''}>${c}</option>`).join('')}</select></div><div><label class="label">Shoot date</label><input class="field" type="date" name="date" required></div></div>
+          <div class="form-row"><label class="label">Lead role</label><select class="field" name="role">${ALL_ROLES.map(r=>`<option>${r}</option>`).join('')}</select></div>
+          <div class="form-row two"><div><label class="label">Budget</label><input class="field" name="budget" placeholder="$5,000 total"></div><div><label class="label">Usage</label><input class="field" name="usage" placeholder="Web + OOH, 6 mo"></div></div>
+          <div class="form-row"><label class="label">The brief</label><textarea class="field" name="brief" placeholder="What you're making, the vibe, what you need on the day…"></textarea></div>
+          <div class="form-row price-row"><div><div style="font-weight:600;font-size:14px">Job post</div><div class="hint" style="margin:0">Single brief · first-timer rate</div></div><div class="amt2">$49</div></div>
+          <button class="btn btn-primary btn-block" type="submit">Post brief &amp; notify crew</button>
+          <div class="hint" style="text-align:center;margin-top:10px">Post 3+ and we'll offer a monthly plan that saves you money.</div>
+        </form></div></div>
+    </div>
+  </div>`));
   paintJobs();
   $('#job-form').addEventListener('submit', e => {
-    e.preventDefault();
-    const f = new FormData(e.target);
-    const job = {
-      id: 'j' + Date.now(), brand: f.get('brand'), title: f.get('title'), city: f.get('city'),
-      roles: [f.get('role')], date: f.get('date'), budget: f.get('budget') || '—',
-      usage: f.get('usage') || '—', brief: f.get('brief') || '', posted: new Date().toISOString().slice(0, 10),
-    };
-    const mine = LS.get('jobs', []); mine.unshift(job); LS.set('jobs', mine);
-    state.jobs.unshift(job);
-    e.target.reset();
-    paintJobs();
-    const matches = state.creators.filter(c => c.city === job.city && c.roles.includes(job.roles[0])).length;
-    toast(`Brief posted — ${matches} matching creator${matches === 1 ? '' : 's'} notified in ${job.city}`);
+    e.preventDefault(); const f=new FormData(e.target);
+    const job={ id:'j'+Date.now(), brand:f.get('brand'), title:f.get('title'), city:f.get('city'), roles:[f.get('role')], date:f.get('date'), budget:f.get('budget')||'—', usage:f.get('usage')||'—', brief:f.get('brief')||'', posted:new Date().toISOString().slice(0,10) };
+    const mine=LS.get('jobs',[]); mine.unshift(job); LS.set('jobs',mine); state.jobs.unshift(job); e.target.reset(); paintJobs();
+    const matches=state.creators.filter(x=>x.city===job.city && x.roles.includes(job.roles[0])).length;
+    toast(`Brief posted — ${matches} matching creator${matches===1?'':'s'} notified in ${job.city}`);
   });
 }
-
-function paintJobs() {
-  $('#jobs-list').innerHTML = state.jobs.map(j => `
-    <div class="card">
-      <h3>${esc(j.title)}</h3>
-      <div class="meta">${esc(j.city)} · shoot ${esc(j.date)}</div>
-      ${j.brief ? `<div class="desc">${esc(j.brief)}</div>` : ''}
-      <div class="pill-row">
-        ${j.roles.map(r => `<span class="pill accent">${esc(r)}</span>`).join('')}
-        <span class="pill">${esc(j.budget)}</span>
-        <span class="pill">${esc(j.usage)}</span>
-      </div>
-      <div class="card-foot">
-        <span class="brandline">${esc(j.brand)} · posted ${esc(j.posted)}</span>
-        <button class="btn btn-ghost btn-sm" data-apply="${j.id}">Express interest</button>
-      </div>
-    </div>`).join('');
-  $$('[data-apply]').forEach(b => b.addEventListener('click', () => toast('Interest sent — the brand will see your profile')));
+function paintJobs(){
+  $('#jobs-list').innerHTML = state.jobs.map(j=>`<div class="card reveal"><h3>${esc(j.title)}</h3><div class="meta">${esc(j.city)} · shoot ${esc(j.date)}</div>${j.brief?`<div class="desc">${esc(j.brief)}</div>`:''}<div class="pill-row">${j.roles.map(r=>`<span class="pill accent">${esc(r)}</span>`).join('')}<span class="pill">${esc(j.budget)}</span><span class="pill">${esc(j.usage)}</span></div><div class="card-foot"><span class="brandline">${esc(j.brand)} · posted ${esc(j.posted)}</span><button class="btn btn-ghost btn-sm" data-apply="${j.id}">Express interest</button></div></div>`).join('');
+  $$('[data-apply]').forEach(b=>b.addEventListener('click',()=>toast('Interest sent — the brand will see your profile')));
+  initReveal();
 }
 
 // ============================================================================
-//  VIEW: GEAR  (rental — Stage 3)
+//  VIEW: GEAR
 // ============================================================================
-function renderGear() {
-  const view = $('#view');
-  view.appendChild(el(`
-    <div class="wrap">
-      <div class="page-head">
-        <div class="eyebrow">For everyone · Stage 3</div>
-        <h1>Rent gear from crew nearby.</h1>
-        <p>Cameras, lights, grip, aerial — listed by the creators already on the map. Commission only, no listing fee. This opens city-by-city once there's enough crew to make it worth it.</p>
-      </div>
-      <div class="section-pad">
-        <div class="grid" style="grid-template-columns:auto auto;justify-content:start;gap:12px;margin-bottom:28px">
-          <select class="field" id="gear-city" style="width:auto">${['All cities', ...CITIES].map(c => `<option>${c}</option>`).join('')}</select>
-          <a class="btn btn-ghost btn-sm" href="#join">List your gear →</a>
-        </div>
-        <div id="gear-list" class="grid grid-3"></div>
-      </div>
-    </div>
-  `));
+function renderGear(){
+  $('#view').appendChild(el(`<div class="wrap">
+    <div class="page-head reveal"><div class="eyebrow">For everyone · Stage 3</div><h1>Rent gear from crew nearby.</h1><p>Cameras, lights, grip, aerial — listed by the creators already on the map. Commission only, no listing fee. Opens city-by-city as crew density grows.</p></div>
+    <div class="section-pad">
+      <div class="grid" style="grid-template-columns:auto auto;justify-content:start;gap:12px;margin-bottom:28px"><select class="field" id="gear-city" style="width:auto">${['All cities',...CITIES].map(c=>`<option>${c}</option>`).join('')}</select><a class="btn btn-ghost btn-sm" href="#join">List your gear →</a></div>
+      <div id="gear-list" class="gear-grid"></div>
+    </div></div>`));
   const paint = () => {
-    const city = $('#gear-city').value;
-    const list = state.gear.filter(g => city === 'All cities' || g.city === city);
-    $('#gear-list').innerHTML = list.length ? list.map(g => `
-      <div class="card">
-        <div class="pill accent" style="display:inline-block">${esc(g.cat)}</div>
-        <h3 style="margin-top:12px">${esc(g.item)}</h3>
-        <div class="meta">${esc(g.area)}, ${esc(g.city)}</div>
-        <div class="card-foot">
-          <span class="brandline">by ${esc(g.owner)} · dep. ${esc(g.deposit)}</span>
-          <span style="font-weight:800;color:var(--accent)">${esc(g.rate)}</span>
-        </div>
-        <button class="btn btn-ghost btn-sm btn-block" style="margin-top:14px" data-rent="${g.id}">Request dates</button>
-      </div>`).join('') : `<div style="color:var(--muted)">No gear listed in ${city} yet — this market opens as crew density grows.</div>`;
-    $$('[data-rent]').forEach(b => b.addEventListener('click', () => toast('Request sent — owner confirms availability & deposit')));
+    const city=$('#gear-city').value;
+    const list=state.gear.filter(g=>city==='All cities'||g.city===city);
+    $('#gear-list').innerHTML = list.length ? list.map(g=>`<div class="gear-card reveal"><div class="gear-img" style="background-image:url('${gearURL(g)}')"><span class="cat">${esc(g.cat)}</span></div><div class="gear-info"><div class="brand">${esc(g.brand)}</div><h3>${esc(g.model)}</h3><div class="gf"><span class="brandline">${esc(g.owner)} · ${esc(g.area)}</span><span class="rate">${esc(g.rate)}</span></div><button class="btn btn-ghost btn-sm btn-block" style="margin-top:14px" data-rent="${g.id}">Request dates · dep. ${esc(g.deposit)}</button></div></div>`).join('') : `<div style="color:var(--muted)">No gear listed in ${city} yet — this market opens as crew density grows.</div>`;
+    $$('[data-rent]').forEach(b=>b.addEventListener('click',()=>toast('Request sent — owner confirms availability & deposit')));
+    initReveal();
   };
-  $('#gear-city').addEventListener('change', paint);
-  paint();
+  $('#gear-city').addEventListener('change', paint); paint();
 }
 
 // ============================================================================
-//  VIEW: JOIN  (creator onboarding — Stage 0, near-zero friction)
+//  VIEW: JOIN  (portfolio-first onboarding)
 // ============================================================================
-function renderJoin() {
-  const view = $('#view');
-  view.appendChild(el(`
-    <div class="hero">
-      <div class="hero-inner">
-        <div class="eyebrow">For creators · always free</div>
-        <h1>Get on the map. <em>Get found.</em></h1>
-        <p>Four fields and you're discoverable to every brand searching your city. Models, photographers, gaffers, sound, hair & makeup, editors, producers — all of it. No fee, no cut of your bookings, ever.</p>
-        <div class="hero-stats">
-          <div><div class="num">${state.creators.length}+</div><div class="lbl">creators on the map</div></div>
-          <div><div class="num">${ALL_ROLES.length}</div><div class="lbl">creative roles</div></div>
-          <div><div class="num">${CITIES.length}</div><div class="lbl">cities live</div></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="strip">
-      <div class="wrap"><div class="steps">
-        <div class="step"><div class="n">01</div><h4>Drop your pin</h4><p>Name, role, city, one piece of work. That's the whole signup.</p></div>
-        <div class="step"><div class="n">02</div><h4>Get discovered</h4><p>Brands find you by role and distance — no cold DMs needed.</p></div>
-        <div class="step"><div class="n">03</div><h4>Get booked</h4><p>Briefs land in your city; you express interest and book direct.</p></div>
-        <div class="step"><div class="n">04</div><h4>Rent your gear</h4><p>Own kit? List it later and earn on idle days.</p></div>
+function renderJoin(){
+  $('#view').appendChild(el(`<div>
+    <div class="hero"><div class="aurora-bg"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
+      <div class="hero-inner"><div class="eyebrow">For creators · always free</div><h1>Build a folio that <em>gets you booked.</em></h1><p>Four fields and you're on the map. Then make it yours — gallery, credits, gear — a profile that feels like your portfolio, not a form. No fee, no cut of your bookings, ever.</p>
+        <div class="hero-stats"><div><div class="num"><em>${state.creators.length}+</em></div><div class="lbl">creators on the map</div></div><div><div class="num">${ALL_ROLES.length}</div><div class="lbl">creative roles</div></div><div><div class="num">${CITIES.length}</div><div class="lbl">cities live</div></div></div>
       </div></div>
-    </div>
-
-    <div class="wrap section-pad">
-      <div class="card form-card">
-        <div class="eyebrow">Create your profile</div>
-        <h3 style="font-size:24px;margin-bottom:6px">Join the Creative Centre</h3>
-        <p style="color:var(--muted);font-size:14px;margin-bottom:24px">Only the first four are required. Everything else you can add later.</p>
-        <form id="join-form">
-          <div class="form-row two">
-            <div><label class="label">Name *</label><input class="field" name="name" required placeholder="Your name" /></div>
-            <div><label class="label">City *</label><select class="field" name="city">${CITIES.map(c => `<option>${c}</option>`).join('')}</select></div>
-          </div>
-          <div class="form-row">
-            <label class="label">Your role(s) * — pick all that apply</label>
-            <div class="checkrow" id="role-picker">
-              ${ALL_ROLES.map(r => `<label class="check"><input type="checkbox" value="${esc(r)}" />${esc(r)}</label>`).join('')}
-            </div>
-          </div>
-          <div class="form-row two">
-            <div><label class="label">Area *</label><input class="field" name="area" required placeholder="Neighbourhood (approx — never your address)" /></div>
-            <div><label class="label">Day rate</label><input class="field" name="rate" placeholder="optional" /></div>
-          </div>
-          <div class="form-row two">
-            <div><label class="label">Years experience</label><input class="field" type="number" name="exp" min="0" placeholder="optional" /></div>
-            <div><label class="label">Gear you own</label><input class="field" name="gear" placeholder="comma separated · optional" /></div>
-          </div>
-          <div class="form-row"><label class="label">Short bio</label><textarea class="field" name="bio" placeholder="What you do and how you work — optional"></textarea></div>
-          <button class="btn btn-primary btn-block" type="submit">Put me on the map →</button>
-          <div class="hint" style="text-align:center;margin-top:10px">Free forever. We never take a cut of your bookings.</div>
-        </form>
-      </div>
-    </div>
-  `));
-
+    <div class="strip"><div class="wrap"><div class="steps">
+      <div class="step"><div class="n">01</div><h4>Drop your pin</h4><p>Name, role, city, one piece of work. That's the whole signup.</p></div>
+      <div class="step"><div class="n">02</div><h4>Curate your folio</h4><p>Add a gallery, rates and gear. Make the profile feel like you.</p></div>
+      <div class="step"><div class="n">03</div><h4>Get discovered</h4><p>Brands find you by role and distance — no cold DMs.</p></div>
+      <div class="step"><div class="n">04</div><h4>Get booked</h4><p>Briefs land in your city; book direct. We never take a cut.</p></div>
+    </div></div></div>
+    <div class="wrap section-pad"><div class="card form-card reveal"><div class="eyebrow">Create your profile</div><h3 style="font-size:26px;margin-bottom:6px">Join the Creative Centre</h3><p style="color:var(--muted);font-size:14px;margin-bottom:24px">Only the first four are required. Everything else builds your folio.</p>
+      <form id="join-form">
+        <div class="form-row two"><div><label class="label">Name *</label><input class="field" name="name" required placeholder="Your name"></div><div><label class="label">City *</label><select class="field" name="city">${CITIES.map(c=>`<option>${c}</option>`).join('')}</select></div></div>
+        <div class="form-row"><label class="label">Your role(s) * — pick all that apply</label><div class="checkrow" id="role-picker">${ALL_ROLES.map(r=>`<label class="check"><input type="checkbox" value="${esc(r)}">${esc(r)}</label>`).join('')}</div></div>
+        <div class="form-row two"><div><label class="label">Suburb *</label><input class="field" name="area" required placeholder="Approx suburb — never your address"></div><div><label class="label">Day rate</label><input class="field" name="rate" placeholder="optional"></div></div>
+        <div class="form-row two"><div><label class="label">Years experience</label><input class="field" type="number" name="exp" min="0" placeholder="optional"></div><div><label class="label">Gear you own</label><input class="field" name="gear" placeholder="comma separated · optional"></div></div>
+        <div class="form-row"><label class="label">Short bio</label><textarea class="field" name="bio" placeholder="What you do and how you work — optional"></textarea></div>
+        <button class="btn btn-primary btn-block" type="submit">Put me on the map →</button>
+        <div class="hint" style="text-align:center;margin-top:10px">Free forever. We never take a cut of your bookings.</div>
+      </form></div></div>
+  </div>`));
   $('#join-form').addEventListener('submit', e => {
-    e.preventDefault();
-    const f = new FormData(e.target);
-    const roles = $$('#role-picker input:checked').map(i => i.value);
-    if (!roles.length) { toast('Pick at least one role'); return; }
-    const creator = {
-      id: 'u' + Date.now(), name: f.get('name'), roles, city: f.get('city'),
-      area: f.get('area'), x: 20 + Math.random() * 60, y: 20 + Math.random() * 56,
-      rate: f.get('rate') || 'On request', exp: +f.get('exp') || 0, verified: false,
-      gear: (f.get('gear') || '').split(',').map(s => s.trim()).filter(Boolean),
-      bio: f.get('bio') || 'New to the Creative Centre.', tags: roles.slice(0, 3),
-    };
-    const mine = LS.get('creators', []); mine.push(creator); LS.set('creators', mine);
-    state.creators.push(creator);
-    state.city = creator.city;
+    e.preventDefault(); const f=new FormData(e.target);
+    const roles=$$('#role-picker input:checked').map(i=>i.value);
+    if(!roles.length){ toast('Pick at least one role'); return; }
+    const ll = near(f.get('city'), (Math.random()-.5)*.05, (Math.random()-.5)*.05);
+    const creator={ id:'u'+Date.now(), name:f.get('name'), roles, city:f.get('city'), area:f.get('area'), lat:ll.lat, lng:ll.lng, rate:f.get('rate')||'On request', exp:+f.get('exp')||0, verified:false, rating:5.0, jobs:0, top:false, gear:(f.get('gear')||'').split(',').map(s=>s.trim()).filter(Boolean), bio:f.get('bio')||'New to the Creative Centre.', tags:roles.slice(0,3) };
+    const mine=LS.get('creators',[]); mine.push(creator); LS.set('creators',mine); state.creators.push(creator); state.city=creator.city;
     toast(`You're on the ${creator.city} map, ${creator.name.split(' ')[0]}!`);
-    location.hash = '#discover';
+    location.hash='#creator?id='+creator.id;
   });
 }
 
 // ============================================================================
-//  BOOT
+//  GLOBAL EFFECTS — loader, mouse glow, scroll reveal, nav hide
 // ============================================================================
+function hideLoader(){ const l=$('#loader'); if(l) l.classList.add('done'); }
+window.addEventListener('load', () => setTimeout(hideLoader, 1500));
+setTimeout(hideLoader, 4200); // safety net
+
+// mouse-tracking aurora glow (rAF-smoothed)
+(function(){
+  const g=$('#glow'); if(!g) return;
+  let tx=innerWidth/2, ty=innerHeight*0.3, x=tx, y=ty;
+  addEventListener('mousemove', e => { tx=e.clientX; ty=e.clientY; }, { passive:true });
+  addEventListener('mouseleave', () => g.style.opacity='0');
+  addEventListener('mouseenter', () => g.style.opacity='');
+  (function loop(){ x+=(tx-x)*.12; y+=(ty-y)*.12; g.style.transform=`translate(${x}px,${y}px)`; requestAnimationFrame(loop); })();
+})();
+
+// scroll reveal
+let revealObserver;
+function initReveal(){
+  if(!('IntersectionObserver' in window)){ $$('.reveal').forEach(n=>n.classList.add('in')); return; }
+  revealObserver = revealObserver || new IntersectionObserver((entries)=>{ entries.forEach(en=>{ if(en.isIntersecting){ en.target.classList.add('in'); revealObserver.unobserve(en.target); } }); }, { threshold:.12, rootMargin:'0px 0px -8% 0px' });
+  $$('.reveal:not(.in)').forEach(n => revealObserver.observe(n));
+}
+
+// nav hide-on-scroll-down
+(function(){ let last=0; const nav=$('#nav');
+  addEventListener('scroll', () => { const y=scrollY; if(y>last && y>320) nav.classList.add('hide'); else nav.classList.remove('hide'); last=y; }, { passive:true });
+})();
+
+// ---------- boot ----------
 $('#scrim').addEventListener('click', closeProfile);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeProfile(); });
-$('#burger')?.addEventListener('click', () => $('.nav-links').classList.toggle('open'));
-$$('[data-nav]').forEach(a => a.addEventListener('click', () => $('.nav-links')?.classList.remove('open')));
+document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeProfile(); $('.lightbox')?.remove(); } });
+$('#burger')?.addEventListener('click', () => { const open=$('.nav-links').classList.toggle('open'); $('#burger').setAttribute('aria-expanded', open); });
 router();
 
   </script>

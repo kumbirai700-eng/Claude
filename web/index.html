@@ -3,18 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Creative Centre — find your crew</title>
-  <meta name="description" content="A map-based marketplace for finding creative crew near you — models, photographers, gaffers, sound, hair & makeup, editors and more." />
+  <title>The Creative Centre — Australia's creative crew, on one map</title>
+  <meta name="description" content="Australia's map-based marketplace for finding creative crew — models, photographers, gaffers, sound, hair & makeup, editors, producers and more. Curate a portfolio that gets you booked." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- ===================== LOADER (Australia outline draws itself) ===================== -->
+  <div class="loader" id="loader">
+    <svg class="loader-au" viewBox="0 0 1000 820" aria-label="Loading Australia">
+      <path id="au-path" d="M175,250 L250,182 L340,150 L430,120 L470,165 L505,150 L545,180 L585,120 L610,92 L650,150 L705,235 L740,300 L762,365 L788,430 L802,495 L792,560 L765,612 L700,648 L640,652 L585,632 L548,598 L520,632 L470,648 L380,650 L300,632 L232,602 L165,566 L128,492 L120,420 L138,356 L150,300 Z" />
+      <path id="au-tas" d="M712,690 L742,675 L760,705 L744,738 L712,728 Z" />
+      <circle id="au-tracer" r="7" />
+    </svg>
+    <div class="loader-word">THE CREATIVE CENTRE</div>
+    <div class="loader-sub">Mapping Australia's creative crew</div>
+  </div>
+
+  <!-- ===================== MOUSE-TRACKING AURORA GLOW ===================== -->
+  <div class="glow" id="glow" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
   <!-- ===================== NAV ===================== -->
-  <header class="nav">
+  <header class="nav" id="nav">
     <a class="brand" href="#home" data-nav>
-      <span class="brand-mark" aria-hidden="true">◐</span>
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 1000 820" class="brand-au"><path d="M175,250 L250,182 L340,150 L430,120 L470,165 L505,150 L545,180 L585,120 L610,92 L650,150 L705,235 L740,300 L762,365 L788,430 L802,495 L792,560 L765,612 L700,648 L640,652 L585,632 L548,598 L520,632 L470,648 L380,650 L300,632 L232,602 L165,566 L128,492 L120,420 L138,356 L150,300 Z"/></svg>
+      </span>
       <span class="brand-name">THE&nbsp;CREATIVE&nbsp;CENTRE</span>
     </a>
     <nav class="nav-links">
@@ -28,20 +46,16 @@
   </header>
 
   <!-- ===================== APP ROOT ===================== -->
-  <main id="view"><!-- views render here --></main>
+  <main id="view"></main>
 
-  <!-- ===================== PROFILE DRAWER ===================== -->
+  <!-- ===================== PROFILE DRAWER (quick view) ===================== -->
   <div class="drawer-scrim" id="scrim" hidden></div>
   <aside class="drawer" id="drawer" hidden aria-hidden="true"></aside>
 
   <!-- ===================== TOAST ===================== -->
   <div class="toast" id="toast" hidden></div>
 
-  <footer class="foot">
-    <span>THE CREATIVE CENTRE</span>
-    <span class="foot-dim">Free for creators, always. Built density-first.</span>
-  </footer>
-
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
   <script src="data.js"></script>
   <script src="app.js"></script>
 </body>
