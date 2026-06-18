@@ -12,7 +12,8 @@ const state = {
   jobs: [...LS.get('jobs', []), ...SEED_JOBS],
   gear: [...LS.get('gear', []), ...SEED_GEAR],
   shortlist: new Set(LS.get('shortlist', [])),
-  map: null, markers: [],
+  spaces: [...LS.get('spaces', []), ...SEED_SPACES],
+  map: null, markers: [], mode: 'people',
 };
 let ROUTE_PARAMS = new URLSearchParams();
 
@@ -29,6 +30,7 @@ function initials(n){ return n.split(/\s+/).slice(0,2).map(w=>w[0]).join('').toU
 function shotURL(id, n, w = 600, h = 700){ return `https://picsum.photos/seed/tcc-${id}-${n}/${w}/${h}`; }
 function coverURL(c){ return `https://picsum.photos/seed/tcc-${c.id}-cv/1200/520`; }
 function gearURL(g){ return `https://picsum.photos/seed/${g.img}/640/420`; }
+function spaceURL(s, n = 1, w = 800, h = 560){ return `https://picsum.photos/seed/${s.img}-${n}/${w}/${h}`; }
 const SHOT_H = [620,470,760,540,690,450,720,520,600];           // masonry variety
 const portfolioCount = c => Math.min(9, 5 + (c.jobs % 5));
 const IMGERR = "this.style.display='none';this.parentElement.style.background='var(--aurora)';this.parentElement.style.opacity='.5'";
@@ -49,13 +51,15 @@ function filtered(){
 // ============================================================================
 //  ROUTER
 // ============================================================================
-const routes = { home:renderHome, discover:renderDiscover, jobs:renderJobs, gear:renderGear, join:renderJoin, creator:renderCreator };
+const routes = { home:renderHome, discover:renderDiscover, jobs:renderJobs, gear:renderGear, join:renderJoin, creator:renderCreator, spaces:renderSpaces, space:renderSpace };
 function router(){
   const raw = location.hash.replace('#','') || 'home';
   const [route, qs] = raw.split('?');
   ROUTE_PARAMS = new URLSearchParams(qs || '');
 
   if (route === 'discover'){
+    if (ROUTE_PARAMS.get('mode') === 'spaces') state.mode = 'spaces';
+    else if (ROUTE_PARAMS.has('cat') || ROUTE_PARAMS.has('role')) state.mode = 'people';
     if (ROUTE_PARAMS.get('city')) state.city = ROUTE_PARAMS.get('city');
     if (ROUTE_PARAMS.has('q')) state.query = ROUTE_PARAMS.get('q');
     if (ROUTE_PARAMS.has('cat')){ const cat=CATEGORIES.find(c=>c.id===ROUTE_PARAMS.get('cat')); state.roles=new Set(cat?cat.roles:[]); }
@@ -92,6 +96,10 @@ const ICONS = {
   shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>',
   wallet:'<path d="M19 7H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/><path d="M16 13h.01M3 9V7a2 2 0 0 1 2-2h11"/>',
   layout:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
+  building:'<path d="M3 21h18M5 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16M15 21V9h3a1 1 0 0 1 1 1v11M8 7h2M8 11h2M8 15h2"/>',
+  users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+  ruler:'<path d="m16 3 5 5L8 21l-5-5L16 3Z"/><path d="m9 10 1 1M12 7l1 1M6 13l1 1"/>',
+  bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>',
 };
 const ic = (n, cls='icn') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]||''}</svg>`;
 const CAT_ICON = { talent:'user', camera:'camera', lighting:'bulb', sound:'wave', glam:'brush', direction:'clap', post:'film', design:'layers' };
@@ -103,6 +111,7 @@ function renderHome(){
   const total = state.creators.length;
   const tops = state.creators.filter(c => c.top).slice(0, 5);
   const featured = state.creators.filter(c => c.verified).sort((a,b)=>b.jobs-a.jobs).slice(0, 4);
+  const featSpaces = [...state.spaces].sort((a,b)=>b.rating-a.rating).slice(0, 3);
   const catCount = id => state.creators.filter(c => c.roles.some(r => ROLE_CATEGORY[r]===id)).length;
 
   $('#view').appendChild(el(`<div class="home">
@@ -185,6 +194,13 @@ function renderHome(){
       <div class="feat-grid">${featured.map((c,i)=>`<div class="feat-card reveal d${(i%4)+1}" data-id="${c.id}"><div class="feat-cover" style="background-image:url('${coverURL(c)}')"><div class="feat-av" style="${avatarBg(c.name)}">${initials(c.name)}</div></div><div class="feat-body"><div class="nm">${esc(c.name)} <span class="verified-ico">${ic('check')}</span></div><div class="rl">${esc(c.roles.join(' · '))}</div><div class="mt"><span>${esc(c.city)}</span><span class="rate">${esc(c.rate)}</span></div></div></div>`).join('')}</div>
     </div></section>
 
+    <!-- SPACES -->
+    <section class="sec"><div class="wrap">
+      <div class="sec-head reveal"><div class="eyebrow">Spaces · location hire</div><h2>And somewhere to shoot it.</h2><p>Studios, warehouses, rooftops and sound stages — on the same map as the crew and gear. Book talent, kit and location in one place.</p></div>
+      <div class="space-grid">${featSpaces.map(s=>spaceCard(s)).join('')}</div>
+      <div style="margin-top:28px"><a class="btn btn-ghost" href="#spaces">Browse all spaces ${ic('arrow')}</a></div>
+    </div></section>
+
     <!-- PRICING -->
     <section class="sec"><div class="wrap">
       <div class="sec-head center reveal"><div class="eyebrow">Pricing</div><h2>Free where it has to be. Paid where it makes sense.</h2><p>Creators are free forever — density is the product. Brands pay only when they hire. Gear earns as that market matures.</p></div>
@@ -227,7 +243,7 @@ function renderHome(){
     <footer class="foot-big">
       <div class="foot-cols">
         <div class="about"><a class="brand" href="#home" data-nav><span class="brand-mark"><svg viewBox="0 0 1000 820" class="brand-au"><path d="M175,250 L250,182 L340,150 L430,120 L470,165 L505,150 L545,180 L585,120 L610,92 L650,150 L705,235 L740,300 L762,365 L788,430 L802,495 L792,560 L765,612 L700,648 L640,652 L585,632 L548,598 L520,632 L470,648 L380,650 L300,632 L232,602 L165,566 L128,492 L120,420 L138,356 L150,300 Z"/></svg></span><span class="brand-name">THE&nbsp;CREATIVE&nbsp;CENTRE</span></a><p>Australia's map-based marketplace for finding creative crew. Free for creators, density-first by design.</p></div>
-        <div class="foot-col"><h5>Product</h5><a href="#discover?reset=1">Discover map</a><a href="#jobs">For brands</a><a href="#gear">Gear rental</a><a href="#join">For creators</a></div>
+        <div class="foot-col"><h5>Product</h5><a href="#discover?reset=1">Discover map</a><a href="#spaces">Spaces</a><a href="#jobs">For brands</a><a href="#gear">Gear rental</a><a href="#join">For creators</a></div>
         <div class="foot-col"><h5>Roles</h5><a href="#discover?role=Model">Models</a><a href="#discover?role=Photographer">Photographers</a><a href="#discover?role=Gaffer">Gaffers</a><a href="#discover?role=Sound%20Mixer">Sound</a></div>
         <div class="foot-col"><h5>Cities</h5>${CITIES.slice(0,6).map(c=>`<a href="#discover?city=${encodeURIComponent(c)}">${c}</a>`).join('')}</div>
       </div>
@@ -241,7 +257,10 @@ function renderHome(){
     const p=new URLSearchParams(); p.set('city',city); if(role) p.set('role',role);
     location.hash='#discover?'+p.toString();
   });
-  $$('.home [data-id]').forEach(n => n.addEventListener('click', () => location.hash='#creator?id='+n.dataset.id));
+  $$('.home [data-id]').forEach(n => n.addEventListener('click', () => {
+    const space = n.classList.contains('space-card');
+    location.hash = (space ? '#space?id=' : '#creator?id=') + n.dataset.id;
+  }));
   $$('.home [data-nav]').forEach(a => a.addEventListener('click', () => $('.nav-links')?.classList.remove('open')));
 }
 
@@ -251,7 +270,13 @@ function renderHome(){
 function renderDiscover(){
   $('#view').appendChild(el(`<section class="discover">
     <div class="panel">
-      <div class="panel-head"><h2>Find your crew</h2><div class="sub">Filter the full crew across ${esc(state.city)} and beyond.</div></div>
+      <div class="panel-head">
+        <div class="mode-toggle">
+          <button data-mode="people" class="${state.mode==='people'?'on':''}">${ic('users')} Crew</button>
+          <button data-mode="spaces" class="${state.mode==='spaces'?'on':''}">${ic('building')} Spaces</button>
+        </div>
+        <h2 id="disco-title"></h2><div class="sub" id="disco-sub"></div>
+      </div>
       <div class="filters">
         <div class="filter-group"><label class="label">City</label><select class="field" id="city-select">${CITIES.map(c=>`<option ${c===state.city?'selected':''}>${c}</option>`).join('')}</select></div>
         <div class="filter-group"><label class="label">Search</label><input class="field" id="search" placeholder="name, role, vibe…" value="${esc(state.query)}" /></div>
@@ -268,14 +293,41 @@ function renderDiscover(){
     </div>
   </section>`));
 
-  $('#cat-filters').innerHTML = CATEGORIES.map(cat => `<div style="margin-bottom:18px"><div class="cat-title">${cat.label}</div><div class="chips">${cat.roles.map(r=>`<button class="chip ${state.roles.has(r)?'on':''}" data-role="${esc(r)}">${esc(r)}</button>`).join('')}</div></div>`).join('');
-
+  $$('.mode-toggle button').forEach(b => b.addEventListener('click', () => {
+    if (state.mode === b.dataset.mode) return;
+    state.mode = b.dataset.mode; state.query = ''; state.roles = new Set();
+    $$('.mode-toggle button').forEach(x => x.classList.toggle('on', x===b));
+    buildFilters(); $('#search').value=''; refreshDiscover();
+  }));
   $('#city-select').addEventListener('change', e => { state.city=e.target.value; flyToCity(); refreshDiscover(); });
   $('#search').addEventListener('input', e => { state.query=e.target.value; refreshDiscover(); });
-  $$('#cat-filters .chip').forEach(ch => ch.addEventListener('click', () => { const r=ch.dataset.role; state.roles.has(r)?state.roles.delete(r):state.roles.add(r); ch.classList.toggle('on'); refreshDiscover(); }));
 
+  buildFilters();
   initMap();
   refreshDiscover();
+}
+
+function buildFilters(){
+  const wrap = $('#cat-filters');
+  $('#disco-title').textContent = state.mode==='people' ? 'Find your crew' : 'Find a space';
+  $('#disco-sub').textContent   = state.mode==='people' ? `The full crew across ${state.city} and beyond.` : `Studios, warehouses & venues in ${state.city}.`;
+  if (state.mode === 'people'){
+    wrap.innerHTML = CATEGORIES.map(cat => `<div style="margin-bottom:18px"><div class="cat-title">${cat.label}</div><div class="chips">${cat.roles.map(r=>`<button class="chip ${state.roles.has(r)?'on':''}" data-role="${esc(r)}">${esc(r)}</button>`).join('')}</div></div>`).join('');
+    $$('#cat-filters .chip').forEach(ch => ch.addEventListener('click', () => { const r=ch.dataset.role; state.roles.has(r)?state.roles.delete(r):state.roles.add(r); ch.classList.toggle('on'); refreshDiscover(); }));
+  } else {
+    wrap.innerHTML = `<div class="cat-title">Space type</div><div class="chips">${SPACE_TYPES.map(t=>`<button class="chip ${state.roles.has(t)?'on':''}" data-type="${esc(t)}">${esc(t)}</button>`).join('')}</div>`;
+    $$('#cat-filters .chip').forEach(ch => ch.addEventListener('click', () => { const t=ch.dataset.type; state.roles.has(t)?state.roles.delete(t):state.roles.add(t); ch.classList.toggle('on'); refreshDiscover(); }));
+  }
+}
+
+function filteredSpaces(){
+  const q = state.query.trim().toLowerCase();
+  return state.spaces.filter(s => {
+    if (s.city !== state.city) return false;
+    if (state.roles.size && !state.roles.has(s.type)) return false;
+    if (q){ const hay=(s.name+' '+s.type+' '+s.area+' '+s.amenities.join(' ')).toLowerCase(); if(!hay.includes(q)) return false; }
+    return true;
+  });
 }
 
 function initMap(){
@@ -301,22 +353,40 @@ function initMap(){
 function flyToCity(){ const c=CITY_COORDS[state.city]; if(state.map) state.map.flyTo({ center:[c.lng,c.lat], zoom:c.zoom, speed:1.2, curve:1.5 }); $('#map-city').textContent=state.city; }
 
 function refreshDiscover(){
-  const list = filtered();
-  $('#map-count').innerHTML = `<b>${list.length}</b>&nbsp;available`;
-  $('#results-title').textContent = state.roles.size ? [...state.roles].slice(0,2).join(', ')+(state.roles.size>2?'…':'') : 'Creators';
-  $('#results-sub').textContent = `${list.length} in ${state.city}`;
-  drawMarkers(list);
-  renderResults(list);
+  if (state.mode === 'spaces'){
+    const list = filteredSpaces();
+    $('#map-count').innerHTML = `<b>${list.length}</b>&nbsp;spaces`;
+    $('#results-title').textContent = 'Spaces';
+    $('#results-sub').textContent = `${list.length} in ${state.city}`;
+    drawSpaceMarkers(list);
+    renderSpaceResults(list);
+  } else {
+    const list = filtered();
+    $('#map-count').innerHTML = `<b>${list.length}</b>&nbsp;available`;
+    $('#results-title').textContent = state.roles.size ? [...state.roles].slice(0,2).join(', ')+(state.roles.size>2?'…':'') : 'Creators';
+    $('#results-sub').textContent = `${list.length} in ${state.city}`;
+    drawMarkers(list);
+    renderResults(list);
+  }
 }
 
+function clearMarkers(){ state.markers.forEach(m => m.remove()); state.markers = []; }
+
 function drawMarkers(list){
-  state.markers.forEach(m => m.remove()); state.markers = [];
-  if (!state.map) return;
+  clearMarkers(); if (!state.map) return;
   list.forEach(c => {
     const node = el(`<div class="mk ${state.selected===c.id?'sel':''}" data-id="${c.id}"><div class="mk-dot" style="${avatarBg(c.name)}"><span>${initials(c.name)}</span></div></div>`);
     node.addEventListener('click', () => openProfile(c.id));
-    const mk = new maplibregl.Marker({ element:node, anchor:'bottom' }).setLngLat([c.lng, c.lat]).addTo(state.map);
-    state.markers.push(mk);
+    state.markers.push(new maplibregl.Marker({ element:node, anchor:'bottom' }).setLngLat([c.lng, c.lat]).addTo(state.map));
+  });
+}
+function drawSpaceMarkers(list){
+  clearMarkers(); if (!state.map) return;
+  list.forEach(s => {
+    const node = el(`<div class="mk mk-space ${state.selected===s.id?'sel':''}" data-id="${s.id}"><div class="mk-dot">${ic('building','icn')}</div></div>`);
+    node.querySelector('.icn').style.cssText='width:18px;height:18px;color:var(--ink)';
+    node.addEventListener('click', () => location.hash='#space?id='+s.id);
+    state.markers.push(new maplibregl.Marker({ element:node, anchor:'center' }).setLngLat([s.lng, s.lat]).addTo(state.map));
   });
 }
 
@@ -325,6 +395,12 @@ function renderResults(list){
   if (!list.length){ box.innerHTML = `<div style="padding:30px 20px;color:var(--muted);font-size:13.5px">No matches in ${esc(state.city)}. Widen your filters, or <a href="#join" style="color:var(--green)">be the first here →</a></div>`; return; }
   box.innerHTML = list.map(c => `<div class="result ${state.selected===c.id?'sel':''}" data-id="${c.id}"><div class="avatar" style="${avatarBg(c.name)}">${initials(c.name)}</div><div class="result-body"><div class="result-name">${esc(c.name)} ${c.verified?`<span class="verified-ico">${ic('check')}</span>`:''}</div><div class="result-role">${esc(c.roles.join(' · '))}</div><div class="result-meta"><span>${esc(c.area)}</span><span class="rate">${esc(c.rate)}</span><span class="star">${ic('star')} ${c.rating.toFixed(1)}</span></div></div></div>`).join('');
   $$('#results .result').forEach(r => r.addEventListener('click', () => openProfile(r.dataset.id)));
+}
+function renderSpaceResults(list){
+  const box = $('#results');
+  if (!list.length){ box.innerHTML = `<div style="padding:30px 20px;color:var(--muted);font-size:13.5px">No spaces in ${esc(state.city)} yet. <a href="#join" style="color:var(--green)">List yours →</a></div>`; return; }
+  box.innerHTML = list.map(s => `<div class="result" data-id="${s.id}"><div class="avatar" style="background-image:url('${spaceURL(s)}')"></div><div class="result-body"><div class="result-name">${esc(s.name)}</div><div class="result-role">${esc(s.type)} · ${esc(s.area)}</div><div class="result-meta"><span class="rate">${esc(s.rate)}</span><span>${esc(s.cap)} ppl</span><span class="star">${ic('star')} ${s.rating.toFixed(1)}</span></div></div></div>`).join('');
+  $$('#results .result').forEach(r => r.addEventListener('click', () => location.hash='#space?id='+r.dataset.id));
 }
 
 // ============================================================================
@@ -411,6 +487,91 @@ function renderCreator(){
   $$('.gallery .shot').forEach(s => s.addEventListener('click', () => openLightbox(s.dataset.full)));
 }
 function openLightbox(src){ const lb=el(`<div class="lightbox"><img src="${src}" alt=""></div>`); lb.addEventListener('click', ()=>lb.remove()); document.body.appendChild(lb); }
+
+// ============================================================================
+//  VIEW: SPACES  (venue / location hire — browse)
+// ============================================================================
+function renderSpaces(){
+  $('#view').appendChild(el(`<div class="wrap">
+    <div class="page-head reveal"><div class="eyebrow">Spaces · location hire</div><h1>Shoot somewhere worth shooting.</h1><p>Studios, warehouses, galleries, rooftops and sound stages for hire — listed on the same map as the crew and kit. Book the talent, the gear and the location in one place. Hosts list free; we take a commission only when you book.</p></div>
+    <div class="section-pad">
+      <div class="grid" style="grid-template-columns:auto auto auto;justify-content:start;gap:12px;margin-bottom:28px">
+        <select class="field" id="sp-city" style="width:auto">${['All cities',...CITIES].map(c=>`<option ${c===state.city?'selected':''}>${c}</option>`).join('')}</select>
+        <select class="field" id="sp-type" style="width:auto"><option>All types</option>${SPACE_TYPES.map(t=>`<option>${t}</option>`).join('')}</select>
+        <a class="btn btn-ghost btn-sm" href="#join">List your space →</a>
+      </div>
+      <div id="sp-list" class="space-grid"></div>
+    </div></div>`));
+  const paint = () => {
+    const city=$('#sp-city').value, type=$('#sp-type').value;
+    const list=state.spaces.filter(s => (city==='All cities'||s.city===city) && (type==='All types'||s.type===type));
+    $('#sp-list').innerHTML = list.length ? list.map(s=>spaceCard(s)).join('') : `<div style="color:var(--muted)">No spaces match — try another city or type.</div>`;
+    $$('#sp-list .space-card').forEach(card => card.addEventListener('click', () => location.hash='#space?id='+card.dataset.id));
+    initReveal();
+  };
+  $('#sp-city').addEventListener('change', paint); $('#sp-type').addEventListener('change', paint); paint();
+}
+function spaceCard(s){
+  return `<div class="space-card reveal" data-id="${s.id}">
+    <div class="space-img" style="background-image:url('${spaceURL(s)}')">
+      <span class="type">${esc(s.type)}</span>
+      ${s.instant?`<span class="instant">${ic('bolt')} Instant</span>`:''}
+      <span class="star">${ic('star')} ${s.rating.toFixed(1)} <span style="color:var(--muted)">(${s.reviews})</span></span>
+    </div>
+    <div class="space-info">
+      <h3>${esc(s.name)}</h3>
+      <div class="loc">${esc(s.area)}, ${esc(s.city)}</div>
+      <div class="space-meta"><span>${ic('users')} ${esc(s.cap)} ppl</span><span>${ic('ruler')} ${esc(s.size)} m²</span></div>
+      <div class="space-foot"><span class="brandline">by ${esc(s.host)}</span><span class="rate">${esc(s.rate)} <small>/ hr</small></span></div>
+    </div></div>`;
+}
+
+// ============================================================================
+//  VIEW: SPACE  (detail page)
+// ============================================================================
+function renderSpace(){
+  const id = ROUTE_PARAMS.get('id');
+  const s = state.spaces.find(x => x.id===id);
+  if (!s){ location.hash='#spaces'; return; }
+  const shots = [2,3,4,5,6].map(n=>{ const h=SHOT_H[n%SHOT_H.length]; return `<div class="shot" data-full="${spaceURL(s,n,1100,Math.round(h*1.4))}"><img loading="lazy" src="${spaceURL(s,n,600,h)}" onerror="${IMGERR}" alt="${esc(s.name)}"></div>`; }).join('');
+
+  $('#view').appendChild(el(`<div class="profile">
+    <div class="pf-hero"><div class="pf-hero-bg" style="background-image:url('${spaceURL(s,1,1400,700)}')"></div>
+      <a class="pf-back btn btn-ghost btn-sm" href="#spaces">${ic('arrow','icn')} All spaces</a></div>
+    <div class="pf-head">
+      <div class="pf-id" style="padding-top:24px">
+        <h1>${esc(s.name)} ${s.instant?`<span class="pf-verified">${ic('bolt')} Instant book</span>`:''}</h1>
+        <div class="roles" style="font-family:var(--font)"><span class="sp-type-badge">${esc(s.type)}</span></div>
+        <div class="loc">${ic('pin','icn')} ${esc(s.area)}, ${esc(s.city)}</div>
+      </div>
+    </div>
+    <div class="pf-body">
+      <div class="pf-main">
+        <div class="pf-stats">
+          <div class="pf-stat"><div class="v"><em>${s.rating.toFixed(1)}</em>★</div><div class="k">${s.reviews} reviews</div></div>
+          <div class="pf-stat"><div class="v">${esc(s.cap)}</div><div class="k">Capacity</div></div>
+          <div class="pf-stat"><div class="v">${esc(s.size)}<small style="font-size:15px"> m²</small></div><div class="k">Floor area</div></div>
+          <div class="pf-stat"><div class="v">${esc(s.host)}</div><div class="k">Hosted by</div></div>
+        </div>
+        <div class="pf-section-t">Amenities</div>
+        <div class="amenities">${s.amenities.map(a=>`<span class="amenity">${ic('check')} ${esc(a)}</span>`).join('')}</div>
+        <div class="pf-section-t">The space</div>
+        <div class="gallery">${shots}</div>
+      </div>
+      <aside class="pf-rail">
+        <div class="rate">${esc(s.rate)} <small>/ hour</small></div>
+        <div class="avail"><span class="dot"></span> ${s.instant?'Instant book available':'Usually replies within a day'}</div>
+        <div class="cap-row"><div class="b"><div class="v">${esc(s.day)}</div><div class="k">Day rate</div></div><div class="b"><div class="v">${esc(s.cap)}</div><div class="k">Max people</div></div></div>
+        <button class="btn btn-primary btn-block" id="sp-book">Request to book</button>
+        <button class="btn btn-ghost btn-block" id="sp-tour" style="margin-top:10px">Ask about a recce</button>
+        <div class="note">Commission applies on confirmed bookings only — listing is free. Exact address shared after booking is confirmed.</div>
+      </aside>
+    </div>
+  </div>`));
+  $('#sp-book').addEventListener('click', () => toast(`Booking request sent to ${s.host}`));
+  $('#sp-tour').addEventListener('click', () => toast('Recce request sent — the host will be in touch'));
+  $$('.gallery .shot').forEach(sh => sh.addEventListener('click', () => openLightbox(sh.dataset.full)));
+}
 
 // ============================================================================
 //  VIEW: JOBS
