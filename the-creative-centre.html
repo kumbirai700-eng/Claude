@@ -7,8 +7,10 @@
   <meta name="description" content="Australia's map-based marketplace for finding creative crew — models, photographers, gaffers, sound, hair & makeup, editors, producers and more. Curate a portfolio that gets you booked." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+  <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=switzer@300,400,500,600,700&f[]=zodiak@400,500i,700&f[]=cabinet-grotesk@700,800,900&display=swap" />
   <link rel="stylesheet" href="https://fonts.cdnfonts.com/css/coolvetica" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Climate+Crisis&family=Space+Mono:wght@400;700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Climate+Crisis&family=Space+Mono:wght@400;700&display=swap" />
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
   <style>
 /* ============================================================================
@@ -976,6 +978,136 @@ body { line-height: 1.5; }
   .globe { width: 220px; height: 220px; } .g-prof { display: none; }
 }
 
+/* ============================================================================
+   ▓▓▓ ROUND 4 — type system, header, hero map/search, continents globe ▓▓▓
+   Re-declared last → wins the cascade.
+   ========================================================================= */
+:root {
+  --display:      'Cabinet Grotesk', 'Clash Display', Impact, sans-serif;  /* sub-display / titles */
+  --display-hero: 'Climate Crisis', 'Cabinet Grotesk', Impact, sans-serif; /* statement headlines */
+  --head:         'Clash Display', 'Cabinet Grotesk', sans-serif;          /* section sub-heads */
+  --font:         'Switzer', -apple-system, BlinkMacSystemFont, sans-serif; /* body */
+  --serif:        'Zodiak', Georgia, serif;                                /* editorial accents */
+  --mono:         'Space Mono', ui-monospace, Menlo, monospace;
+}
+body { font-family: var(--font); font-weight: 400; }
+h1,h2,h3,h4 { font-family: var(--display); }
+.home-hero h1, .hero h1, .sec-head h2, .page-head h1, .cta-band h2, .list-strip span, .cta-band-inner h2 { font-family: var(--display-hero); }
+.card h3, .dual-card h3, .feature-copy h2, .gear-info h3, .space-info h3, .modal-body h3, .blog-body h3, .price-card .who { font-family: var(--head); }
+.serif, .post-wrap p.body, .blog-body p { font-family: var(--serif); }
+.lede { font-family: var(--serif); font-style: italic; font-weight: 500; }
+.hero-grid { display: none !important; }   /* kill the AI grid */
+
+/* ---------- HEADER : mega-menu + motion ---------- */
+.nav { gap: 18px; padding: 0 28px; height: 64px; }
+.nav-links { gap: 2px; margin: 0 auto; height: 100%; }
+.nav-item { position: relative; height: 100%; display: flex; align-items: center; }
+.nav-item > a, .nav-links > a { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 100%; padding: 0 16px; font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); transition: color .2s; }
+.nav-item > a::after, .nav-links > a.nav-item::after { content: ''; position: absolute; left: 16px; right: 16px; bottom: 16px; height: 2px; background: var(--green); transform: scaleX(0); transform-origin: left; transition: transform .28s var(--ease); }
+.nav-item:hover > a, .nav-links > a:hover, .nav-links a.active { color: var(--text); }
+.nav-item:hover > a::after, .nav-links > a.nav-item:hover::after, .nav-links a.active::after { transform: scaleX(1); }
+.caret { width: 0; height: 0; border-left: 3.5px solid transparent; border-right: 3.5px solid transparent; border-top: 4px solid currentColor; transition: transform .25s var(--ease); opacity: .6; }
+.nav-item.has-menu:hover .caret { transform: rotate(180deg); }
+.nav-menu { position: absolute; top: 100%; left: 8px; min-width: 248px; background: var(--ink); border: 2px solid var(--green); box-shadow: 8px 8px 0 #000; padding: 6px; opacity: 0; visibility: hidden; transform: translateY(10px); transition: opacity .22s var(--ease), transform .22s var(--ease); z-index: 50; }
+.nav-item.has-menu:hover .nav-menu { opacity: 1; visibility: visible; transform: translateY(0); }
+.nav-menu a { display: block; padding: 12px 14px; border-bottom: 1px solid var(--line); transition: background .15s, padding .2s; }
+.nav-menu a:hover { background: var(--surface2); padding-left: 20px; }
+.nav-menu a b { display: block; font-family: var(--head); font-size: 15px; color: var(--text); text-transform: none; letter-spacing: 0; }
+.nav-menu a:hover b { color: var(--green); }
+.nav-menu a span { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; color: var(--muted2); }
+.nav-actions { display: flex; align-items: center; gap: 8px; }
+
+/* ---------- HERO : two-col, live map + animated search ---------- */
+.home-hero-inner { grid-template-columns: 1.04fr .96fr; gap: 48px; align-items: center; padding: 76px 30px 80px; }
+.hero-copy { align-self: center; }
+.home-hero h1 { font-size: clamp(46px,6.6vw,86px); }
+.lede { max-width: 46ch; }
+.hsearch { position: relative; display: flex; align-items: center; gap: 0; margin-top: 30px; background: var(--ink); border: 2px solid var(--green); box-shadow: var(--shadow); max-width: 560px; transition: box-shadow .2s var(--ease), transform .2s var(--ease); }
+.hsearch:focus-within { box-shadow: 8px 8px 0 var(--green); transform: translate(-2px,-2px); }
+.hsearch::before { content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; background: linear-gradient(90deg, transparent, var(--green), transparent); background-size: 200% 100%; animation: sweep 2.6s linear infinite; opacity: 0; }
+.hsearch:focus-within::before { opacity: 1; }
+@keyframes sweep { to { background-position: 200% 0; } }
+.hsearch-ic { display: grid; place-items: center; width: 52px; height: 58px; color: var(--green); flex-shrink: 0; }
+.hsearch input { flex: 1; min-width: 0; background: none; border: none; height: 58px; color: var(--text); font-family: var(--mono); font-size: 15px; }
+.hsearch input:focus { outline: none; }
+.hsearch input::placeholder { color: var(--muted); }
+.hsearch-go { flex-shrink: 0; height: 58px; padding: 0 24px; background: var(--green); color: var(--ink); font-family: var(--mono); font-weight: 700; text-transform: uppercase; display: inline-flex; align-items: center; gap: 8px; transition: gap .2s; }
+.hsearch-go:hover { gap: 13px; }
+.hsearch-go .icn { width: 16px; height: 16px; }
+.hsearch-sug { position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: var(--ink); border: 2px solid var(--green); box-shadow: var(--shadow); z-index: 40; }
+.hsearch-sug button { display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; padding: 13px 16px; border-bottom: 1px solid var(--line); color: var(--text); }
+.hsearch-sug button:hover { background: var(--surface2); }
+.hsearch-sug button .icn { color: var(--green); width: 16px; flex-shrink: 0; }
+.hsearch-sug button b { font-family: var(--head); font-size: 14px; }
+.hsearch-sug button span { margin-left: auto; font-family: var(--mono); font-size: 10px; text-transform: uppercase; color: var(--muted2); }
+.sug-none { padding: 14px 16px; color: var(--muted); font-size: 13px; font-family: var(--mono); }
+
+.hero-map-card { position: relative; height: 460px; border: 2px solid var(--green); box-shadow: var(--shadow); overflow: hidden; }
+#hero-map { position: absolute; inset: 0; }
+#hero-map canvas { filter: saturate(1.05); }
+.hmc-bar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; background: linear-gradient(transparent, rgba(5,6,5,.92)); font-family: var(--mono); font-size: 11px; text-transform: uppercase; z-index: 5; pointer-events: none; }
+.hmc-live { color: var(--green); display: flex; align-items: center; gap: 7px; }
+.hmc-live .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); animation: pulse 2s ease infinite; }
+.hmc-cnt { color: var(--muted); }
+.hmc-fallback { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-family: var(--mono); font-size: 12px; gap: 8px; }
+.hmk { width: 30px; height: 30px; display: grid; place-items: center; font-family: var(--display); font-size: 11px; color: var(--ink); border: 2px solid var(--ink); box-shadow: 0 3px 8px rgba(0,0,0,.6); cursor: pointer; transition: transform .15s; }
+.hmk:hover { transform: scale(1.18); z-index: 5; }
+
+/* ---------- VERIFIED SEAL ---------- */
+.verified-ico { display: inline-flex; width: 16px; height: 16px; vertical-align: -.15em; }
+.vbadge { width: 100%; height: 100%; }
+.pf-verified .vbadge { width: 16px; height: 16px; }
+.seal { fill: var(--green); }
+.seal-tick { fill: none; stroke: var(--ink); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.feature-list .vbadge { width: 18px; height: 18px; flex-shrink: 0; }
+
+/* ---------- CONTINENTS GLOBE ---------- */
+.globe-wrap { position: relative; display: grid; place-items: center; cursor: grab; overflow: visible; }
+.globe-wrap.dragging { cursor: grabbing; }
+.globe { position: relative; width: 320px; height: 320px; border-radius: 50%; overflow: hidden; border: 1.5px solid rgba(216,255,62,.4); background: radial-gradient(circle at 38% 32%, rgba(216,255,62,.07), rgba(5,8,5,.25) 60%, rgba(3,5,3,.5)); box-shadow: 0 0 60px rgba(216,255,62,.14), inset 0 0 40px rgba(0,0,0,.5); }
+.g-tex { position: absolute; inset: 0; display: flex; width: max-content; height: 100%; will-change: transform; }
+.g-world { flex: 0 0 auto; width: 320px; height: 100%; }
+.g-land path, .g-land circle { fill: rgba(216,255,62,.42); }
+.g-grat { position: absolute; inset: 0; pointer-events: none; }
+.g-grat .gm { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(216,255,62,.1); }
+.g-grat .gl { position: absolute; left: 0; right: 0; height: 1px; background: rgba(216,255,62,.08); }
+.g-shade { position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle at 50% 50%, transparent 52%, rgba(3,5,3,.5) 100%); pointer-events: none; }
+.g-rim { position: absolute; inset: 0; border-radius: 50%; box-shadow: inset 6px 8px 22px rgba(216,255,62,.12), inset -10px -12px 30px rgba(0,0,0,.6); pointer-events: none; }
+.globe-hint { position: absolute; bottom: -2px; left: 50%; transform: translateX(-50%); font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted2); display: flex; gap: 6px; align-items: center; }
+.globe-hint .icn { width: 13px; height: 13px; color: var(--green); }
+.g-prof { position: absolute; display: flex; align-items: center; gap: 8px; background: rgba(5,8,5,.9); border: 2px solid var(--line2); padding: 5px 11px 5px 5px; backdrop-filter: blur(6px); animation: gfade 8s ease-in-out infinite; z-index: 3; }
+.g-prof.p0 { top: 6%; left: 0; animation-delay: 0s; }
+.g-prof.p1 { top: 18%; right: -4%; animation-delay: -2s; }
+.g-prof.p2 { bottom: 20%; left: -4%; animation-delay: -4s; }
+.g-prof.p3 { bottom: 4%; right: 4%; animation-delay: -6s; }
+.g-prof-av { width: 26px; height: 26px; display: grid; place-items: center; font-family: var(--display); font-size: 12px; color: var(--ink); }
+.g-prof-t b { display: block; font-size: 12px; }
+.g-prof-t span { font-family: var(--mono); font-size: 9px; text-transform: uppercase; color: var(--green); }
+@keyframes gfade { 0%,100%{opacity:0; transform: translateY(8px) scale(.96)} 14%,80%{opacity:1; transform: none} }
+
+/* ---------- ORBIT : web spokes + floating ---------- */
+.orbit-ring .spoke { position: absolute; left: 50%; top: 50%; width: var(--R); height: 0; border-top: 1px dashed rgba(216,255,62,.28); transform-origin: 0 0; }
+.on-bob.float { animation: bob 5s ease-in-out infinite; }
+@keyframes bob { 0%,100%{transform: translateY(0)} 50%{transform: translateY(-9px)} }
+
+/* ---------- alignment / cleanup ---------- */
+.statboard, .search-slab { display: none; }   /* retired elements */
+.sec-head h2 { letter-spacing: 0; }
+
+@media (max-width: 1080px){
+  .nav-links { position: static; margin: 0 auto; }
+  .home-hero-inner { grid-template-columns: 1fr; gap: 36px; }
+  .hero-map-card { height: 360px; }
+}
+@media (max-width: 860px){
+  .nav-links { display: none; }
+  .nav-links.open { display: flex; flex-direction: column; position: absolute; top: 64px; right: 12px; left: 12px; background: var(--ink); border: 2px solid var(--green); box-shadow: var(--shadow); padding: 8px; height: auto; }
+  .nav-links.open .nav-item { height: auto; width: 100%; }
+  .nav-links.open .nav-item > a { height: 48px; width: 100%; }
+  .nav-links.open .nav-menu { position: static; opacity: 1; visibility: visible; transform: none; border: none; box-shadow: none; border-top: 1px solid var(--line); }
+  .nav-actions { margin-left: auto; }
+}
+
 </style>
 </head>
 <body>
@@ -1001,17 +1133,35 @@ body { line-height: 1.5; }
       </span>
       <span class="brand-name">THE&nbsp;CREATIVE&nbsp;CENTRE</span>
     </a>
-    <nav class="nav-links">
-      <a href="#discover" data-nav data-route="discover">Discover</a>
-      <a href="#spaces"   data-nav data-route="spaces">Spaces</a>
-      <a href="#jobs"     data-nav data-route="jobs">For brands</a>
-      <a href="#join"     data-nav data-route="join">For creators</a>
-      <a href="#blog"     data-nav data-route="blog">Blog</a>
+
+    <nav class="nav-links" id="nav-main">
+      <div class="nav-item has-menu">
+        <a href="#discover" data-nav data-route="discover">Discover<i class="caret"></i></a>
+        <div class="nav-menu">
+          <a href="#discover?reset=1" data-nav><b>Crew</b><span>People near you</span></a>
+          <a href="#discover?mode=spaces" data-nav><b>Spaces</b><span>Studios &amp; locations</span></a>
+          <a href="#discover?mode=jobs" data-nav><b>Jobs</b><span>Open briefs on the map</span></a>
+        </div>
+      </div>
+      <a class="nav-item" href="#spaces" data-nav data-route="spaces">Spaces</a>
+      <a class="nav-item" href="#jobs" data-nav data-route="jobs">For brands</a>
+      <div class="nav-item has-menu">
+        <a href="#join" data-nav data-route="join">For creators<i class="caret"></i></a>
+        <div class="nav-menu">
+          <a href="#join" data-nav><b>Join free</b><span>Build your folio</span></a>
+          <a href="#gear" data-nav><b>Rent your gear</b><span>Earn on idle days</span></a>
+          <a href="#join" data-nav><b>List a space</b><span>Host your studio</span></a>
+        </div>
+      </div>
+      <a class="nav-item" href="#blog" data-nav data-route="blog">Scene</a>
+    </nav>
+
+    <div class="nav-actions">
       <select class="cur-select" id="cur-select" aria-label="Currency">
         <option>AUD</option><option>USD</option><option>NZD</option><option>GBP</option><option>EUR</option>
       </select>
       <span class="nav-cta-area" id="nav-cta-area"></span>
-    </nav>
+    </div>
     <button class="nav-burger" id="burger" aria-label="Open menu" aria-expanded="false">☰</button>
   </header>
 
@@ -1214,7 +1364,7 @@ const state = {
   gear: [...LS.get('gear', []), ...SEED_GEAR],
   shortlist: new Set(LS.get('shortlist', [])),
   spaces: [...LS.get('spaces', []), ...SEED_SPACES],
-  map: null, markers: [], mode: 'people',
+  map: null, markers: [], mode: 'people', heroMap: null,
   user: LS.get('user', null),
   following: new Set(LS.get('following', [])),
   cur: LS.get('cur', 'AUD'),
@@ -1282,8 +1432,9 @@ function router(){
     else if (ROUTE_PARAMS.has('role')) state.roles=new Set([ROUTE_PARAMS.get('role')]);
     else if (ROUTE_PARAMS.has('reset')){ state.roles=new Set(); state.query=''; }
   }
-  // tear down a live map when leaving discover
+  // tear down live maps when leaving their views
   if (route !== 'discover' && state.map){ try{ state.map.remove(); }catch{} state.map=null; state.markers=[]; }
+  if (route !== 'home' && state.heroMap){ try{ state.heroMap.remove(); }catch{} state.heroMap=null; }
 
   const fn = routes[route] || renderHome;
   $$('.nav-links a').forEach(a => a.classList.toggle('active', a.dataset.route === route));
@@ -1318,7 +1469,20 @@ const ICONS = {
   bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>',
 };
 const ic = (n, cls='icn') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]||''}</svg>`;
-const CAT_ICON = { talent:'user', camera:'camera', lighting:'bulb', sound:'wave', glam:'brush', direction:'clap', post:'film', design:'layers' };
+const CAT_ICON = { talent:'user', camera:'camera', lighting:'bulb', sound:'wave', glam:'brush', direction:'clap', post:'film', design:'layers', music:'wave' };
+
+// unique scalloped "seal" verified badge (replaces the generic tick)
+const VBADGE = `<svg class="vbadge" viewBox="0 0 24 24" aria-label="Verified"><path class="seal" d="M12 1l2.4 1.6 2.8-.5 1.3 2.5 2.5 1.3-.5 2.8L23 12l-1.6 2.4.5 2.8-2.5 1.3-1.3 2.5-2.8-.5L12 23l-2.4-1.6-2.8.5-1.3-2.5-2.5-1.3.5-2.8L1 12l1.6-2.4-.5-2.8 2.5-1.3 1.3-2.5 2.8.5z"/><path class="seal-tick" d="M8.4 12.3l2.4 2.3 4.8-5"/></svg>`;
+
+// simplified equirectangular continents for the spinning globe (transparent)
+const WORLD_SVG = `<svg class="g-world" viewBox="0 0 360 180" preserveAspectRatio="none"><g class="g-land">
+<path d="M38,44 C44,34 70,30 82,42 C92,52 86,62 90,72 C78,82 70,96 60,92 C50,88 46,72 40,66 C32,58 32,52 38,44Z"/>
+<path d="M78,98 C90,92 98,106 94,124 C90,142 82,156 76,148 C70,134 70,112 78,98Z"/>
+<path d="M176,44 C186,40 196,48 190,58 C198,70 206,84 202,104 C198,124 190,138 184,132 C176,120 174,96 178,76 C170,66 168,52 176,44Z"/>
+<path d="M206,40 C236,32 280,40 298,56 C308,68 290,80 262,78 C236,76 210,66 206,52Z"/>
+<path d="M150,42 C160,38 170,46 164,56 C156,62 146,54 150,42Z"/>
+<path d="M292,118 C308,112 322,122 318,136 C312,148 296,150 288,140 C282,130 284,122 292,118Z"/>
+<circle cx="302" cy="92" r="3.4"/><circle cx="314" cy="101" r="2.6"/><circle cx="287" cy="105" r="2.6"/><circle cx="332" cy="150" r="3.2"/><circle cx="120" cy="150" r="2.4"/></g></svg>`;
 
 // ============================================================================
 //  VIEW: HOME
@@ -1338,61 +1502,31 @@ function renderHome(){
     <!-- HERO -->
     <section class="home-hero">
       <div class="aurora-bg"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
-      <div class="hero-grid"></div>
       <div class="home-hero-inner">
         <div class="hero-copy">
           <span class="badge"><span class="dot"></span> ${CITIES.length} cities · free for creators · no cut, ever</span>
           <h1>The crew, the kit,<br>the spot. <em>One map.</em></h1>
-          <p class="lede">Models, photographers, gaffers, sound, hair &amp; makeup, editors — plus gear and locations. Every part of a shoot, plotted across Australia. Built for the people who actually make the work.</p>
-          <div class="hero-actions">
-            <a class="btn btn-primary" href="#discover?reset=1">Open the map ${ic('arrow')}</a>
-            <a class="btn btn-ghost" href="#join">Join free</a>
+          <p class="lede">Every part of a shoot — crew, gear and locations — plotted across Australia. Built for the people who actually make the work.</p>
+          <form class="hsearch" id="hero-search" role="search">
+            <span class="hsearch-ic">${ic('search')}</span>
+            <input id="hs-q" autocomplete="off" aria-label="Search the scene" />
+            <button class="hsearch-go" type="submit">GO ${ic('arrow')}</button>
+            <div class="hsearch-sug" id="hs-sug" hidden></div>
+          </form>
+          <div class="pop-row"><span class="lbl">Try</span>
+            <a class="pop-tag" href="#discover?role=Model">Models</a>
+            <a class="pop-tag" href="#discover?role=Photographer">Photographers</a>
+            <a class="pop-tag" href="#discover?role=Gaffer">Gaffers</a>
+            <a class="pop-tag" href="#discover?mode=spaces">Studios</a>
           </div>
         </div>
 
-        <!-- BY THE NUMBERS — graphic stat board -->
-        <aside class="statboard">
-          <div class="sb-head"><span class="dot"></span> LIVE — THE SCENE BY NUMBERS</div>
-          <div class="sb-grid">
-            <div class="sb-cell lead">
-              <div class="sb-graphic"><div class="sb-bars">${bars(2)}</div></div>
-              <div class="sb-num">${total}<span>+</span></div>
-              <div class="sb-lbl">Creators on the map</div>
-              <div class="sb-delta up">▲ +6 this week</div>
-            </div>
-            <div class="sb-cell">
-              <div class="sb-graphic"><div class="sb-pingrid">${dots(15, state.spaces.length)}</div></div>
-              <div class="sb-num">${state.spaces.length}</div>
-              <div class="sb-lbl">Spaces for hire</div>
-              <div class="sb-delta up">▲ +2 this week</div>
-            </div>
-            <div class="sb-cell">
-              <div class="sb-graphic"><div class="sb-segbar">${CATEGORIES.map((c,i)=>`<i style="flex:${c.roles.length};opacity:${0.45+i*0.07}"></i>`).join('')}</div></div>
-              <div class="sb-num">${ALL_ROLES.length}</div>
-              <div class="sb-lbl">Roles, ${CATEGORIES.length} crafts</div>
-              <div class="sb-delta">crew · gear · spaces</div>
-            </div>
-            <div class="sb-cell">
-              <div class="sb-graphic">${ringSVG(100)}</div>
-              <div class="sb-num">$0</div>
-              <div class="sb-lbl">Our cut of bookings</div>
-              <div class="sb-delta up">you keep 100%</div>
-            </div>
-          </div>
-          <div class="sb-ticker"><div class="sb-ticker-track" id="sb-ticker"></div></div>
-        </aside>
+        <div class="hero-map-card">
+          <div id="hero-map"></div>
+          <div class="hmc-bar"><span class="hmc-live"><span class="dot"></span> LIVE MAP</span><span class="hmc-cnt">${total} creators · ${state.spaces.length} spaces</span></div>
+        </div>
       </div>
     </section>
-
-    <!-- SEARCH SLAB (striking, blocky) -->
-    <section class="search-slab"><div class="wrap">
-      <div class="slab-tab">FIND</div>
-      <form class="searchbar" id="hero-search" role="search">
-        <div class="seg"><span class="seg-lbl">Who</span>${ic('search')}<select id="hs-role" aria-label="Role"><option value="">Any role</option>${CATEGORIES.map(c=>`<optgroup label="${c.label}">${c.roles.map(r=>`<option>${esc(r)}</option>`).join('')}</optgroup>`).join('')}</select></div>
-        <div class="seg"><span class="seg-lbl">Where</span>${ic('pin')}<select id="hs-city" aria-label="City">${CITIES.map(c=>`<option ${c===state.city?'selected':''}>${c}</option>`).join('')}</select></div>
-        <button class="btn btn-primary" type="submit">GO ${ic('arrow')}</button>
-      </form>
-    </div></section>
 
     <!-- MARQUEE TAPE -->
     <div class="marquee"><div class="marquee-track">${[1,2].map(()=>`<span>${ALL_ROLES.slice(0,16).join('</span><span>')}</span>`).join('')}</div></div>
@@ -1414,20 +1548,20 @@ function renderHome(){
       <div class="cat-grid">${CATEGORIES.map((c,i)=>`<a class="cat-card reveal d${(i%4)+1}" href="#discover?cat=${c.id}"><div class="cat-ico">${ic(CAT_ICON[c.id])}</div><h3>${c.label}</h3><div class="roles">${c.roles.slice(0,4).join(' · ')}${c.roles.length>4?' …':''}</div><div class="cnt">View near you →</div></a>`).join('')}</div>
     </div></section>
 
-    <!-- MAP FEATURE -->
+    <!-- GLOBAL SCENE — continents globe -->
     <section class="sec"><div class="wrap"><div class="feature">
-      <div class="feature-copy reveal"><div class="kicker">The discovery map</div><h2>See who's actually near you</h2>
-        <p>An accurate, live map of Australia — one part of the platform, not the whole thing. Filter by role and distance, preview portfolios from the pin, shortlist before you message.</p>
-        <ul class="feature-list"><li>${ic('check')} Real geography, smooth zoom, talent plotted by city</li><li>${ic('check')} Approximate location only — exact addresses never shown</li><li>${ic('check')} Never a dead empty map — coverage widens automatically</li></ul>
+      <div class="feature-copy reveal"><div class="kicker">Local map · global scene</div><h2>The map is local. The scene is global.</h2>
+        <p>Discovery happens on an accurate map of your city — but the community reaches across the world. Connect with creatives anywhere, then bring the work home.</p>
+        <ul class="feature-list"><li>${VBADGE} Approximate location only — exact addresses never shown</li><li>${VBADGE} Connect with crew across cities and continents</li><li>${VBADGE} Never a dead empty map — coverage widens automatically</li></ul>
         <a class="btn btn-primary" href="#discover?reset=1">Open the map ${ic('arrow')}</a>
       </div>
       <div class="feature-visual globe-wrap reveal d2" id="globe-wrap">
-        <div class="globe-scene"><div class="globe" id="globe">
-          ${Array.from({length:9},(_,k)=>`<div class="g-ring" style="transform:rotateY(${k*20}deg)"></div>`).join('')}
-          <div class="g-lat" style="top:30%"></div><div class="g-lat" style="top:50%"></div><div class="g-lat" style="top:70%"></div>
-          <div class="g-fill"></div>
-        </div></div>
-        ${INTL.map((p,i)=>`<div class="g-prof" style="--gi:${i};--gn:${INTL.length}"><div class="g-prof-av" style="${avatarBg(p[0]+p[1])}">${p[0][0]}</div><div class="g-prof-t"><b>${esc(p[0])}</b><span>${esc(p[2])} · ${esc(p[1])}</span></div></div>`).join('')}
+        <div class="globe" id="globe">
+          <div class="g-tex" id="g-tex">${WORLD_SVG}${WORLD_SVG}</div>
+          <div class="g-grat">${Array.from({length:7},(_,k)=>`<i class="gm" style="left:${(k+1)*12.5}%"></i>`).join('')}<i class="gl" style="top:32%"></i><i class="gl" style="top:50%"></i><i class="gl" style="top:68%"></i></div>
+          <div class="g-shade"></div><div class="g-rim"></div>
+        </div>
+        ${INTL.slice(0,4).map((p,i)=>`<div class="g-prof p${i}"><div class="g-prof-av" style="${avatarBg(p[0]+p[1])}">${p[0][0]}</div><div class="g-prof-t"><b>${esc(p[0])}</b><span>${esc(p[2])} · ${esc(p[1])}</span></div></div>`).join('')}
         <div class="globe-hint">${ic('arrow','icn')} drag to spin</div>
       </div>
     </div></div></section>
@@ -1451,7 +1585,8 @@ function renderHome(){
       <div class="orbit reveal">
         <div class="orbit-center"><div class="oc-mark">◐</div><div class="oc-t">THE<br>SCENE</div></div>
         <div class="orbit-ring" id="orbit-ring">
-          ${orbitList.map((c,i)=>{ const a=Math.round(i*360/orbitList.length); return `<div class="orbit-node" data-id="${c.id}" style="transform:rotate(${a}deg) translate(var(--R)) rotate(${-a}deg)"><div class="on-spin"><div class="on-av" style="${avatarBg(c.name)};background-image:url('${coverURL(c)}')"></div><div class="on-meta"><b>${esc(c.name.split(' ')[0])}</b><span>${esc(c.roles[0])}</span></div></div></div>`; }).join('')}
+          ${orbitList.map((c,i)=>{ const a=Math.round(i*360/orbitList.length); return `<i class="spoke" style="transform:rotate(${a}deg)"></i>`; }).join('')}
+          ${orbitList.map((c,i)=>{ const a=Math.round(i*360/orbitList.length); return `<div class="orbit-node" data-id="${c.id}" style="transform:rotate(${a}deg) translate(var(--R)) rotate(${-a}deg)"><div class="on-spin"><div class="on-bob float" style="animation-delay:${i*-0.8}s"><div class="on-av" style="${avatarBg(c.name)};background-image:url('${coverURL(c)}')"></div><div class="on-meta"><b>${esc(c.name.split(' ')[0])}</b><span>${esc(c.roles[0])}</span></div></div></div></div>`; }).join('')}
         </div>
       </div>
     </div></section>
@@ -1542,20 +1677,8 @@ function renderHome(){
     </footer>
   </div>`));
 
-  $('#hero-search').addEventListener('submit', e => {
-    e.preventDefault();
-    const role=$('#hs-role').value, city=$('#hs-city').value;
-    const p=new URLSearchParams(); p.set('city',city); if(role) p.set('role',role);
-    location.hash='#discover?'+p.toString();
-  });
-  // live activity ticker on the stat board
-  const tk = $('#sb-ticker');
-  if (tk){
-    const verbs = ['just joined in','booked a shoot in','connected in','listed a space in','posted a brief in'];
-    const sample = state.creators.slice().sort(()=>Math.random()-0.5).slice(0, 8);
-    const items = sample.map(c => `<span class="tk-item"><b style="${avatarBg(c.name)}">${initials(c.name)}</b>${esc(c.name.split(' ')[0])} ${verbs[hashHue(c.id)%verbs.length]} ${esc(c.city)}</span>`).join('');
-    tk.innerHTML = items + items;
-  }
+  initHeroSearch();
+  initHeroMap();
   $$('.home [data-id]').forEach(n => n.addEventListener('click', () => {
     const space = n.classList.contains('space-card');
     location.hash = (space ? '#space?id=' : '#creator?id=') + n.dataset.id;
@@ -1564,17 +1687,80 @@ function renderHome(){
   initGlobe();
 }
 
-// interactive drag-to-spin globe
+// landing search — typewriter placeholder + live suggestions + smart parse
+function initHeroSearch(){
+  const form = $('#hero-search'), inp = $('#hs-q'), sug = $('#hs-sug'); if(!form) return;
+  const ex = ['photographer in Sydney','recording studio in Brisbane','gaffer in Melbourne','makeup artist in Perth','sound mixer in Gold Coast','warehouse in Melbourne'];
+  let ei=0, ci=0, del=false, typing=true;
+  (function type(){
+    if(!document.body.contains(inp)) return;
+    if(!typing){ return; }
+    const t = ex[ei];
+    ci += del ? -1 : 1;
+    inp.setAttribute('placeholder', 'Try “'+t.slice(0,ci)+'”');
+    if(!del && ci>=t.length){ del=true; setTimeout(type, 1600); return; }
+    if(del && ci<=0){ del=false; ei=(ei+1)%ex.length; }
+    setTimeout(type, del?34:62);
+  })();
+  inp.addEventListener('focus', ()=>{ typing=false; inp.setAttribute('placeholder','Search crew, spaces, roles, cities…'); render(inp.value); });
+  inp.addEventListener('blur', ()=>{ setTimeout(()=>{ sug.hidden=true; }, 160); if(!inp.value){ typing=true; type(); } });
+  inp.addEventListener('input', ()=>render(inp.value));
+  function render(q){
+    const ql=q.trim().toLowerCase();
+    const roles = ALL_ROLES.filter(r=>r.toLowerCase().includes(ql)).slice(0,4);
+    const cities = CITIES.filter(c=>c.toLowerCase().includes(ql)).slice(0,3);
+    const out=[];
+    if(ql){ roles.forEach(r=>out.push(`<button data-go="#discover?role=${encodeURIComponent(r)}">${ic('users','icn')} <b>${esc(r)}</b><span>crew</span></button>`));
+            cities.forEach(c=>out.push(`<button data-go="#discover?city=${encodeURIComponent(c)}">${ic('pin','icn')} <b>${esc(c)}</b><span>city</span></button>`)); }
+    else { ['Model','Photographer','Gaffer','Recording Engineer'].forEach(r=>out.push(`<button data-go="#discover?role=${encodeURIComponent(r)}">${ic('users','icn')} <b>${esc(r)}</b><span>popular</span></button>`)); }
+    sug.innerHTML = out.join('') || `<div class="sug-none">Press GO to search “${esc(q)}”</div>`;
+    sug.hidden = false;
+    $$('#hs-sug button').forEach(b=>b.addEventListener('mousedown', e=>{ e.preventDefault(); location.hash=b.dataset.go; }));
+  }
+  form.addEventListener('submit', e=>{
+    e.preventDefault();
+    const q=inp.value.trim().toLowerCase();
+    const role=ALL_ROLES.find(r=>q.includes(r.toLowerCase().split(' ')[0]));
+    const city=CITIES.find(c=>q.includes(c.toLowerCase()));
+    const p=new URLSearchParams(); if(city)p.set('city',city); if(role)p.set('role',role); if(!city&&!role&&q)p.set('q',q);
+    location.hash='#discover'+(p.toString()?'?'+p:'?reset=1');
+  });
+}
+
+// live mini-map in the hero (Australia-wide with animated talent pins)
+function initHeroMap(){
+  const host = $('#hero-map'); if(!host) return;
+  if (typeof maplibregl === 'undefined'){ host.innerHTML = `<div class="hmc-fallback">${ic('pin','icn')} Live map loads online</div>`; return; }
+  state.heroMap = new maplibregl.Map({
+    container: 'hero-map', interactive: true, attributionControl: false,
+    style: { version:8, sources:{ c:{ type:'raster', tileSize:256, tiles:['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png','https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png','https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'] } }, layers:[{ id:'c', type:'raster', source:'c' }] },
+    center:[134.5,-25.7], zoom:3.1, dragRotate:false,
+  });
+  state.heroMap.on('load', ()=>{
+    state.heroMap.resize();
+    const seen=new Set();
+    state.creators.forEach(c=>{
+      const node = el(`<div class="hmk" style="${avatarBg(c.name)}">${initials(c.name)}</div>`);
+      node.addEventListener('click', ()=>location.hash='#creator?id='+c.id);
+      new maplibregl.Marker({element:node}).setLngLat([c.lng,c.lat]).addTo(state.heroMap);
+    });
+  });
+}
+
+// interactive drag-to-spin continents globe (texture scroll)
 function initGlobe(){
-  const g = $('#globe'), wrap = $('#globe-wrap'); if(!g || !wrap) return;
-  let angle = -20, vel = 0.22, dragging = false, lastX = 0;
+  const tex = $('#g-tex'), wrap = $('#globe-wrap'); if(!tex || !wrap) return;
+  let off = 0, vel = 0.35, dragging = false, lastX = 0, W = 0;
+  const measure = () => { W = tex.scrollWidth / 2 || 300; };
+  measure(); setTimeout(measure, 400);
   wrap.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; wrap.classList.add('dragging'); });
-  addEventListener('pointermove', e => { if(!dragging) return; const dx = e.clientX - lastX; lastX = e.clientX; angle += dx * 0.55; vel = dx * 0.55; });
+  addEventListener('pointermove', e => { if(!dragging) return; const dx = e.clientX - lastX; lastX = e.clientX; off -= dx; vel = -dx; });
   addEventListener('pointerup', () => { dragging = false; wrap.classList.remove('dragging'); });
   (function loop(){
-    if(!document.body.contains(g)) return;
-    if(!dragging){ angle += vel; vel += (0.22 - vel) * 0.04; }
-    g.style.transform = `rotateY(${angle}deg)`;
+    if(!document.body.contains(tex)) return;
+    if(!dragging){ off += vel; vel += (0.35 - vel) * 0.04; }
+    if(W){ off = ((off % W) + W) % W; }
+    tex.style.transform = `translateX(${-off}px)`;
     requestAnimationFrame(loop);
   })();
 }
@@ -1775,7 +1961,7 @@ function drawSpaceMarkers(list){
 function renderResults(list){
   const box = $('#results');
   if (!list.length){ box.innerHTML = `<div style="padding:30px 20px;color:var(--muted);font-size:13.5px">No matches in ${esc(state.city)}. Widen your filters, or <a href="#join" style="color:var(--green)">be the first here →</a></div>`; return; }
-  box.innerHTML = list.map(c => `<div class="result ${state.selected===c.id?'sel':''}" data-id="${c.id}"><div class="avatar" style="${avatarBg(c.name)}">${initials(c.name)}</div><div class="result-body"><div class="result-name">${esc(c.name)} ${c.verified?`<span class="verified-ico">${ic('check')}</span>`:''}</div><div class="result-role">${esc(c.roles.join(' · '))}</div><div class="result-meta"><span>${esc(c.area)}</span><span class="rate">${esc(money(c.rate))}</span><span class="star">${ic('star')} ${c.rating.toFixed(1)}</span></div></div></div>`).join('');
+  box.innerHTML = list.map(c => `<div class="result ${state.selected===c.id?'sel':''}" data-id="${c.id}"><div class="avatar" style="${avatarBg(c.name)}">${initials(c.name)}</div><div class="result-body"><div class="result-name">${esc(c.name)} ${c.verified?`<span class="verified-ico">${VBADGE}</span>`:''}</div><div class="result-role">${esc(c.roles.join(' · '))}</div><div class="result-meta"><span>${esc(c.area)}</span><span class="rate">${esc(money(c.rate))}</span><span class="star">${ic('star')} ${c.rating.toFixed(1)}</span></div></div></div>`).join('');
   $$('#results .result').forEach(r => r.addEventListener('click', () => openProfile(r.dataset.id)));
 }
 function renderSpaceResults(list){
@@ -1798,7 +1984,7 @@ function openProfile(id){
   $('#drawer').innerHTML = `
     <div class="drawer-cover" style="background-image:url('${coverURL(c)}')"><button class="drawer-close" id="drawer-close" aria-label="Close">✕</button><div class="drawer-av" style="${avatarBg(c.name)}">${initials(c.name)}</div></div>
     <div class="drawer-pad">
-      <h2>${esc(c.name)} ${c.verified?`<span class="verified-ico">${ic('check')}</span>`:''}</h2>
+      <h2>${esc(c.name)} ${c.verified?`<span class="verified-ico">${VBADGE}</span>`:''}</h2>
       <div class="roles">${esc(c.roles.join(' · '))}</div>
       <div class="loc">${esc(c.area)}, ${esc(c.city)}</div>
       <div class="kv"><div><div class="k">Day rate</div><div class="v">${esc(money(c.rate))}</div></div><div><div class="k">Rating</div><div class="v">${c.rating.toFixed(1)}★</div></div><div><div class="k">Booked</div><div class="v">${c.jobs}×</div></div></div>
@@ -1834,7 +2020,7 @@ function renderCreator(){
     <div class="pf-head">
       <div class="pf-av" style="${avatarBg(c.name)}">${initials(c.name)}</div>
       <div class="pf-id">
-        <h1>${esc(c.name)} ${c.verified?`<span class="pf-verified">${ic('check')} Verified</span>`:''}</h1>
+        <h1>${esc(c.name)} ${c.verified?`<span class="pf-verified">${VBADGE} Verified</span>`:''}</h1>
         <div class="roles">${esc(c.roles.join(' · '))}</div>
         <div class="loc">${ic('pin','icn')} ${esc(c.area)}, ${esc(c.city)}</div>
       </div>

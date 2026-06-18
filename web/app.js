@@ -13,7 +13,7 @@ const state = {
   gear: [...LS.get('gear', []), ...SEED_GEAR],
   shortlist: new Set(LS.get('shortlist', [])),
   spaces: [...LS.get('spaces', []), ...SEED_SPACES],
-  map: null, markers: [], mode: 'people',
+  map: null, markers: [], mode: 'people', heroMap: null,
   user: LS.get('user', null),
   following: new Set(LS.get('following', [])),
   cur: LS.get('cur', 'AUD'),
@@ -81,8 +81,9 @@ function router(){
     else if (ROUTE_PARAMS.has('role')) state.roles=new Set([ROUTE_PARAMS.get('role')]);
     else if (ROUTE_PARAMS.has('reset')){ state.roles=new Set(); state.query=''; }
   }
-  // tear down a live map when leaving discover
+  // tear down live maps when leaving their views
   if (route !== 'discover' && state.map){ try{ state.map.remove(); }catch{} state.map=null; state.markers=[]; }
+  if (route !== 'home' && state.heroMap){ try{ state.heroMap.remove(); }catch{} state.heroMap=null; }
 
   const fn = routes[route] || renderHome;
   $$('.nav-links a').forEach(a => a.classList.toggle('active', a.dataset.route === route));
@@ -117,7 +118,20 @@ const ICONS = {
   bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>',
 };
 const ic = (n, cls='icn') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]||''}</svg>`;
-const CAT_ICON = { talent:'user', camera:'camera', lighting:'bulb', sound:'wave', glam:'brush', direction:'clap', post:'film', design:'layers' };
+const CAT_ICON = { talent:'user', camera:'camera', lighting:'bulb', sound:'wave', glam:'brush', direction:'clap', post:'film', design:'layers', music:'wave' };
+
+// unique scalloped "seal" verified badge (replaces the generic tick)
+const VBADGE = `<svg class="vbadge" viewBox="0 0 24 24" aria-label="Verified"><path class="seal" d="M12 1l2.4 1.6 2.8-.5 1.3 2.5 2.5 1.3-.5 2.8L23 12l-1.6 2.4.5 2.8-2.5 1.3-1.3 2.5-2.8-.5L12 23l-2.4-1.6-2.8.5-1.3-2.5-2.5-1.3.5-2.8L1 12l1.6-2.4-.5-2.8 2.5-1.3 1.3-2.5 2.8.5z"/><path class="seal-tick" d="M8.4 12.3l2.4 2.3 4.8-5"/></svg>`;
+
+// simplified equirectangular continents for the spinning globe (transparent)
+const WORLD_SVG = `<svg class="g-world" viewBox="0 0 360 180" preserveAspectRatio="none"><g class="g-land">
+<path d="M38,44 C44,34 70,30 82,42 C92,52 86,62 90,72 C78,82 70,96 60,92 C50,88 46,72 40,66 C32,58 32,52 38,44Z"/>
+<path d="M78,98 C90,92 98,106 94,124 C90,142 82,156 76,148 C70,134 70,112 78,98Z"/>
+<path d="M176,44 C186,40 196,48 190,58 C198,70 206,84 202,104 C198,124 190,138 184,132 C176,120 174,96 178,76 C170,66 168,52 176,44Z"/>
+<path d="M206,40 C236,32 280,40 298,56 C308,68 290,80 262,78 C236,76 210,66 206,52Z"/>
+<path d="M150,42 C160,38 170,46 164,56 C156,62 146,54 150,42Z"/>
+<path d="M292,118 C308,112 322,122 318,136 C312,148 296,150 288,140 C282,130 284,122 292,118Z"/>
+<circle cx="302" cy="92" r="3.4"/><circle cx="314" cy="101" r="2.6"/><circle cx="287" cy="105" r="2.6"/><circle cx="332" cy="150" r="3.2"/><circle cx="120" cy="150" r="2.4"/></g></svg>`;
 
 // ============================================================================
 //  VIEW: HOME
@@ -137,61 +151,31 @@ function renderHome(){
     <!-- HERO -->
     <section class="home-hero">
       <div class="aurora-bg"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
-      <div class="hero-grid"></div>
       <div class="home-hero-inner">
         <div class="hero-copy">
           <span class="badge"><span class="dot"></span> ${CITIES.length} cities · free for creators · no cut, ever</span>
           <h1>The crew, the kit,<br>the spot. <em>One map.</em></h1>
-          <p class="lede">Models, photographers, gaffers, sound, hair &amp; makeup, editors — plus gear and locations. Every part of a shoot, plotted across Australia. Built for the people who actually make the work.</p>
-          <div class="hero-actions">
-            <a class="btn btn-primary" href="#discover?reset=1">Open the map ${ic('arrow')}</a>
-            <a class="btn btn-ghost" href="#join">Join free</a>
+          <p class="lede">Every part of a shoot — crew, gear and locations — plotted across Australia. Built for the people who actually make the work.</p>
+          <form class="hsearch" id="hero-search" role="search">
+            <span class="hsearch-ic">${ic('search')}</span>
+            <input id="hs-q" autocomplete="off" aria-label="Search the scene" />
+            <button class="hsearch-go" type="submit">GO ${ic('arrow')}</button>
+            <div class="hsearch-sug" id="hs-sug" hidden></div>
+          </form>
+          <div class="pop-row"><span class="lbl">Try</span>
+            <a class="pop-tag" href="#discover?role=Model">Models</a>
+            <a class="pop-tag" href="#discover?role=Photographer">Photographers</a>
+            <a class="pop-tag" href="#discover?role=Gaffer">Gaffers</a>
+            <a class="pop-tag" href="#discover?mode=spaces">Studios</a>
           </div>
         </div>
 
-        <!-- BY THE NUMBERS — graphic stat board -->
-        <aside class="statboard">
-          <div class="sb-head"><span class="dot"></span> LIVE — THE SCENE BY NUMBERS</div>
-          <div class="sb-grid">
-            <div class="sb-cell lead">
-              <div class="sb-graphic"><div class="sb-bars">${bars(2)}</div></div>
-              <div class="sb-num">${total}<span>+</span></div>
-              <div class="sb-lbl">Creators on the map</div>
-              <div class="sb-delta up">▲ +6 this week</div>
-            </div>
-            <div class="sb-cell">
-              <div class="sb-graphic"><div class="sb-pingrid">${dots(15, state.spaces.length)}</div></div>
-              <div class="sb-num">${state.spaces.length}</div>
-              <div class="sb-lbl">Spaces for hire</div>
-              <div class="sb-delta up">▲ +2 this week</div>
-            </div>
-            <div class="sb-cell">
-              <div class="sb-graphic"><div class="sb-segbar">${CATEGORIES.map((c,i)=>`<i style="flex:${c.roles.length};opacity:${0.45+i*0.07}"></i>`).join('')}</div></div>
-              <div class="sb-num">${ALL_ROLES.length}</div>
-              <div class="sb-lbl">Roles, ${CATEGORIES.length} crafts</div>
-              <div class="sb-delta">crew · gear · spaces</div>
-            </div>
-            <div class="sb-cell">
-              <div class="sb-graphic">${ringSVG(100)}</div>
-              <div class="sb-num">$0</div>
-              <div class="sb-lbl">Our cut of bookings</div>
-              <div class="sb-delta up">you keep 100%</div>
-            </div>
-          </div>
-          <div class="sb-ticker"><div class="sb-ticker-track" id="sb-ticker"></div></div>
-        </aside>
+        <div class="hero-map-card">
+          <div id="hero-map"></div>
+          <div class="hmc-bar"><span class="hmc-live"><span class="dot"></span> LIVE MAP</span><span class="hmc-cnt">${total} creators · ${state.spaces.length} spaces</span></div>
+        </div>
       </div>
     </section>
-
-    <!-- SEARCH SLAB (striking, blocky) -->
-    <section class="search-slab"><div class="wrap">
-      <div class="slab-tab">FIND</div>
-      <form class="searchbar" id="hero-search" role="search">
-        <div class="seg"><span class="seg-lbl">Who</span>${ic('search')}<select id="hs-role" aria-label="Role"><option value="">Any role</option>${CATEGORIES.map(c=>`<optgroup label="${c.label}">${c.roles.map(r=>`<option>${esc(r)}</option>`).join('')}</optgroup>`).join('')}</select></div>
-        <div class="seg"><span class="seg-lbl">Where</span>${ic('pin')}<select id="hs-city" aria-label="City">${CITIES.map(c=>`<option ${c===state.city?'selected':''}>${c}</option>`).join('')}</select></div>
-        <button class="btn btn-primary" type="submit">GO ${ic('arrow')}</button>
-      </form>
-    </div></section>
 
     <!-- MARQUEE TAPE -->
     <div class="marquee"><div class="marquee-track">${[1,2].map(()=>`<span>${ALL_ROLES.slice(0,16).join('</span><span>')}</span>`).join('')}</div></div>
@@ -213,20 +197,20 @@ function renderHome(){
       <div class="cat-grid">${CATEGORIES.map((c,i)=>`<a class="cat-card reveal d${(i%4)+1}" href="#discover?cat=${c.id}"><div class="cat-ico">${ic(CAT_ICON[c.id])}</div><h3>${c.label}</h3><div class="roles">${c.roles.slice(0,4).join(' · ')}${c.roles.length>4?' …':''}</div><div class="cnt">View near you →</div></a>`).join('')}</div>
     </div></section>
 
-    <!-- MAP FEATURE -->
+    <!-- GLOBAL SCENE — continents globe -->
     <section class="sec"><div class="wrap"><div class="feature">
-      <div class="feature-copy reveal"><div class="kicker">The discovery map</div><h2>See who's actually near you</h2>
-        <p>An accurate, live map of Australia — one part of the platform, not the whole thing. Filter by role and distance, preview portfolios from the pin, shortlist before you message.</p>
-        <ul class="feature-list"><li>${ic('check')} Real geography, smooth zoom, talent plotted by city</li><li>${ic('check')} Approximate location only — exact addresses never shown</li><li>${ic('check')} Never a dead empty map — coverage widens automatically</li></ul>
+      <div class="feature-copy reveal"><div class="kicker">Local map · global scene</div><h2>The map is local. The scene is global.</h2>
+        <p>Discovery happens on an accurate map of your city — but the community reaches across the world. Connect with creatives anywhere, then bring the work home.</p>
+        <ul class="feature-list"><li>${VBADGE} Approximate location only — exact addresses never shown</li><li>${VBADGE} Connect with crew across cities and continents</li><li>${VBADGE} Never a dead empty map — coverage widens automatically</li></ul>
         <a class="btn btn-primary" href="#discover?reset=1">Open the map ${ic('arrow')}</a>
       </div>
       <div class="feature-visual globe-wrap reveal d2" id="globe-wrap">
-        <div class="globe-scene"><div class="globe" id="globe">
-          ${Array.from({length:9},(_,k)=>`<div class="g-ring" style="transform:rotateY(${k*20}deg)"></div>`).join('')}
-          <div class="g-lat" style="top:30%"></div><div class="g-lat" style="top:50%"></div><div class="g-lat" style="top:70%"></div>
-          <div class="g-fill"></div>
-        </div></div>
-        ${INTL.map((p,i)=>`<div class="g-prof" style="--gi:${i};--gn:${INTL.length}"><div class="g-prof-av" style="${avatarBg(p[0]+p[1])}">${p[0][0]}</div><div class="g-prof-t"><b>${esc(p[0])}</b><span>${esc(p[2])} · ${esc(p[1])}</span></div></div>`).join('')}
+        <div class="globe" id="globe">
+          <div class="g-tex" id="g-tex">${WORLD_SVG}${WORLD_SVG}</div>
+          <div class="g-grat">${Array.from({length:7},(_,k)=>`<i class="gm" style="left:${(k+1)*12.5}%"></i>`).join('')}<i class="gl" style="top:32%"></i><i class="gl" style="top:50%"></i><i class="gl" style="top:68%"></i></div>
+          <div class="g-shade"></div><div class="g-rim"></div>
+        </div>
+        ${INTL.slice(0,4).map((p,i)=>`<div class="g-prof p${i}"><div class="g-prof-av" style="${avatarBg(p[0]+p[1])}">${p[0][0]}</div><div class="g-prof-t"><b>${esc(p[0])}</b><span>${esc(p[2])} · ${esc(p[1])}</span></div></div>`).join('')}
         <div class="globe-hint">${ic('arrow','icn')} drag to spin</div>
       </div>
     </div></div></section>
@@ -250,7 +234,8 @@ function renderHome(){
       <div class="orbit reveal">
         <div class="orbit-center"><div class="oc-mark">◐</div><div class="oc-t">THE<br>SCENE</div></div>
         <div class="orbit-ring" id="orbit-ring">
-          ${orbitList.map((c,i)=>{ const a=Math.round(i*360/orbitList.length); return `<div class="orbit-node" data-id="${c.id}" style="transform:rotate(${a}deg) translate(var(--R)) rotate(${-a}deg)"><div class="on-spin"><div class="on-av" style="${avatarBg(c.name)};background-image:url('${coverURL(c)}')"></div><div class="on-meta"><b>${esc(c.name.split(' ')[0])}</b><span>${esc(c.roles[0])}</span></div></div></div>`; }).join('')}
+          ${orbitList.map((c,i)=>{ const a=Math.round(i*360/orbitList.length); return `<i class="spoke" style="transform:rotate(${a}deg)"></i>`; }).join('')}
+          ${orbitList.map((c,i)=>{ const a=Math.round(i*360/orbitList.length); return `<div class="orbit-node" data-id="${c.id}" style="transform:rotate(${a}deg) translate(var(--R)) rotate(${-a}deg)"><div class="on-spin"><div class="on-bob float" style="animation-delay:${i*-0.8}s"><div class="on-av" style="${avatarBg(c.name)};background-image:url('${coverURL(c)}')"></div><div class="on-meta"><b>${esc(c.name.split(' ')[0])}</b><span>${esc(c.roles[0])}</span></div></div></div></div>`; }).join('')}
         </div>
       </div>
     </div></section>
@@ -341,20 +326,8 @@ function renderHome(){
     </footer>
   </div>`));
 
-  $('#hero-search').addEventListener('submit', e => {
-    e.preventDefault();
-    const role=$('#hs-role').value, city=$('#hs-city').value;
-    const p=new URLSearchParams(); p.set('city',city); if(role) p.set('role',role);
-    location.hash='#discover?'+p.toString();
-  });
-  // live activity ticker on the stat board
-  const tk = $('#sb-ticker');
-  if (tk){
-    const verbs = ['just joined in','booked a shoot in','connected in','listed a space in','posted a brief in'];
-    const sample = state.creators.slice().sort(()=>Math.random()-0.5).slice(0, 8);
-    const items = sample.map(c => `<span class="tk-item"><b style="${avatarBg(c.name)}">${initials(c.name)}</b>${esc(c.name.split(' ')[0])} ${verbs[hashHue(c.id)%verbs.length]} ${esc(c.city)}</span>`).join('');
-    tk.innerHTML = items + items;
-  }
+  initHeroSearch();
+  initHeroMap();
   $$('.home [data-id]').forEach(n => n.addEventListener('click', () => {
     const space = n.classList.contains('space-card');
     location.hash = (space ? '#space?id=' : '#creator?id=') + n.dataset.id;
@@ -363,17 +336,80 @@ function renderHome(){
   initGlobe();
 }
 
-// interactive drag-to-spin globe
+// landing search — typewriter placeholder + live suggestions + smart parse
+function initHeroSearch(){
+  const form = $('#hero-search'), inp = $('#hs-q'), sug = $('#hs-sug'); if(!form) return;
+  const ex = ['photographer in Sydney','recording studio in Brisbane','gaffer in Melbourne','makeup artist in Perth','sound mixer in Gold Coast','warehouse in Melbourne'];
+  let ei=0, ci=0, del=false, typing=true;
+  (function type(){
+    if(!document.body.contains(inp)) return;
+    if(!typing){ return; }
+    const t = ex[ei];
+    ci += del ? -1 : 1;
+    inp.setAttribute('placeholder', 'Try “'+t.slice(0,ci)+'”');
+    if(!del && ci>=t.length){ del=true; setTimeout(type, 1600); return; }
+    if(del && ci<=0){ del=false; ei=(ei+1)%ex.length; }
+    setTimeout(type, del?34:62);
+  })();
+  inp.addEventListener('focus', ()=>{ typing=false; inp.setAttribute('placeholder','Search crew, spaces, roles, cities…'); render(inp.value); });
+  inp.addEventListener('blur', ()=>{ setTimeout(()=>{ sug.hidden=true; }, 160); if(!inp.value){ typing=true; type(); } });
+  inp.addEventListener('input', ()=>render(inp.value));
+  function render(q){
+    const ql=q.trim().toLowerCase();
+    const roles = ALL_ROLES.filter(r=>r.toLowerCase().includes(ql)).slice(0,4);
+    const cities = CITIES.filter(c=>c.toLowerCase().includes(ql)).slice(0,3);
+    const out=[];
+    if(ql){ roles.forEach(r=>out.push(`<button data-go="#discover?role=${encodeURIComponent(r)}">${ic('users','icn')} <b>${esc(r)}</b><span>crew</span></button>`));
+            cities.forEach(c=>out.push(`<button data-go="#discover?city=${encodeURIComponent(c)}">${ic('pin','icn')} <b>${esc(c)}</b><span>city</span></button>`)); }
+    else { ['Model','Photographer','Gaffer','Recording Engineer'].forEach(r=>out.push(`<button data-go="#discover?role=${encodeURIComponent(r)}">${ic('users','icn')} <b>${esc(r)}</b><span>popular</span></button>`)); }
+    sug.innerHTML = out.join('') || `<div class="sug-none">Press GO to search “${esc(q)}”</div>`;
+    sug.hidden = false;
+    $$('#hs-sug button').forEach(b=>b.addEventListener('mousedown', e=>{ e.preventDefault(); location.hash=b.dataset.go; }));
+  }
+  form.addEventListener('submit', e=>{
+    e.preventDefault();
+    const q=inp.value.trim().toLowerCase();
+    const role=ALL_ROLES.find(r=>q.includes(r.toLowerCase().split(' ')[0]));
+    const city=CITIES.find(c=>q.includes(c.toLowerCase()));
+    const p=new URLSearchParams(); if(city)p.set('city',city); if(role)p.set('role',role); if(!city&&!role&&q)p.set('q',q);
+    location.hash='#discover'+(p.toString()?'?'+p:'?reset=1');
+  });
+}
+
+// live mini-map in the hero (Australia-wide with animated talent pins)
+function initHeroMap(){
+  const host = $('#hero-map'); if(!host) return;
+  if (typeof maplibregl === 'undefined'){ host.innerHTML = `<div class="hmc-fallback">${ic('pin','icn')} Live map loads online</div>`; return; }
+  state.heroMap = new maplibregl.Map({
+    container: 'hero-map', interactive: true, attributionControl: false,
+    style: { version:8, sources:{ c:{ type:'raster', tileSize:256, tiles:['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png','https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png','https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'] } }, layers:[{ id:'c', type:'raster', source:'c' }] },
+    center:[134.5,-25.7], zoom:3.1, dragRotate:false,
+  });
+  state.heroMap.on('load', ()=>{
+    state.heroMap.resize();
+    const seen=new Set();
+    state.creators.forEach(c=>{
+      const node = el(`<div class="hmk" style="${avatarBg(c.name)}">${initials(c.name)}</div>`);
+      node.addEventListener('click', ()=>location.hash='#creator?id='+c.id);
+      new maplibregl.Marker({element:node}).setLngLat([c.lng,c.lat]).addTo(state.heroMap);
+    });
+  });
+}
+
+// interactive drag-to-spin continents globe (texture scroll)
 function initGlobe(){
-  const g = $('#globe'), wrap = $('#globe-wrap'); if(!g || !wrap) return;
-  let angle = -20, vel = 0.22, dragging = false, lastX = 0;
+  const tex = $('#g-tex'), wrap = $('#globe-wrap'); if(!tex || !wrap) return;
+  let off = 0, vel = 0.35, dragging = false, lastX = 0, W = 0;
+  const measure = () => { W = tex.scrollWidth / 2 || 300; };
+  measure(); setTimeout(measure, 400);
   wrap.addEventListener('pointerdown', e => { dragging = true; lastX = e.clientX; wrap.classList.add('dragging'); });
-  addEventListener('pointermove', e => { if(!dragging) return; const dx = e.clientX - lastX; lastX = e.clientX; angle += dx * 0.55; vel = dx * 0.55; });
+  addEventListener('pointermove', e => { if(!dragging) return; const dx = e.clientX - lastX; lastX = e.clientX; off -= dx; vel = -dx; });
   addEventListener('pointerup', () => { dragging = false; wrap.classList.remove('dragging'); });
   (function loop(){
-    if(!document.body.contains(g)) return;
-    if(!dragging){ angle += vel; vel += (0.22 - vel) * 0.04; }
-    g.style.transform = `rotateY(${angle}deg)`;
+    if(!document.body.contains(tex)) return;
+    if(!dragging){ off += vel; vel += (0.35 - vel) * 0.04; }
+    if(W){ off = ((off % W) + W) % W; }
+    tex.style.transform = `translateX(${-off}px)`;
     requestAnimationFrame(loop);
   })();
 }
@@ -574,7 +610,7 @@ function drawSpaceMarkers(list){
 function renderResults(list){
   const box = $('#results');
   if (!list.length){ box.innerHTML = `<div style="padding:30px 20px;color:var(--muted);font-size:13.5px">No matches in ${esc(state.city)}. Widen your filters, or <a href="#join" style="color:var(--green)">be the first here →</a></div>`; return; }
-  box.innerHTML = list.map(c => `<div class="result ${state.selected===c.id?'sel':''}" data-id="${c.id}"><div class="avatar" style="${avatarBg(c.name)}">${initials(c.name)}</div><div class="result-body"><div class="result-name">${esc(c.name)} ${c.verified?`<span class="verified-ico">${ic('check')}</span>`:''}</div><div class="result-role">${esc(c.roles.join(' · '))}</div><div class="result-meta"><span>${esc(c.area)}</span><span class="rate">${esc(money(c.rate))}</span><span class="star">${ic('star')} ${c.rating.toFixed(1)}</span></div></div></div>`).join('');
+  box.innerHTML = list.map(c => `<div class="result ${state.selected===c.id?'sel':''}" data-id="${c.id}"><div class="avatar" style="${avatarBg(c.name)}">${initials(c.name)}</div><div class="result-body"><div class="result-name">${esc(c.name)} ${c.verified?`<span class="verified-ico">${VBADGE}</span>`:''}</div><div class="result-role">${esc(c.roles.join(' · '))}</div><div class="result-meta"><span>${esc(c.area)}</span><span class="rate">${esc(money(c.rate))}</span><span class="star">${ic('star')} ${c.rating.toFixed(1)}</span></div></div></div>`).join('');
   $$('#results .result').forEach(r => r.addEventListener('click', () => openProfile(r.dataset.id)));
 }
 function renderSpaceResults(list){
@@ -597,7 +633,7 @@ function openProfile(id){
   $('#drawer').innerHTML = `
     <div class="drawer-cover" style="background-image:url('${coverURL(c)}')"><button class="drawer-close" id="drawer-close" aria-label="Close">✕</button><div class="drawer-av" style="${avatarBg(c.name)}">${initials(c.name)}</div></div>
     <div class="drawer-pad">
-      <h2>${esc(c.name)} ${c.verified?`<span class="verified-ico">${ic('check')}</span>`:''}</h2>
+      <h2>${esc(c.name)} ${c.verified?`<span class="verified-ico">${VBADGE}</span>`:''}</h2>
       <div class="roles">${esc(c.roles.join(' · '))}</div>
       <div class="loc">${esc(c.area)}, ${esc(c.city)}</div>
       <div class="kv"><div><div class="k">Day rate</div><div class="v">${esc(money(c.rate))}</div></div><div><div class="k">Rating</div><div class="v">${c.rating.toFixed(1)}★</div></div><div><div class="k">Booked</div><div class="v">${c.jobs}×</div></div></div>
@@ -633,7 +669,7 @@ function renderCreator(){
     <div class="pf-head">
       <div class="pf-av" style="${avatarBg(c.name)}">${initials(c.name)}</div>
       <div class="pf-id">
-        <h1>${esc(c.name)} ${c.verified?`<span class="pf-verified">${ic('check')} Verified</span>`:''}</h1>
+        <h1>${esc(c.name)} ${c.verified?`<span class="pf-verified">${VBADGE} Verified</span>`:''}</h1>
         <div class="roles">${esc(c.roles.join(' · '))}</div>
         <div class="loc">${ic('pin','icn')} ${esc(c.area)}, ${esc(c.city)}</div>
       </div>
