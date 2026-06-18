@@ -6,22 +6,25 @@
   <title>The Creative Centre — find your crew</title>
   <meta name="description" content="A map-based marketplace for finding creative crew near you — models, photographers, gaffers, sound, hair & makeup, editors and more." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <!-- ===================== NAV ===================== -->
   <header class="nav">
-    <a class="brand" href="#discover" data-nav>
-      <span class="brand-mark">◐</span>
+    <a class="brand" href="#home" data-nav>
+      <span class="brand-mark" aria-hidden="true">◐</span>
       <span class="brand-name">THE&nbsp;CREATIVE&nbsp;CENTRE</span>
     </a>
     <nav class="nav-links">
       <a href="#discover" data-nav data-route="discover">Discover</a>
-      <a href="#jobs"     data-nav data-route="jobs">Jobs</a>
-      <a href="#gear"     data-nav data-route="gear">Gear</a>
+      <a href="#jobs"     data-nav data-route="jobs">For brands</a>
+      <a href="#gear"     data-nav data-route="gear">Gear rental</a>
+      <a href="#join"     data-nav data-route="join">For creators</a>
       <a href="#join"     data-nav data-route="join" class="nav-cta">Join free</a>
     </nav>
-    <button class="nav-burger" id="burger" aria-label="Menu">☰</button>
+    <button class="nav-burger" id="burger" aria-label="Open menu" aria-expanded="false">☰</button>
   </header>
 
   <!-- ===================== APP ROOT ===================== -->

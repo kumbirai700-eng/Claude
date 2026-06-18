@@ -55,11 +55,28 @@ function filtered() {
 // ============================================================================
 //  ROUTER
 // ============================================================================
-const routes = { discover: renderDiscover, jobs: renderJobs, gear: renderGear, join: renderJoin };
+const routes = { home: renderHome, discover: renderDiscover, jobs: renderJobs, gear: renderGear, join: renderJoin };
 
 function router() {
-  const route = (location.hash.replace('#', '') || 'discover').split('?')[0];
-  const fn = routes[route] || renderDiscover;
+  const raw = location.hash.replace('#', '') || 'home';
+  const [route, qs] = raw.split('?');
+  const params = new URLSearchParams(qs || '');
+
+  // pre-filter the discover view when arriving from home (search bar / category cards)
+  if (route === 'discover') {
+    if (params.get('city')) state.city = params.get('city');
+    if (params.has('q')) state.query = params.get('q');
+    if (params.has('cat')) {
+      const cat = CATEGORIES.find(c => c.id === params.get('cat'));
+      state.roles = new Set(cat ? cat.roles : []);
+    } else if (params.has('role')) {
+      state.roles = new Set([params.get('role')]);
+    } else if (params.has('reset')) {
+      state.roles = new Set(); state.query = '';
+    }
+  }
+
+  const fn = routes[route] || renderHome;
   $$('.nav-links a').forEach(a => a.classList.toggle('active', a.dataset.route === route));
   $('#view').innerHTML = '';
   fn();
@@ -68,8 +85,287 @@ function router() {
 }
 window.addEventListener('hashchange', router);
 
+// ----- inline SVG icon set (no emoji-as-icon, per skill checklist) -----
+const ICONS = {
+  search:  '<path d="M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="m21 21-4.3-4.3"/>',
+  pin:     '<path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/>',
+  arrow:   '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  check:   '<path d="M20 6 9 17l-5-5"/>',
+  spark:   '<path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6 5.6 18.4"/>',
+  camera:  '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/>',
+  user:    '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  bulb:    '<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1h6c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2Z"/>',
+  wave:    '<path d="M2 12h2l2-7 4 16 4-13 2 6h6"/>',
+  brush:   '<path d="M9.06 11.9 16.5 4.5a2.1 2.1 0 0 1 3 3l-7.4 7.4M9 12a3 3 0 0 0-3 3c0 1.3-1 2-2 2 1 1.5 3 2 4.5 2A3.5 3.5 0 0 0 12 17a3 3 0 0 0-3-5Z"/>',
+  clap:    '<path d="m4 11 16-3M4 11l-1 8a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-8M4 11 3 7l16-3 1 4M9 6.5l1 3M14 5.5l1 3"/>',
+  layers:  '<path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 17l9 5 9-5"/>',
+  film:    '<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 8h4M3 16h4M17 8h4M17 16h4"/>',
+  shield:  '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>',
+  wallet:  '<path d="M19 7H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/><path d="M16 13h.01M3 9V7a2 2 0 0 1 2-2h11"/>',
+  eye:     '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>',
+};
+const ic = (name, cls = 'icn') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+
+// category -> icon
+const CAT_ICON = { talent:'user', camera:'camera', lighting:'bulb', sound:'wave', glam:'brush', direction:'clap', post:'film', design:'layers' };
+
 // ============================================================================
-//  VIEW: DISCOVER  (the map — Stage 0 product)
+//  VIEW: HOME  (the landing page — the map is just ONE section of it)
+// ============================================================================
+function renderHome() {
+  const total = state.creators.length;
+  const featured = state.creators.filter(c => c.verified).slice(0, 4);
+  const catCount = id => state.creators.filter(c => c.roles.some(r => ROLE_CATEGORY[r] === id)).length;
+
+  $('#view').appendChild(el(`
+    <div class="home">
+
+      <!-- ============ HERO ============ -->
+      <section class="home-hero">
+        <div class="home-hero-grid"></div>
+        <div class="home-hero-inner">
+          <span class="badge"><span class="dot"></span> Live in ${CITIES.length} cities · free for creators</span>
+          <h1>The whole crew, <em>on one map.</em></h1>
+          <p class="lede">Models, photographers, gaffers, sound, hair &amp; makeup, editors, producers — every role on a shoot, discoverable near you. Brands post a brief; creators get found without cold-pitching.</p>
+
+          <form class="searchbar" id="hero-search" role="search" aria-label="Find creative crew">
+            <div class="seg">
+              ${ic('search')}
+              <select id="hs-role" aria-label="Role">
+                <option value="">Any role</option>
+                ${CATEGORIES.map(c => `<optgroup label="${c.label}">${c.roles.map(r => `<option>${esc(r)}</option>`).join('')}</optgroup>`).join('')}
+              </select>
+            </div>
+            <div class="seg">
+              ${ic('pin')}
+              <select id="hs-city" aria-label="City">${CITIES.map(c => `<option ${c === state.city ? 'selected' : ''}>${c}</option>`).join('')}</select>
+            </div>
+            <button class="btn btn-primary" type="submit">Search ${ic('arrow')}</button>
+          </form>
+
+          <div class="pop-row">
+            <span class="lbl">Popular:</span>
+            <a class="pop-tag" href="#discover?role=Model">Models</a>
+            <a class="pop-tag" href="#discover?role=Photographer">Photographers</a>
+            <a class="pop-tag" href="#discover?role=Gaffer">Gaffers</a>
+            <a class="pop-tag" href="#discover?role=Sound%20Mixer">Sound</a>
+            <a class="pop-tag" href="#discover?role=Makeup%20Artist">MUAs</a>
+            <a class="pop-tag" href="#discover?role=Editor">Editors</a>
+          </div>
+
+          <div class="hero-stats">
+            <div><div class="num"><em>${total}+</em></div><div class="lbl">creators on the map</div></div>
+            <div><div class="num">${ALL_ROLES.length}</div><div class="lbl">creative roles</div></div>
+            <div><div class="num">${CATEGORIES.length}</div><div class="lbl">crew categories</div></div>
+            <div><div class="num">£0</div><div class="lbl">cut of your bookings</div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ MARQUEE ============ -->
+      <div class="marquee"><div class="marquee-track">
+        ${[1,2].map(() => `<span>${ALL_ROLES.slice(0,18).join('</span><span>')}</span>`).join('')}
+      </div></div>
+
+      <!-- ============ CATEGORIES ============ -->
+      <section class="sec"><div class="wrap">
+        <div class="sec-head">
+          <div class="eyebrow">Every role on the call sheet</div>
+          <h2>Find any kind of creative</h2>
+          <p>Not just talent and cameras — the full crew, grouped the way a production actually works.</p>
+        </div>
+        <div class="cat-grid">
+          ${CATEGORIES.map(c => `
+            <a class="cat-card" href="#discover?cat=${c.id}">
+              <div class="cat-ico">${ic(CAT_ICON[c.id] || 'spark')}</div>
+              <h3>${c.label}</h3>
+              <div class="roles">${c.roles.slice(0,4).join(' · ')}${c.roles.length>4?' …':''}</div>
+              <div class="cnt">${catCount(c.id)} available →</div>
+            </a>`).join('')}
+        </div>
+      </div></section>
+
+      <!-- ============ MAP FEATURE (one feature) ============ -->
+      <section class="sec"><div class="wrap">
+        <div class="feature">
+          <div class="feature-copy">
+            <div class="kicker">The discovery map</div>
+            <h2>See who's actually near you</h2>
+            <p>The map is how discovery works — but it's one part of the platform, not the whole thing. Filter by role and distance, preview portfolios from the pin, and shortlist before you ever send a message.</p>
+            <ul class="feature-list">
+              <li>${ic('check')} Filter the full crew by category, distance &amp; availability</li>
+              <li>${ic('check')} Approximate location only — exact addresses are never shown</li>
+              <li>${ic('check')} Never a dead empty map — coverage widens automatically</li>
+            </ul>
+            <a class="btn btn-primary" href="#discover?reset=1">Open the map ${ic('arrow')}</a>
+          </div>
+          <div class="feature-visual">
+            <div class="fv-map"></div>
+            ${featured.map((c,i) => `<div class="fv-pin" style="${avatarStyle(c.name)};left:${[22,62,40,75][i]}%;top:${[30,40,66,22][i]}%">${initials(c.name)}</div>`).join('')}
+          </div>
+        </div>
+      </div></section>
+
+      <!-- ============ HOW IT WORKS (two audiences) ============ -->
+      <section class="sec"><div class="wrap">
+        <div class="sec-head center">
+          <div class="eyebrow">How it works</div>
+          <h2>Two sides, one map</h2>
+          <p>Creators join free and get found. Brands post a brief and book. Density makes both sides worth more.</p>
+        </div>
+        <div class="dual">
+          <div class="dual-card">
+            <div class="tag">For creators · always free</div>
+            <h3>Get on the map &amp; get found</h3>
+            <ul class="flow">
+              <li><span class="step-n">1</span><div><h4>Drop your pin</h4><p>Name, role, city, one piece of work. Four fields and you're discoverable.</p></div></li>
+              <li><span class="step-n">2</span><div><h4>Get discovered</h4><p>Brands find you by role and distance — no cold DMs, no agency gatekeeping.</p></div></li>
+              <li><span class="step-n">3</span><div><h4>Get booked direct</h4><p>Briefs land in your city; express interest and book. We never take a cut.</p></div></li>
+            </ul>
+            <a class="btn btn-ghost" href="#join">Create your profile ${ic('arrow')}</a>
+          </div>
+          <div class="dual-card">
+            <div class="tag">For brands · pay per post</div>
+            <h3>Post a brief, book the crew</h3>
+            <ul class="flow">
+              <li><span class="step-n">1</span><div><h4>Browse free</h4><p>Explore the live map before you ever create an account. Feel the density first.</p></div></li>
+              <li><span class="step-n">2</span><div><h4>Post a brief</h4><p>One job post notifies every matching creator in the city. No subscription to start.</p></div></li>
+              <li><span class="step-n">3</span><div><h4>Review &amp; book</h4><p>Shortlist responders, confirm the shoot, and keep the relationship.</p></div></li>
+            </ul>
+            <a class="btn btn-ghost" href="#jobs">Post a brief ${ic('arrow')}</a>
+          </div>
+        </div>
+      </div></section>
+
+      <!-- ============ FEATURED CREATORS ============ -->
+      <section class="sec"><div class="wrap">
+        <div class="sec-head"><div class="eyebrow">On the map now</div><h2>Featured creators</h2></div>
+        <div class="feat-grid">
+          ${featured.map(c => `
+            <div class="feat-card" data-id="${c.id}">
+              <div class="feat-cover" style="${avatarStyle(c.name)}"><div class="feat-av" style="${avatarStyle(c.roles.join(''))}">${initials(c.name)}</div></div>
+              <div class="feat-body">
+                <div class="nm">${esc(c.name)} <span class="verified" title="Verified">${ic('check','icn')}</span></div>
+                <div class="rl">${esc(c.roles.join(' · '))}</div>
+                <div class="mt"><span>${esc(c.area)}, ${esc(c.city)}</span><span class="rate">${esc(c.rate)}</span></div>
+              </div>
+            </div>`).join('')}
+        </div>
+      </div></section>
+
+      <!-- ============ PRICING (staged model) ============ -->
+      <section class="sec"><div class="wrap">
+        <div class="sec-head center">
+          <div class="eyebrow">Pricing</div>
+          <h2>Free where it has to be. Paid where it makes sense.</h2>
+          <p>Creators are free forever — density is the product. Brands pay only when they hire. Gear earns as that market matures.</p>
+        </div>
+        <div class="price-grid">
+          <div class="price-card">
+            <div class="who">Creators</div>
+            <div class="amt">Free <small>forever</small></div>
+            <div class="stage">Stage 0 · live</div>
+            <ul>
+              <li>${ic('check')} Unlimited profile &amp; portfolio</li>
+              <li>${ic('check')} Discoverable on the map</li>
+              <li>${ic('check')} Apply to briefs in your city</li>
+              <li>${ic('check')} 0% cut of your bookings</li>
+            </ul>
+            <a class="btn btn-ghost btn-block" href="#join">Join free</a>
+          </div>
+          <div class="price-card hl">
+            <div class="who">Brands</div>
+            <div class="amt">£39 <small>/ job post</small></div>
+            <div class="stage">Stage 1 · live</div>
+            <ul>
+              <li>${ic('check')} Browse the full map free</li>
+              <li>${ic('check')} Post a brief, notify matching crew</li>
+              <li>${ic('check')} Shortlist &amp; contact unlock</li>
+              <li>${ic('check')} Post 3+ → switch to a saver plan</li>
+            </ul>
+            <a class="btn btn-primary btn-block" href="#jobs">Post a brief</a>
+          </div>
+          <div class="price-card">
+            <div class="who">Gear rental</div>
+            <div class="amt">Commission <small>only</small></div>
+            <div class="stage">Stage 3 · rolling out</div>
+            <ul>
+              <li>${ic('check')} List gear you already own</li>
+              <li>${ic('check')} No listing fee</li>
+              <li>${ic('check')} Deposit &amp; calendar handled</li>
+              <li>${ic('check')} Opens city-by-city</li>
+            </ul>
+            <a class="btn btn-ghost btn-block" href="#gear">Browse gear</a>
+          </div>
+        </div>
+      </div></section>
+
+      <!-- ============ TRUST / SAFETY ============ -->
+      <section class="sec"><div class="wrap">
+        <div class="sec-head center"><div class="eyebrow">Trust &amp; safety</div><h2>Built so the map feels safe</h2></div>
+        <div class="trust-grid">
+          <div class="trust-card">${ic('pin')}<h4>Approximate location</h4><p>Pins show a neighbourhood, never a home address. Exact coordinates are never exposed.</p></div>
+          <div class="trust-card">${ic('shield')}<h4>Verified creators</h4><p>A verification badge signals creators we've checked, so brands know who they're booking.</p></div>
+          <div class="trust-card">${ic('wallet')}<h4>No cut of bookings</h4><p>Creators keep 100%. We make money from brands and gear — never from your day rate.</p></div>
+        </div>
+      </div></section>
+
+      <!-- ============ FAQ ============ -->
+      <section class="sec"><div class="wrap">
+        <div class="sec-head center"><div class="eyebrow">FAQ</div><h2>Questions, answered</h2></div>
+        <div class="faq">
+          <details open><summary>Is it really free for creators?</summary><div class="ans">Yes — free forever, and we never take a percentage of your bookings. Density is the product, so getting every kind of creative onto the map without friction matters more than charging you.</div></details>
+          <details><summary>Who can I find on here?</summary><div class="ans">The whole call sheet: models, actors and dancers; photographers, videographers and DPs; gaffers, grips and sound; hair, makeup and wardrobe; producers, directors and casting; editors, colorists and retouchers; set and prop designers — ${ALL_ROLES.length} roles in total.</div></details>
+          <details><summary>How do brands pay?</summary><div class="ans">Pay-per-job-post — a small fee per brief, no subscription to start. Browsing the map is always free. Brands who post repeatedly get offered a monthly plan that saves money.</div></details>
+          <details><summary>What about gear rental?</summary><div class="ans">It's rolling out city-by-city as crew density grows. Creators list gear they already own, renters request dates, and we take a commission on completed rentals — no listing fee.</div></details>
+          <details><summary>Which cities are live?</summary><div class="ans">${CITIES.join(', ')} today, with more opening as coverage builds. Joining in a new city helps it reach the density that makes the map worth using.</div></details>
+        </div>
+      </div></section>
+
+      <!-- ============ FINAL CTA ============ -->
+      <section class="cta-band">
+        <h2>Your next shoot starts on the map.</h2>
+        <p>Join free as a creator, or post your first brief in minutes.</p>
+        <div class="cta-actions">
+          <a class="btn btn-primary" href="#join">Join free as a creator</a>
+          <a class="btn btn-ghost" href="#jobs">I'm a brand — post a brief</a>
+        </div>
+      </section>
+
+      <!-- ============ BIG FOOTER ============ -->
+      <footer class="foot-big">
+        <div class="foot-cols">
+          <div class="about">
+            <a class="brand" href="#home" data-nav><span class="brand-mark" aria-hidden="true">◐</span><span class="brand-name">THE&nbsp;CREATIVE&nbsp;CENTRE</span></a>
+            <p>A map-based marketplace for finding creative crew near you. Free for creators, density-first by design.</p>
+          </div>
+          <div class="foot-col"><h5>Product</h5><a href="#discover?reset=1">Discover map</a><a href="#jobs">For brands</a><a href="#gear">Gear rental</a><a href="#join">For creators</a></div>
+          <div class="foot-col"><h5>Roles</h5><a href="#discover?role=Model">Models</a><a href="#discover?role=Photographer">Photographers</a><a href="#discover?role=Gaffer">Gaffers</a><a href="#discover?role=Sound%20Mixer">Sound</a></div>
+          <div class="foot-col"><h5>Cities</h5>${CITIES.map(c => `<a href="#discover?city=${encodeURIComponent(c)}">${c}</a>`).join('')}</div>
+        </div>
+        <div class="foot-bar"><span>© 2026 The Creative Centre</span><span>Free for creators, always.</span></div>
+      </footer>
+    </div>
+  `));
+
+  // wire hero search → discover, prefiltered
+  $('#hero-search').addEventListener('submit', e => {
+    e.preventDefault();
+    const role = $('#hs-role').value, city = $('#hs-city').value;
+    const p = new URLSearchParams(); p.set('city', city);
+    if (role) p.set('role', role);
+    location.hash = '#discover?' + p.toString();
+  });
+  // featured cards → open profile (after navigating to discover so the drawer has context)
+  $$('.feat-card').forEach(card => card.addEventListener('click', () => {
+    const c = state.creators.find(x => x.id === card.dataset.id);
+    if (c) { state.city = c.city; location.hash = '#discover'; setTimeout(() => openProfile(card.dataset.id), 60); }
+  }));
+  $$('.home [data-nav]').forEach(a => a.addEventListener('click', () => $('.nav-links')?.classList.remove('open')));
+}
+
+// ============================================================================
+//  VIEW: DISCOVER  (the map — one feature, reached from Discover / home)
 // ============================================================================
 function renderDiscover() {
   const view = $('#view');
