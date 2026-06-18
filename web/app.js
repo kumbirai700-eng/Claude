@@ -121,43 +121,42 @@ function renderHome(){
       <div class="hero-grid"></div>
       <div class="home-hero-inner">
         <div class="hero-copy">
-          <span class="badge"><span class="dot"></span> Live across ${CITIES.length} Australian cities · free for creators</span>
-          <h1>Australia's creative crew, <em>on one map.</em></h1>
-          <p class="lede">Models, photographers, gaffers, sound, hair &amp; makeup, editors, producers — every role on a shoot, discoverable near you. Curate a portfolio that gets you booked.</p>
-          <form class="searchbar" id="hero-search" role="search">
-            <div class="seg">${ic('search')}<select id="hs-role" aria-label="Role"><option value="">Any role</option>${CATEGORIES.map(c=>`<optgroup label="${c.label}">${c.roles.map(r=>`<option>${esc(r)}</option>`).join('')}</optgroup>`).join('')}</select></div>
-            <div class="seg">${ic('pin')}<select id="hs-city" aria-label="City">${CITIES.map(c=>`<option ${c===state.city?'selected':''}>${c}</option>`).join('')}</select></div>
-            <button class="btn btn-primary" type="submit">Search ${ic('arrow')}</button>
-          </form>
-          <div class="pop-row"><span class="lbl">Popular</span>
-            <a class="pop-tag" href="#discover?role=Model">Models</a>
-            <a class="pop-tag" href="#discover?role=Photographer">Photographers</a>
-            <a class="pop-tag" href="#discover?role=Gaffer">Gaffers</a>
-            <a class="pop-tag" href="#discover?role=Sound%20Mixer">Sound</a>
-            <a class="pop-tag" href="#discover?role=Makeup%20Artist">MUAs</a>
-          </div>
+          <span class="badge"><span class="dot"></span> ${CITIES.length} cities · free for creators · no cut, ever</span>
+          <h1>The crew, the kit,<br>the spot. <em>One map.</em></h1>
+          <p class="lede">Models, photographers, gaffers, sound, hair &amp; makeup, editors — plus gear and locations. Every part of a shoot, plotted across Australia. Built for the people who actually make the work.</p>
           <div class="hero-stats">
-            <div><div class="num"><em>${total}+</em></div><div class="lbl">creators on the map</div></div>
-            <div><div class="num">${ALL_ROLES.length}</div><div class="lbl">creative roles</div></div>
-            <div><div class="num">$0</div><div class="lbl">cut of your bookings</div></div>
+            <div><div class="num"><em>${total}+</em></div><div class="lbl">creators</div></div>
+            <div><div class="num">${state.spaces.length}</div><div class="lbl">spaces</div></div>
+            <div><div class="num">${ALL_ROLES.length}</div><div class="lbl">roles</div></div>
+            <div><div class="num">$0</div><div class="lbl">cut of bookings</div></div>
           </div>
-        </div>
-        <!-- floating top performers -->
-        <div class="float-stage">
-          <div class="float-label">★ Top performers this week</div>
-          ${tops.map((c,i)=>`
-            <div class="float-card p${i}" data-id="${c.id}">
-              <div class="fc-img" style="background-image:url('${coverURL(c)}')"><span class="fc-rank">#${i+1} · ${esc(c.city)}</span></div>
-              <div class="fc-name">${esc(c.name.split(' ')[0])} ${esc(c.name.split(' ')[1]||'')} <span class="verified-ico">${ic('check')}</span></div>
-              <div class="fc-role">${esc(c.roles[0])}</div>
-              <div class="fc-meta"><span class="star">${ic('star')} ${c.rating.toFixed(1)}</span><span>${c.jobs} jobs</span></div>
-            </div>`).join('')}
         </div>
       </div>
     </section>
 
-    <!-- MARQUEE -->
-    <div class="marquee"><div class="marquee-track">${[1,2].map(()=>`<span>${ALL_ROLES.slice(0,18).join('</span><span>')}</span>`).join('')}</div></div>
+    <!-- SEARCH SLAB (striking, blocky) -->
+    <section class="search-slab"><div class="wrap">
+      <div class="slab-tab">FIND</div>
+      <form class="searchbar" id="hero-search" role="search">
+        <div class="seg"><span class="seg-lbl">Who</span>${ic('search')}<select id="hs-role" aria-label="Role"><option value="">Any role</option>${CATEGORIES.map(c=>`<optgroup label="${c.label}">${c.roles.map(r=>`<option>${esc(r)}</option>`).join('')}</optgroup>`).join('')}</select></div>
+        <div class="seg"><span class="seg-lbl">Where</span>${ic('pin')}<select id="hs-city" aria-label="City">${CITIES.map(c=>`<option ${c===state.city?'selected':''}>${c}</option>`).join('')}</select></div>
+        <button class="btn btn-primary" type="submit">GO ${ic('arrow')}</button>
+      </form>
+    </div></section>
+
+    <!-- MARQUEE TAPE -->
+    <div class="marquee"><div class="marquee-track">${[1,2].map(()=>`<span>${ALL_ROLES.slice(0,16).join('</span><span>')}</span>`).join('')}</div></div>
+
+    <!-- LEADERBOARD (replaces floating cards) -->
+    <section class="sec"><div class="wrap">
+      <div class="sec-head reveal"><div class="eyebrow">★ Top this week</div><h2>Who's getting booked</h2><p>The crew putting in work right now, ranked by bookings and rating across the cities.</p></div>
+      <div class="board">
+        ${tops.map((c,i)=>`<div class="rank-card reveal d${(i%4)+1}" data-id="${c.id}">
+          <div class="rc-img" style="background-image:url('${coverURL(c)}')"><span class="rc-num">${i+1}</span><span class="rc-city">${esc(c.city)}</span></div>
+          <div class="rc-body"><div class="rc-name">${esc(c.name)}</div><div class="rc-role">${esc(c.roles[0])}</div><div class="rc-meta"><span class="star">${ic('star')} ${c.rating.toFixed(1)}</span><span>${c.jobs} jobs</span></div></div>
+        </div>`).join('')}
+      </div>
+    </div></section>
 
     <!-- CATEGORIES -->
     <section class="sec"><div class="wrap">
@@ -199,6 +198,35 @@ function renderHome(){
       <div class="sec-head reveal"><div class="eyebrow">Spaces · location hire</div><h2>And somewhere to shoot it.</h2><p>Studios, warehouses, rooftops and sound stages — on the same map as the crew and gear. Book talent, kit and location in one place.</p></div>
       <div class="space-grid">${featSpaces.map(s=>spaceCard(s)).join('')}</div>
       <div style="margin-top:28px"><a class="btn btn-ghost" href="#spaces">Browse all spaces ${ic('arrow')}</a></div>
+    </div></section>
+
+    <!-- SUPPLY CTAs : get listed -->
+    <section class="sec"><div class="wrap">
+      <div class="sec-head reveal"><div class="eyebrow">★ Get listed</div><h2>Got something? Put it to work.</h2><p>The platform only works because of the people supplying it. List free — you only ever pay when you get booked.</p></div>
+      <div class="list-cta-grid">
+        <a class="list-cta c-space reveal" href="#join">
+          <div class="lc-tag">Spaces</div>
+          <h3>Run a studio or space?</h3>
+          <p>Recording studio, warehouse, rooftop, gallery, rehearsal room sitting empty between bookings? Put it in front of every crew shooting in your city.</p>
+          <span class="lc-go">List your space ${ic('arrow')}</span>
+        </a>
+        <a class="list-cta c-gear reveal d2" href="#gear">
+          <div class="lc-tag">Gear</div>
+          <h3>Own gear that's gathering dust?</h3>
+          <p>Cameras, lenses, lights, grip — earn on the days it's not on a job. List it free, set your rate, we handle deposits and the calendar.</p>
+          <span class="lc-go">List your gear ${ic('arrow')}</span>
+        </a>
+        <a class="list-cta c-crew reveal d3" href="#join">
+          <div class="lc-tag">Crew</div>
+          <h3>Behind the camera or in front of it?</h3>
+          <p>Model, shooter, gaffer, editor — whatever you do on set, build a folio that gets you found. Free forever, no cut of your bookings.</p>
+          <span class="lc-go">Get on the map ${ic('arrow')}</span>
+        </a>
+      </div>
+      <div class="list-strip reveal">
+        <span>Looking for clients for your studio?</span>
+        <a class="btn btn-primary" href="#join">List up your space — it's free</a>
+      </div>
     </div></section>
 
     <!-- PRICING -->
