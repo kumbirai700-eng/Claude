@@ -33,6 +33,8 @@ function shotURL(id, n, w = 600, h = 700){ return `https://picsum.photos/seed/tc
 function coverURL(c){ return `https://picsum.photos/seed/tcc-${c.id}-cv/1200/520`; }
 function gearURL(g){ return `https://picsum.photos/seed/${g.img}/640/420`; }
 function spaceURL(s, n = 1, w = 800, h = 560){ return `https://picsum.photos/seed/${s.img}-${n}/${w}/${h}`; }
+// a graphic ring (donut) — pct 0..100 of the green arc
+function ringSVG(pct){ const r=20, c=2*Math.PI*r, on=c*pct/100; return `<svg class="sb-ring" viewBox="0 0 48 48"><circle cx="24" cy="24" r="${r}" class="ring-track"/><circle cx="24" cy="24" r="${r}" class="ring-on" stroke-dasharray="${on.toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 24 24)"/></svg>`; }
 const SHOT_H = [620,470,760,540,690,450,720,520,600];           // masonry variety
 const portfolioCount = c => Math.min(9, 5 + (c.jobs % 5));
 const IMGERR = "this.style.display='none';this.parentElement.style.background='var(--aurora)';this.parentElement.style.opacity='.5'";
@@ -128,13 +130,43 @@ function renderHome(){
           <span class="badge"><span class="dot"></span> ${CITIES.length} cities · free for creators · no cut, ever</span>
           <h1>The crew, the kit,<br>the spot. <em>One map.</em></h1>
           <p class="lede">Models, photographers, gaffers, sound, hair &amp; makeup, editors — plus gear and locations. Every part of a shoot, plotted across Australia. Built for the people who actually make the work.</p>
-          <div class="hero-stats">
-            <div class="stat-tile lead"><div class="st-fig">${total}<span>+</span></div><div class="st-lbl">creators</div><div class="st-spark">${bars(2)}</div></div>
-            <div class="stat-tile"><div class="st-fig">${state.spaces.length}</div><div class="st-lbl">spaces</div><div class="st-pin">${ic('pin')}${ic('pin')}${ic('pin')}</div></div>
-            <div class="stat-tile"><div class="st-fig">${ALL_ROLES.length}</div><div class="st-lbl">roles</div><div class="st-dots">${dots(12,9)}</div></div>
-            <div class="stat-tile"><div class="st-fig">$0</div><div class="st-lbl">cut of bookings</div><div class="st-spark">${bars(9)}</div></div>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#discover?reset=1">Open the map ${ic('arrow')}</a>
+            <a class="btn btn-ghost" href="#join">Join free</a>
           </div>
         </div>
+
+        <!-- BY THE NUMBERS — graphic stat board -->
+        <aside class="statboard">
+          <div class="sb-head"><span class="dot"></span> LIVE — THE SCENE BY NUMBERS</div>
+          <div class="sb-grid">
+            <div class="sb-cell lead">
+              <div class="sb-graphic"><div class="sb-bars">${bars(2)}</div></div>
+              <div class="sb-num">${total}<span>+</span></div>
+              <div class="sb-lbl">Creators on the map</div>
+              <div class="sb-delta up">▲ +6 this week</div>
+            </div>
+            <div class="sb-cell">
+              <div class="sb-graphic"><div class="sb-pingrid">${dots(15, state.spaces.length)}</div></div>
+              <div class="sb-num">${state.spaces.length}</div>
+              <div class="sb-lbl">Spaces for hire</div>
+              <div class="sb-delta up">▲ +2 this week</div>
+            </div>
+            <div class="sb-cell">
+              <div class="sb-graphic"><div class="sb-segbar">${CATEGORIES.map((c,i)=>`<i style="flex:${c.roles.length};opacity:${0.45+i*0.07}"></i>`).join('')}</div></div>
+              <div class="sb-num">${ALL_ROLES.length}</div>
+              <div class="sb-lbl">Roles, ${CATEGORIES.length} crafts</div>
+              <div class="sb-delta">crew · gear · spaces</div>
+            </div>
+            <div class="sb-cell">
+              <div class="sb-graphic">${ringSVG(100)}</div>
+              <div class="sb-num">$0</div>
+              <div class="sb-lbl">Our cut of bookings</div>
+              <div class="sb-delta up">you keep 100%</div>
+            </div>
+          </div>
+          <div class="sb-ticker"><div class="sb-ticker-track" id="sb-ticker"></div></div>
+        </aside>
       </div>
     </section>
 
@@ -289,6 +321,14 @@ function renderHome(){
     const p=new URLSearchParams(); p.set('city',city); if(role) p.set('role',role);
     location.hash='#discover?'+p.toString();
   });
+  // live activity ticker on the stat board
+  const tk = $('#sb-ticker');
+  if (tk){
+    const verbs = ['just joined in','booked a shoot in','connected in','listed a space in','posted a brief in'];
+    const sample = state.creators.slice().sort(()=>Math.random()-0.5).slice(0, 8);
+    const items = sample.map(c => `<span class="tk-item"><b style="${avatarBg(c.name)}">${initials(c.name)}</b>${esc(c.name.split(' ')[0])} ${verbs[hashHue(c.id)%verbs.length]} ${esc(c.city)}</span>`).join('');
+    tk.innerHTML = items + items;
+  }
   $$('.home [data-id]').forEach(n => n.addEventListener('click', () => {
     const space = n.classList.contains('space-card');
     location.hash = (space ? '#space?id=' : '#creator?id=') + n.dataset.id;

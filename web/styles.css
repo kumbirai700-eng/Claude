@@ -832,3 +832,49 @@ body { line-height: 1.5; }
   .blog-grid { grid-template-columns: 1fr; } .blog-card.feat { grid-column: span 1; grid-template-columns: 1fr; }
   .blog-card.feat .blog-img { border-right: none; border-bottom: 2px solid var(--line); min-height: 200px; }
 }
+
+/* ============================================================================
+   ▓▓ HERO "BY THE NUMBERS" graphic stat board ▓▓
+   ========================================================================= */
+.home-hero-inner { align-items: stretch; }
+.hero-copy { align-self: center; }
+.hero-actions { display: flex; gap: 12px; margin-top: 34px; flex-wrap: wrap; }
+
+.statboard { align-self: center; background: var(--ink); border: 2px solid var(--green); box-shadow: var(--shadow); display: flex; flex-direction: column; }
+.sb-head { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--green); padding: 12px 16px; border-bottom: 2px solid var(--line2); display: flex; align-items: center; gap: 9px; }
+.sb-head .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); animation: pulse 2s ease infinite; }
+.sb-grid { display: grid; grid-template-columns: 1fr 1fr; }
+.sb-cell { padding: 18px 18px 16px; border-bottom: 2px solid var(--line); }
+.sb-cell:nth-child(odd) { border-right: 2px solid var(--line); }
+.sb-cell .sb-graphic { height: 30px; margin-bottom: 12px; display: flex; align-items: flex-end; }
+.sb-bars { display: flex; align-items: flex-end; gap: 3px; height: 30px; width: 100%; }
+.sb-bars i { flex: 1; background: var(--green); opacity: .4; }
+.sb-cell.lead .sb-bars i { opacity: .7; }
+.sb-pingrid { display: grid; grid-template-columns: repeat(5,1fr); gap: 4px; width: 100%; }
+.sb-pingrid i { aspect-ratio: 1; background: var(--green); opacity: .2; }
+.sb-pingrid i.on { opacity: .9; box-shadow: 0 0 6px rgba(216,255,62,.5); }
+.sb-segbar { display: flex; gap: 2px; width: 100%; height: 14px; }
+.sb-segbar i { background: var(--green); }
+.sb-ring { width: 38px; height: 38px; }
+.sb-ring .ring-track { fill: none; stroke: var(--line2); stroke-width: 6; }
+.sb-ring .ring-on { fill: none; stroke: var(--green); stroke-width: 6; stroke-linecap: butt; }
+.sb-num { font-family: var(--display-hero); font-size: clamp(30px,3vw,42px); line-height: .8; color: var(--text); }
+.sb-cell.lead .sb-num { color: var(--green); }
+.sb-num span { font-size: .5em; vertical-align: super; }
+.sb-lbl { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-top: 9px; }
+.sb-delta { font-family: var(--mono); font-size: 10px; text-transform: uppercase; color: var(--muted2); margin-top: 6px; }
+.sb-delta.up { color: var(--green); }
+.sb-ticker { overflow: hidden; border-top: 2px solid var(--line2); -webkit-mask-image: linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent); mask-image: linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent); }
+.sb-ticker-track { display: flex; gap: 26px; white-space: nowrap; width: max-content; padding: 11px 16px; animation: scroll 26s linear infinite; }
+.tk-item { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; text-transform: uppercase; color: var(--muted); }
+.tk-item b { width: 20px; height: 20px; display: grid; place-items: center; font-family: var(--display); font-size: 9px; color: var(--ink); }
+
+/* join-page stat row stays a simple flex (home no longer uses .hero-stats) */
+.hero .hero-stats, .hero-stats:not(.sb-grid) { display: flex; gap: 34px; border: none; background: none; max-width: none; margin-top: 44px; }
+.hero .hero-stats > div { background: none; padding: 0; border: none; }
+.hero .hero-stats .num { font-family: var(--display-hero); font-size: 40px; line-height: .85; }
+.hero .hero-stats .num em { color: var(--green); font-style: normal; }
+.hero .hero-stats .lbl { font-family: var(--mono); font-size: 11px; text-transform: uppercase; color: var(--muted); margin-top: 8px; }
+
+@media (max-width: 1080px){ .statboard { margin-top: 8px; } }
+@media (max-width: 560px){ .sb-grid { grid-template-columns: 1fr; } .sb-cell:nth-child(odd){border-right:none} }

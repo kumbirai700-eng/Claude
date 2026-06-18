@@ -846,6 +846,52 @@ body { line-height: 1.5; }
   .blog-card.feat .blog-img { border-right: none; border-bottom: 2px solid var(--line); min-height: 200px; }
 }
 
+/* ============================================================================
+   ▓▓ HERO "BY THE NUMBERS" graphic stat board ▓▓
+   ========================================================================= */
+.home-hero-inner { align-items: stretch; }
+.hero-copy { align-self: center; }
+.hero-actions { display: flex; gap: 12px; margin-top: 34px; flex-wrap: wrap; }
+
+.statboard { align-self: center; background: var(--ink); border: 2px solid var(--green); box-shadow: var(--shadow); display: flex; flex-direction: column; }
+.sb-head { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--green); padding: 12px 16px; border-bottom: 2px solid var(--line2); display: flex; align-items: center; gap: 9px; }
+.sb-head .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); animation: pulse 2s ease infinite; }
+.sb-grid { display: grid; grid-template-columns: 1fr 1fr; }
+.sb-cell { padding: 18px 18px 16px; border-bottom: 2px solid var(--line); }
+.sb-cell:nth-child(odd) { border-right: 2px solid var(--line); }
+.sb-cell .sb-graphic { height: 30px; margin-bottom: 12px; display: flex; align-items: flex-end; }
+.sb-bars { display: flex; align-items: flex-end; gap: 3px; height: 30px; width: 100%; }
+.sb-bars i { flex: 1; background: var(--green); opacity: .4; }
+.sb-cell.lead .sb-bars i { opacity: .7; }
+.sb-pingrid { display: grid; grid-template-columns: repeat(5,1fr); gap: 4px; width: 100%; }
+.sb-pingrid i { aspect-ratio: 1; background: var(--green); opacity: .2; }
+.sb-pingrid i.on { opacity: .9; box-shadow: 0 0 6px rgba(216,255,62,.5); }
+.sb-segbar { display: flex; gap: 2px; width: 100%; height: 14px; }
+.sb-segbar i { background: var(--green); }
+.sb-ring { width: 38px; height: 38px; }
+.sb-ring .ring-track { fill: none; stroke: var(--line2); stroke-width: 6; }
+.sb-ring .ring-on { fill: none; stroke: var(--green); stroke-width: 6; stroke-linecap: butt; }
+.sb-num { font-family: var(--display-hero); font-size: clamp(30px,3vw,42px); line-height: .8; color: var(--text); }
+.sb-cell.lead .sb-num { color: var(--green); }
+.sb-num span { font-size: .5em; vertical-align: super; }
+.sb-lbl { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-top: 9px; }
+.sb-delta { font-family: var(--mono); font-size: 10px; text-transform: uppercase; color: var(--muted2); margin-top: 6px; }
+.sb-delta.up { color: var(--green); }
+.sb-ticker { overflow: hidden; border-top: 2px solid var(--line2); -webkit-mask-image: linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent); mask-image: linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent); }
+.sb-ticker-track { display: flex; gap: 26px; white-space: nowrap; width: max-content; padding: 11px 16px; animation: scroll 26s linear infinite; }
+.tk-item { display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; text-transform: uppercase; color: var(--muted); }
+.tk-item b { width: 20px; height: 20px; display: grid; place-items: center; font-family: var(--display); font-size: 9px; color: var(--ink); }
+
+/* join-page stat row stays a simple flex (home no longer uses .hero-stats) */
+.hero .hero-stats, .hero-stats:not(.sb-grid) { display: flex; gap: 34px; border: none; background: none; max-width: none; margin-top: 44px; }
+.hero .hero-stats > div { background: none; padding: 0; border: none; }
+.hero .hero-stats .num { font-family: var(--display-hero); font-size: 40px; line-height: .85; }
+.hero .hero-stats .num em { color: var(--green); font-style: normal; }
+.hero .hero-stats .lbl { font-family: var(--mono); font-size: 11px; text-transform: uppercase; color: var(--muted); margin-top: 8px; }
+
+@media (max-width: 1080px){ .statboard { margin-top: 8px; } }
+@media (max-width: 560px){ .sb-grid { grid-template-columns: 1fr; } .sb-cell:nth-child(odd){border-right:none} }
+
 </style>
 </head>
 <body>
@@ -1101,6 +1147,8 @@ function shotURL(id, n, w = 600, h = 700){ return `https://picsum.photos/seed/tc
 function coverURL(c){ return `https://picsum.photos/seed/tcc-${c.id}-cv/1200/520`; }
 function gearURL(g){ return `https://picsum.photos/seed/${g.img}/640/420`; }
 function spaceURL(s, n = 1, w = 800, h = 560){ return `https://picsum.photos/seed/${s.img}-${n}/${w}/${h}`; }
+// a graphic ring (donut) — pct 0..100 of the green arc
+function ringSVG(pct){ const r=20, c=2*Math.PI*r, on=c*pct/100; return `<svg class="sb-ring" viewBox="0 0 48 48"><circle cx="24" cy="24" r="${r}" class="ring-track"/><circle cx="24" cy="24" r="${r}" class="ring-on" stroke-dasharray="${on.toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 24 24)"/></svg>`; }
 const SHOT_H = [620,470,760,540,690,450,720,520,600];           // masonry variety
 const portfolioCount = c => Math.min(9, 5 + (c.jobs % 5));
 const IMGERR = "this.style.display='none';this.parentElement.style.background='var(--aurora)';this.parentElement.style.opacity='.5'";
@@ -1196,13 +1244,43 @@ function renderHome(){
           <span class="badge"><span class="dot"></span> ${CITIES.length} cities · free for creators · no cut, ever</span>
           <h1>The crew, the kit,<br>the spot. <em>One map.</em></h1>
           <p class="lede">Models, photographers, gaffers, sound, hair &amp; makeup, editors — plus gear and locations. Every part of a shoot, plotted across Australia. Built for the people who actually make the work.</p>
-          <div class="hero-stats">
-            <div class="stat-tile lead"><div class="st-fig">${total}<span>+</span></div><div class="st-lbl">creators</div><div class="st-spark">${bars(2)}</div></div>
-            <div class="stat-tile"><div class="st-fig">${state.spaces.length}</div><div class="st-lbl">spaces</div><div class="st-pin">${ic('pin')}${ic('pin')}${ic('pin')}</div></div>
-            <div class="stat-tile"><div class="st-fig">${ALL_ROLES.length}</div><div class="st-lbl">roles</div><div class="st-dots">${dots(12,9)}</div></div>
-            <div class="stat-tile"><div class="st-fig">$0</div><div class="st-lbl">cut of bookings</div><div class="st-spark">${bars(9)}</div></div>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#discover?reset=1">Open the map ${ic('arrow')}</a>
+            <a class="btn btn-ghost" href="#join">Join free</a>
           </div>
         </div>
+
+        <!-- BY THE NUMBERS — graphic stat board -->
+        <aside class="statboard">
+          <div class="sb-head"><span class="dot"></span> LIVE — THE SCENE BY NUMBERS</div>
+          <div class="sb-grid">
+            <div class="sb-cell lead">
+              <div class="sb-graphic"><div class="sb-bars">${bars(2)}</div></div>
+              <div class="sb-num">${total}<span>+</span></div>
+              <div class="sb-lbl">Creators on the map</div>
+              <div class="sb-delta up">▲ +6 this week</div>
+            </div>
+            <div class="sb-cell">
+              <div class="sb-graphic"><div class="sb-pingrid">${dots(15, state.spaces.length)}</div></div>
+              <div class="sb-num">${state.spaces.length}</div>
+              <div class="sb-lbl">Spaces for hire</div>
+              <div class="sb-delta up">▲ +2 this week</div>
+            </div>
+            <div class="sb-cell">
+              <div class="sb-graphic"><div class="sb-segbar">${CATEGORIES.map((c,i)=>`<i style="flex:${c.roles.length};opacity:${0.45+i*0.07}"></i>`).join('')}</div></div>
+              <div class="sb-num">${ALL_ROLES.length}</div>
+              <div class="sb-lbl">Roles, ${CATEGORIES.length} crafts</div>
+              <div class="sb-delta">crew · gear · spaces</div>
+            </div>
+            <div class="sb-cell">
+              <div class="sb-graphic">${ringSVG(100)}</div>
+              <div class="sb-num">$0</div>
+              <div class="sb-lbl">Our cut of bookings</div>
+              <div class="sb-delta up">you keep 100%</div>
+            </div>
+          </div>
+          <div class="sb-ticker"><div class="sb-ticker-track" id="sb-ticker"></div></div>
+        </aside>
       </div>
     </section>
 
@@ -1357,6 +1435,14 @@ function renderHome(){
     const p=new URLSearchParams(); p.set('city',city); if(role) p.set('role',role);
     location.hash='#discover?'+p.toString();
   });
+  // live activity ticker on the stat board
+  const tk = $('#sb-ticker');
+  if (tk){
+    const verbs = ['just joined in','booked a shoot in','connected in','listed a space in','posted a brief in'];
+    const sample = state.creators.slice().sort(()=>Math.random()-0.5).slice(0, 8);
+    const items = sample.map(c => `<span class="tk-item"><b style="${avatarBg(c.name)}">${initials(c.name)}</b>${esc(c.name.split(' ')[0])} ${verbs[hashHue(c.id)%verbs.length]} ${esc(c.city)}</span>`).join('');
+    tk.innerHTML = items + items;
+  }
   $$('.home [data-id]').forEach(n => n.addEventListener('click', () => {
     const space = n.classList.contains('space-card');
     location.hash = (space ? '#space?id=' : '#creator?id=') + n.dataset.id;
