@@ -1,26 +1,59 @@
-# Map-Based Talent Discovery Marketplace — Strategy Docs
+# THE CREATIVE CENTRE
 
-A two-sided (heading toward three-sided) local marketplace built on one core
-promise: **find creative talent near you**. Brands discover and book nearby
-creators on a map; creators get found without cold-pitching; gear rental
-arrives later as a third sub-market once discovery has traction.
+A black, map-based marketplace for finding creative **crew** near you — not
+just models and photographers, but the whole call sheet: **gaffers, sound
+mixers, boom ops, MUAs, hair & wardrobe stylists, DPs, drone operators,
+grips, editors, colorists, retouchers, producers, casting, set designers,
+dancers** and more. One promise: **find your crew near you.**
 
-## The documents
+```
+web/            ← the working app (open web/index.html in a browser)
+  index.html
+  styles.css    ← black editorial theme
+  app.js        ← SPA: discovery map, brand jobs, gear rental, creator join
+  data.js       ← seed crew / jobs / gear
+docs/           ← the strategy behind it
+  monetization-strategy.md
+  feature-set-and-user-flows.md
+```
 
-| Doc | What it covers |
-| --- | --- |
-| [`docs/monetization-strategy.md`](docs/monetization-strategy.md) | Who pays, why, and in what order. The brand-pays / creator-free decision, its costs, and the staged rollout. |
-| [`docs/feature-set-and-user-flows.md`](docs/feature-set-and-user-flows.md) | The product itself — creator profiles & discovery, the brand search/posting flow, and the gear rental flow, sequenced against the rollout stages. |
+## Run it
 
-## The one-paragraph version
+No build step, no dependencies. Just open the file:
 
-Creators are free and frictionless forever (or at least until there's real
-coverage), because density is the product and an empty map kills it on first
-screenshot. Brands are the paying side, but they're a slower sale, so revenue
-lags signups by months — we grow unmonetized through launch, then turn on a
-**pay-per-job-post** brand tier once one or two cities look alive, then a
-**Creator Pro** upsell once we have booking outcomes to sell against, then
-**gear-rental commission** activates on its own as that sub-market matures.
+```bash
+# from the repo root
+open web/index.html          # macOS
+xdg-open web/index.html      # Linux
+# …or serve it:
+python3 -m http.server -d web 8080   # then visit http://localhost:8080
+```
 
-See [`docs/monetization-strategy.md`](docs/monetization-strategy.md) for the
-full reasoning.
+## What's built
+
+A full, self-contained front-end across the three core flows from the
+strategy:
+
+- **Discover (Stage 0)** — the black map. Filter the full crew by category
+  (Talent / Camera / Lighting & Grip / Sound / Hair-Makeup-Style /
+  Direction & Production / Post / Design & Build), search, tap pins, open
+  rich profiles. Handles the empty-map cold-start gracefully — it never
+  shows a dead screen.
+- **Jobs (Stage 1)** — brand brief posting with the **pay-per-post** model
+  (£39 first brief, subscription nudge after 3+). Posting notifies matching
+  crew in-city. Briefs persist locally.
+- **Gear (Stage 3)** — rental listings seeded by the gear crew already own,
+  commission-only, opening city-by-city.
+- **Join (always free)** — near-zero-friction creator onboarding (4 required
+  fields) that drops a new pin on the map live.
+
+State persists to `localStorage`, so creators you add, jobs you post, and
+your shortlist survive a reload.
+
+## Why it's shaped this way
+
+Density is the product; an empty map kills it on first screenshot. So crew
+are free and frictionless forever, brands are the paying side (but a slower
+sale), and gear rides on top once density exists. The full reasoning and the
+staged rollout are in [`docs/monetization-strategy.md`](docs/monetization-strategy.md);
+the flows are in [`docs/feature-set-and-user-flows.md`](docs/feature-set-and-user-flows.md).

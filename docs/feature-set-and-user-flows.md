@@ -33,8 +33,10 @@ the pin exists, not before.
 
 **Required to get a pin on the map (the absolute minimum):**
 - Name / handle
-- Discipline(s) — e.g. photographer, videographer, model, MUA, stylist,
-  editor *(multi-select, drives discovery filters)*
+- Discipline(s) — the full crew: model, actor, dancer, photographer,
+  videographer, DP, gaffer, grip, sound mixer, boom op, MUA, hair/wardrobe
+  stylist, producer, director, editor, colorist, retoucher, set designer…
+  *(multi-select, grouped into categories, drives discovery filters)*
 - Location — city + an approximate area to drop the pin
 - One portfolio image or link
 

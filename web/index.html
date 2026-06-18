@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Creative Centre — find your crew</title>
+  <meta name="description" content="A map-based marketplace for finding creative crew near you — models, photographers, gaffers, sound, hair & makeup, editors and more." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- ===================== NAV ===================== -->
+  <header class="nav">
+    <a class="brand" href="#discover" data-nav>
+      <span class="brand-mark">◐</span>
+      <span class="brand-name">THE&nbsp;CREATIVE&nbsp;CENTRE</span>
+    </a>
+    <nav class="nav-links">
+      <a href="#discover" data-nav data-route="discover">Discover</a>
+      <a href="#jobs"     data-nav data-route="jobs">Jobs</a>
+      <a href="#gear"     data-nav data-route="gear">Gear</a>
+      <a href="#join"     data-nav data-route="join" class="nav-cta">Join free</a>
+    </nav>
+    <button class="nav-burger" id="burger" aria-label="Menu">☰</button>
+  </header>
+
+  <!-- ===================== APP ROOT ===================== -->
+  <main id="view"><!-- views render here --></main>
+
+  <!-- ===================== PROFILE DRAWER ===================== -->
+  <div class="drawer-scrim" id="scrim" hidden></div>
+  <aside class="drawer" id="drawer" hidden aria-hidden="true"></aside>
+
+  <!-- ===================== TOAST ===================== -->
+  <div class="toast" id="toast" hidden></div>
+
+  <footer class="foot">
+    <span>THE CREATIVE CENTRE</span>
+    <span class="foot-dim">Free for creators, always. Built density-first.</span>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
