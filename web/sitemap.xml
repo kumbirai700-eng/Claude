@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The Creative Collective — sitemap. Clean URL architecture ready for SSR/prerender.
+     City + role landing pages (e.g. /brisbane-photographers) are prepared but not built yet. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://thecreativecollective.com.au/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://thecreativecollective.com.au/discover</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>https://thecreativecollective.com.au/spaces</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://thecreativecollective.com.au/jobs</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://thecreativecollective.com.au/scene</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://thecreativecollective.com.au/about</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <!-- Future programmatic city + role pages (architecture reserved) -->
+  <url><loc>https://thecreativecollective.com.au/brisbane-photographers</loc><priority>0.6</priority></url>
+  <url><loc>https://thecreativecollective.com.au/brisbane-videographers</loc><priority>0.6</priority></url>
+  <url><loc>https://thecreativecollective.com.au/sydney-models</loc><priority>0.6</priority></url>
+  <url><loc>https://thecreativecollective.com.au/melbourne-stylists</loc><priority>0.6</priority></url>
+</urlset>

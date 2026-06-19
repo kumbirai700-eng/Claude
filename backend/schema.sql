@@ -116,3 +116,91 @@ end; $$ language plpgsql security definer;
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert on auth.users
   for each row execute function handle_new_user();
+
+-- ============================================================================
+--  V1 EXPANSION — reviews, availability, waitlist, saves, compare, enquiries,
+--  verification, support, featured (admin-ready architecture)
+-- ============================================================================
+
+-- profiles gains credibility + responsiveness + availability columns
+alter table profiles add column if not exists verify        jsonb default '{}'::jsonb;   -- {id,email,portfolio}
+alter table profiles add column if not exists response_time text;
+alter table profiles add column if not exists response_rate int default 0;
+alter table profiles add column if not exists repeat_pct    int default 0;
+alter table profiles add column if not exists availability  text default 'now';          -- now | limited | booked
+alter table profiles add column if not exists avail_days    jsonb default '{}'::jsonb;    -- {weekdays,weekends,evenings}
+alter table profiles add column if not exists featured      boolean default false;        -- admin: feature a profile
+
+create table if not exists reviews (
+  id uuid primary key default gen_random_uuid(),
+  creator_id uuid references profiles(id) on delete cascade,
+  author_id  uuid references profiles(id) on delete set null,
+  author_name text, author_role text, stars int check (stars between 1 and 5),
+  text text, created_at timestamptz default now()
+);
+
+-- portfolio items carry project context
+create table if not exists portfolio_items (
+  id uuid primary key default gen_random_uuid(),
+  creator_id uuid references profiles(id) on delete cascade,
+  image_url text, project_name text, client text, role text, location text, year int,
+  sort int default 0
+);
+
+create table if not exists waitlist (
+  id uuid primary key default gen_random_uuid(),
+  name text, phone text, email text, city text, occupation text, created_at timestamptz default now()
+);
+
+-- user-generated saved collections
+create table if not exists saved_lists (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid references profiles(id) on delete cascade,
+  name text not null, created_at timestamptz default now()
+);
+create table if not exists saved_items (
+  list_id uuid references saved_lists(id) on delete cascade,
+  item_type text, item_id text, created_at timestamptz default now(),
+  primary key (list_id, item_type, item_id)
+);
+
+create table if not exists comparisons (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid references profiles(id) on delete cascade,
+  creator_ids text[] default '{}', created_at timestamptz default now()
+);
+
+create table if not exists enquiries (
+  id uuid primary key default gen_random_uuid(),
+  from_id uuid references profiles(id) on delete set null,
+  to_id   uuid references profiles(id) on delete cascade,
+  project text, location text, date date, budget text, description text,
+  team text[] default '{}', status text default 'new', created_at timestamptz default now()
+);
+
+create table if not exists support_tickets (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid references profiles(id) on delete set null,
+  subject text, body text, status text default 'open', created_at timestamptz default now()
+);
+
+alter table reviews enable row level security;
+alter table waitlist enable row level security;
+alter table saved_lists enable row level security;
+alter table saved_items enable row level security;
+alter table comparisons enable row level security;
+alter table enquiries enable row level security;
+alter table support_tickets enable row level security;
+alter table portfolio_items enable row level security;
+
+create policy "reviews read"   on reviews for select using (true);
+create policy "reviews write"  on reviews for insert with check (auth.uid() is not null);
+create policy "waitlist insert" on waitlist for insert with check (true);
+create policy "portfolio read" on portfolio_items for select using (true);
+create policy "portfolio own"  on portfolio_items for all using (auth.uid() = creator_id) with check (auth.uid() = creator_id);
+create policy "saves own"   on saved_lists for all using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+create policy "saveitems own" on saved_items for all using (exists(select 1 from saved_lists l where l.id = list_id and l.owner_id = auth.uid()));
+create policy "cmp own"     on comparisons for all using (auth.uid() = owner_id) with check (auth.uid() = owner_id);
+create policy "enq parties" on enquiries for select using (auth.uid() = from_id or auth.uid() = to_id);
+create policy "enq create"  on enquiries for insert with check (auth.uid() is not null);
+create policy "tickets own" on support_tickets for all using (auth.uid() = owner_id) with check (auth.uid() = owner_id);

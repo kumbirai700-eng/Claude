@@ -17,6 +17,8 @@ const state = {
   user: LS.get('user', null),
   following: new Set(LS.get('following', [])),
   cur: LS.get('cur', 'AUD'),
+  saves: LS.get('saves', { 'Saved': [] }),       // { collectionName: ["creator:c01", ...] }
+  compare: new Set(LS.get('compare', [])),        // creator ids
 };
 const RATES = { AUD:1, USD:0.66, NZD:1.08, GBP:0.52, EUR:0.61 };
 const CUR_SYM = { AUD:'$', USD:'US$', NZD:'NZ$', GBP:'£', EUR:'€' };
@@ -68,7 +70,7 @@ function filtered(){
 // ============================================================================
 //  ROUTER
 // ============================================================================
-const routes = { home:renderHome, discover:renderDiscover, jobs:renderJobs, gear:renderGear, join:renderJoin, creator:renderCreator, spaces:renderSpaces, space:renderSpace, blog:renderBlog, post:renderPost, account:renderAccount };
+const routes = { home:renderHome, discover:renderDiscover, jobs:renderJobs, gear:renderGear, join:renderJoin, creator:renderCreator, spaces:renderSpaces, space:renderSpace, blog:renderBlog, post:renderPost, account:renderAccount, about:renderAbout, legal:renderLegal };
 function router(){
   const raw = location.hash.replace('#','') || 'home';
   const [route, qs] = raw.split('?');
@@ -95,6 +97,42 @@ function router(){
   if (route !== 'discover') window.scrollTo(0,0);
   $('.nav-links')?.classList.remove('open');
   initReveal();
+  applySEO(route, ROUTE_PARAMS);
+  renderCompareTray();
+}
+
+// ---------- SEO: per-route title / meta / OG / Twitter / JSON-LD ----------
+function setMeta(name, content, attr='name'){
+  let m = document.head.querySelector(`meta[${attr}="${name}"]`);
+  if(!m){ m=document.createElement('meta'); m.setAttribute(attr,name); document.head.appendChild(m); }
+  m.setAttribute('content', content);
+}
+function setLD(obj){
+  let s = document.getElementById('ld-json');
+  if(!s){ s=document.createElement('script'); s.id='ld-json'; s.type='application/ld+json'; document.head.appendChild(s); }
+  s.textContent = JSON.stringify(obj);
+}
+function applySEO(route, params){
+  const base = 'The Creative Collective';
+  let title = `${base} — Australia's creative marketplace`;
+  let desc = "Discover and book Australia's creative crew — photographers, models, gaffers, stylists, editors, music and studios. Build your team in one place.";
+  let ld = { '@context':'https://schema.org', '@type':'WebSite', name:base, url:location.origin };
+  if(route==='creator'){ const c=state.creators.find(x=>x.id===params.get('id')); if(c){
+    title=`${c.name} — ${c.roles[0]} in ${c.city} | ${base}`;
+    desc=`${c.name}, ${c.roles.join(', ')} based in ${c.area}, ${c.city}. ${c.bio.slice(0,120)}`;
+    ld={ '@context':'https://schema.org','@type':'Person', name:c.name, jobTitle:c.roles.join(', '), address:{'@type':'PostalAddress',addressLocality:c.city,addressCountry:'AU'},
+      aggregateRating:{'@type':'AggregateRating', ratingValue:c.rating, reviewCount:c.reviewCount} }; } }
+  else if(route==='space'){ const s=state.spaces.find(x=>x.id===params.get('id')); if(s){ title=`${s.name} — ${s.type} in ${s.city} | ${base}`; desc=`Hire ${s.name}, a ${s.type.toLowerCase()} in ${s.area}, ${s.city}. ${s.rate}/hr.`; } }
+  else if(route==='spaces'){ title=`Studios & locations for hire | ${base}`; desc='Hire studios, warehouses, galleries and sound stages across Australia.'; }
+  else if(route==='jobs'){ title=`Post a creative brief | ${base}`; desc='Post a job and book Australian creative crew — pay per post, no subscription.'; }
+  else if(route==='blog'){ title=`The Scene — Australian creative culture | ${base}`; desc="Dispatches from Australia's underground creative scene."; }
+  else if(route==='about'){ title=`About | ${base}`; desc='Why we built the home of Australian creative talent.'; }
+  else if(route==='legal'){ title=`${(params.get('doc')||'Legal').replace(/-/g,' ')} | ${base}`; desc='Legal policies for The Creative Collective.'; }
+  document.title = title;
+  setMeta('description', desc);
+  setMeta('og:title', title, 'property'); setMeta('og:description', desc, 'property'); setMeta('og:type','website','property');
+  setMeta('twitter:card','summary_large_image'); setMeta('twitter:title', title); setMeta('twitter:description', desc);
+  setLD(ld);
 }
 window.addEventListener('hashchange', router);
 
@@ -119,6 +157,12 @@ const ICONS = {
   users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
   ruler:'<path d="m16 3 5 5L8 21l-5-5L16 3Z"/><path d="m9 10 1 1M12 7l1 1M6 13l1 1"/>',
   bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"/>',
+  heart:'<path d="M20.8 5.6a5 5 0 0 0-7.1 0L12 7.3l-1.7-1.7a5 5 0 1 0-7.1 7.1L12 21.5l8.8-8.8a5 5 0 0 0 0-7.1Z"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  scale:'<path d="M12 3v18M5 21h14M7 7l-4 7a4 4 0 0 0 8 0L7 7Zm10 0-4 7a4 4 0 0 0 8 0l-4-7ZM7 7l5-2 5 2"/>',
+  mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/>',
+  chev:'<path d="m9 6 6 6-6 6"/>',
+  x:'<path d="M6 6l12 12M18 6 6 18"/>',
 };
 const ic = (n, cls='icn') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]||''}</svg>`;
 const CAT_ICON = { talent:'user', camera:'camera', lighting:'bulb', sound:'wave', glam:'brush', direction:'clap', post:'film', design:'layers', music:'wave' };
@@ -322,17 +366,17 @@ function renderHome(){
 
     <!-- CTA -->
     <section class="cta-band"><div class="aurora-bg"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
-      <div class="cta-band-inner reveal"><h2>Your next shoot starts on the map.</h2><p>Join free as a creator, or post your first brief in minutes.</p>
-        <div class="cta-actions"><a class="btn btn-primary" href="#join">Join free as a creator</a><a class="btn btn-ghost" href="#jobs">I'm a brand — post a brief</a></div></div>
+      <div class="cta-band-inner reveal"><div class="wl-pill"><span class="dot"></span> ${waitlistCount().toLocaleString()} founding members waiting</div><h2>Be part of the scene.</h2><p>We're opening city by city. Join the waitlist and be first in.</p>
+        <div class="cta-actions"><button class="btn btn-primary" id="cta-wl">Join the waitlist</button><a class="btn btn-ghost" href="#about">Why we're building this</a></div></div>
     </section>
 
     <!-- FOOTER -->
     <footer class="foot-big">
       <div class="foot-cols">
         <div class="about"><a class="brand" href="#home" data-nav><span class="brand-mark"><svg viewBox="0 0 900 820" class="brand-au"><path d="M612,60 C660,96 740,190 800,440 C788,540 755,612 730,645 C700,665 625,672 590,650 C540,646 500,648 470,645 C360,652 230,640 155,610 C135,580 120,530 120,520 C130,440 150,360 250,230 C300,172 330,142 360,150 C420,150 455,118 470,86 C520,108 560,148 560,150 C600,118 612,60 612,60 Z"/></svg></span><span class="brand-name">THE&nbsp;CREATIVE&nbsp;COLLECTIVE</span></a><p>Australia's map-based marketplace for finding creative crew. Free for creators, density-first by design.</p></div>
-        <div class="foot-col"><h5>Product</h5><a href="#discover?reset=1">Discover map</a><a href="#spaces">Spaces</a><a href="#jobs">For brands</a><a href="#gear">Gear rental</a><a href="#join">For creators</a></div>
-        <div class="foot-col"><h5>Roles</h5><a href="#discover?role=Model">Models</a><a href="#discover?role=Photographer">Photographers</a><a href="#discover?role=Gaffer">Gaffers</a><a href="#discover?role=Sound%20Mixer">Sound</a></div>
-        <div class="foot-col"><h5>Cities</h5>${CITIES.slice(0,6).map(c=>`<a href="#discover?city=${encodeURIComponent(c)}">${c}</a>`).join('')}</div>
+        <div class="foot-col"><h5>Product</h5><a href="#discover?reset=1">Discover map</a><a href="#spaces">Spaces</a><a href="#jobs">For brands</a><a href="#gear">Gear rental</a><a href="#blog">The Scene</a></div>
+        <div class="foot-col"><h5>Company</h5><a href="#about">About</a><a id="foot-wl" href="#about">Join waitlist</a><a href="#discover?role=Model">Models</a><a href="#discover?role=Photographer">Photographers</a></div>
+        <div class="foot-col"><h5>Legal</h5>${Object.entries(LEGAL_DOCS).map(([k,v])=>`<a href="#legal?doc=${k}">${esc(v[0])}</a>`).join('')}</div>
       </div>
       <div class="foot-bar"><span>© 2026 The Creative Collective · Australia</span><span>Free for creators, always.</span></div>
     </footer>
@@ -345,6 +389,9 @@ function renderHome(){
     location.hash = (space ? '#space?id=' : '#creator?id=') + n.dataset.id;
   }));
   $$('.home [data-nav]').forEach(a => a.addEventListener('click', () => $('.nav-links')?.classList.remove('open')));
+  $('#cta-wl')?.addEventListener('click', openWaitlist);
+  $('#foot-wl')?.addEventListener('click', e => { e.preventDefault(); openWaitlist(); });
+  wireSaves(); wireCompare();
   initGlobe();
 }
 
@@ -642,8 +689,9 @@ function drawSpaceMarkers(list){
 function renderResults(list){
   const box = $('#results');
   if (!list.length){ box.innerHTML = `<div style="padding:30px 20px;color:var(--muted);font-size:13.5px">No matches in ${esc(state.city)}. Widen your filters, or <a href="#join" style="color:var(--green)">be the first here →</a></div>`; return; }
-  box.innerHTML = list.map(c => `<div class="result ${state.selected===c.id?'sel':''}" data-id="${c.id}"><div class="avatar" style="${avatarBg(c.name)}">${initials(c.name)}</div><div class="result-body"><div class="result-name">${esc(c.name)} ${c.verified?`<span class="verified-ico">${VBADGE}</span>`:''}</div><div class="result-role">${esc(c.roles.join(' · '))}</div><div class="result-meta"><span>${esc(c.area)}</span><span class="rate">${esc(money(c.rate))}</span><span class="star">${ic('star')} ${c.rating.toFixed(1)}</span></div></div></div>`).join('');
-  $$('#results .result').forEach(r => r.addEventListener('click', () => openProfile(r.dataset.id)));
+  box.innerHTML = list.map(c => `<div class="result ${state.selected===c.id?'sel':''}" data-id="${c.id}"><div class="avatar" style="${avatarBg(c.name)}">${initials(c.name)}</div><div class="result-body"><div class="result-name">${esc(c.name)} ${c.verified?`<span class="verified-ico">${VBADGE}</span>`:''}<span class="r-avail ${c.availability}"></span></div><div class="result-role">${esc(c.roles.join(' · '))}</div><div class="result-meta"><span class="rate">${esc(money(c.rate))}</span><span class="star">${ic('star')} ${c.rating.toFixed(1)}</span><span>${esc(c.responseTime)}</span></div></div><div class="result-actions">${saveBtnHTML('creator',c.id)}${compareBtnHTML(c.id)}</div></div>`).join('');
+  $$('#results .result').forEach(r => r.addEventListener('click', e => { if(e.target.closest('.result-actions')) return; openProfile(r.dataset.id); }));
+  wireSaves(box); wireCompare(box);
 }
 function renderSpaceResults(list){
   const box = $('#results');
@@ -693,7 +741,6 @@ function renderCreator(){
   const c = state.creators.find(x => x.id===id);
   if (!c){ location.hash='#discover'; return; }
   const gearOwned = state.gear.filter(g => g.owner===c.name);
-  const shots = Array.from({length:portfolioCount(c)}, (_,i)=>{ const h=SHOT_H[i%SHOT_H.length]; return `<div class="shot" data-full="${shotURL(c.id,i+1,1000,Math.round(h*1.6))}"><img loading="lazy" src="${shotURL(c.id,i+1,600,h)}" onerror="${IMGERR}" alt="Work by ${esc(c.name)}"></div>`; }).join('');
 
   $('#view').appendChild(el(`<div class="profile">
     <div class="pf-hero"><div class="pf-hero-bg" style="background-image:url('${coverURL(c)}')"></div>
@@ -701,45 +748,70 @@ function renderCreator(){
     <div class="pf-head">
       <div class="pf-av" style="${avatarBg(c.name)}">${initials(c.name)}</div>
       <div class="pf-id">
-        <h1>${esc(c.name)} ${c.verified?`<span class="pf-verified">${VBADGE} Verified</span>`:''}</h1>
+        <h1>${esc(c.name)} ${c.verified?`<span class="pf-seal" title="Verified">${VBADGE}</span>`:''}</h1>
         <div class="roles">${esc(c.roles.join(' · '))}</div>
+        <div class="pf-id-meta">${verifyChipsHTML(c)} ${availabilityHTML(c)}</div>
         <div class="loc">${ic('pin','icn')} ${esc(c.area)}, ${esc(c.city)}</div>
       </div>
-      <div class="pf-actions">${connectBtnHTML(c.id)}<button class="btn btn-ghost" id="pf-save">${state.shortlist.has(c.id)?'✓ Shortlisted':'☆ Shortlist'}</button></div>
+      <div class="pf-actions">
+        ${saveBtnHTML('creator',c.id,'lg')}
+        ${compareBtnHTML(c.id,'lg')}
+        ${connectBtnHTML(c.id)}
+      </div>
     </div>
     <div class="pf-body">
       <div class="pf-main">
-        <div class="pf-stats">
-          <div class="pf-stat"><div class="v conn"><em data-conncount="${c.id}">${numFmt(c.connections||0)}</em></div><div class="k">Connections</div></div>
-          <div class="pf-stat"><div class="v"><em>${c.rating.toFixed(1)}</em>★</div><div class="k">Rating</div></div>
-          <div class="pf-stat"><div class="v">${c.jobs}</div><div class="k">Bookings</div></div>
-          <div class="pf-stat"><div class="v">${c.exp}<small style="font-size:16px"> yrs</small></div><div class="k">Experience</div></div>
-        </div>
+        ${statsGridHTML(c)}
         <div class="pf-section-t">About</div>
         <p class="pf-bio">${esc(c.bio)}</p>
         <div class="pf-tags">${(c.tags||[]).map(t=>`<span class="pf-tag">${esc(t)}</span>`).join('')}</div>
         ${socialsHTML(c)}
-        <div class="pf-section-t">Portfolio</div>
-        <div class="gallery">${shots}</div>
+        <div class="pf-section-t">Portfolio <span class="pf-hint">hover / tap a piece for project details</span></div>
+        <div class="flip-grid">${projectFlipHTML(c)}</div>
+        <div class="pf-section-t">Reviews</div>
+        ${reviewsHTML(c)}
       </div>
       <aside class="pf-rail">
         <div class="rate">${esc(money(c.rate))}</div>
-        <div class="avail"><span class="dot"></span> Available for bookings</div>
+        ${availabilityHTML(c)}
+        <button class="btn btn-primary btn-block" id="pf-enq" style="margin-top:14px">${ic('mail','icn')} Send project enquiry</button>
         ${connectBtnHTML(c.id, true)}
-        <a class="btn btn-primary btn-block" href="#jobs" id="pf-book" style="margin-top:10px">Book / send brief</a>
-        <button class="btn btn-ghost btn-block" id="pf-save2" style="margin-top:10px">${state.shortlist.has(c.id)?'✓ Shortlisted':'☆ Shortlist'}</button>
+        <button class="btn btn-ghost btn-block" id="pf-save-rail" style="margin-top:10px">${isSaved('creator',c.id)?'♥ Saved':'♡ Save'}</button>
         ${gearOwned.length?`<div class="pf-section-t" style="margin:24px 0 12px">Gear for hire</div><div class="pf-gear">${gearOwned.map(g=>`<div class="gi"><img loading="lazy" src="${gearURL(g)}" onerror="${IMGERR}" alt=""><div><div class="gt">${esc(g.brand)} ${esc(g.model)}</div><div class="gs">${esc(money(g.rate))} · ${esc(g.cat)}</div></div></div>`).join('')}</div>`:''}
-        <div class="note">Contact opens once a brand posts a brief or unlocks contact — that's the line we monetise. Location shown is an approximate suburb.</div>
+        <div class="note">Enquiries are structured so ${c.name.split(' ')[0]} can reply fast. Location shown is an approximate suburb.</div>
       </aside>
     </div>
   </div>`));
 
-  const toggleSave = () => { state.shortlist.has(c.id)?state.shortlist.delete(c.id):state.shortlist.add(c.id); LS.set('shortlist',[...state.shortlist]); const t=state.shortlist.has(c.id)?'✓ Shortlisted':'☆ Shortlist'; $('#pf-save').textContent=t; $('#pf-save2').textContent=t; toast(state.shortlist.has(c.id)?`${c.name} shortlisted`:`Removed ${c.name}`); };
-  $('#pf-save').addEventListener('click', toggleSave);
-  $('#pf-save2').addEventListener('click', toggleSave);
-  $('#pf-book').addEventListener('click', () => setTimeout(()=>toast('Post a brief to reach '+c.name.split(' ')[0]),200));
-  $$('.gallery .shot').forEach(s => s.addEventListener('click', () => openLightbox(s.dataset.full)));
-  wireConnect();
+  $('#pf-enq').addEventListener('click', () => openEnquiry(c));
+  $('#pf-save-rail').addEventListener('click', () => { toggleSave('creator',c.id); $('#pf-save-rail').textContent = isSaved('creator',c.id)?'♥ Saved':'♡ Save'; });
+  $$('.flip .fb-view').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); openLightbox(b.dataset.full); }));
+  $$('.flip').forEach(f => f.addEventListener('click', () => f.classList.toggle('flipped')));  // tap to flip (mobile)
+  // review submission
+  $('#rev-add').addEventListener('click', () => openReview(c));
+  wireConnect(); wireSaves(); wireCompare();
+}
+
+function openReview(c){
+  let stars=5;
+  modalOpen(`<div class="rev-modal"><button class="ico-btn modal-close" id="md-x">${ic('x','icn')}</button>
+    <h3>Write a review</h3><p class="sub">Worked with ${esc(c.name)}? Share how it went.</p>
+    <form id="rev-form">
+      <div class="form-row two"><div><input class="field" name="name" required placeholder="Your name"></div><div><input class="field" name="role" placeholder="Occupation"></div></div>
+      <div class="form-row"><label class="label">Rating</label><div class="star-pick" id="star-pick">${[1,2,3,4,5].map(n=>`<button type="button" data-star="${n}" class="${n<=5?'on':''}">★</button>`).join('')}</div></div>
+      <div class="form-row"><textarea class="field" name="text" required placeholder="What was it like working together?"></textarea></div>
+      <button class="btn btn-primary btn-block" type="submit">Post review</button>
+    </form></div>`);
+  $('#md-x').addEventListener('click', modalClose);
+  const paintStars=()=>$$('#star-pick button').forEach(b=>b.classList.toggle('on', +b.dataset.star<=stars));
+  $$('#star-pick button').forEach(b=>b.addEventListener('click',()=>{ stars=+b.dataset.star; paintStars(); }));
+  $('#rev-form').addEventListener('submit', e=>{ e.preventDefault(); const f=new FormData(e.target);
+    const r={ name:f.get('name'), role:f.get('role')||'Client', stars, date:new Date().toISOString().slice(0,7), text:f.get('text') };
+    c.reviews=[r,...(c.reviews||[])]; c.reviewCount=(c.reviewCount||0)+1;
+    const ur=LS.get('userReviews',{}); ur[c.id]=[r,...(ur[c.id]||[])]; LS.set('userReviews',ur);
+    if(FB.on&&FB.db) FB.db.collection('reviews').add({creator:c.id,...r}).catch(()=>{});
+    modalClose(); const grid=$('#reviews-grid'); if(grid) grid.insertAdjacentHTML('afterbegin', reviewCardHTML(r)); toast('Review posted');
+  });
 }
 function openLightbox(src){ const lb=el(`<div class="lightbox"><img src="${src}" alt=""></div>`); lb.addEventListener('click', ()=>lb.remove()); document.body.appendChild(lb); }
 
@@ -783,6 +855,63 @@ function renderPost(){
 }
 
 // ============================================================================
+//  VIEW: ABOUT
+// ============================================================================
+function renderAbout(){
+  $('#view').appendChild(el(`<div>
+    <div class="hero"><div class="aurora-bg"><span class="a1"></span><span class="a2"></span><span class="a3"></span></div>
+      <div class="hero-inner"><div class="eyebrow">About</div><h1>The home of Australia's <em>creative industry.</em></h1>
+        <p>We're building the place where Australian creatives get discovered, build teams and get booked — without agencies, gatekeepers or a cut of your work.</p></div></div>
+    <div class="wrap section-pad">
+      <div class="about-grid">
+        <div class="about-card reveal"><div class="ac-n">01</div><h3>Support local creatives</h3><p>Every model, shooter, gaffer, stylist and producer in the country deserves a shopfront that's actually theirs. Free, forever.</p></div>
+        <div class="about-card reveal d2"><div class="ac-n">02</div><h3>Make discovery easy</h3><p>Talent shouldn't live in DMs and group chats. One map, real portfolios, honest reviews — find the right person in minutes.</p></div>
+        <div class="about-card reveal d3"><div class="ac-n">03</div><h3>Help teams come together</h3><p>A shoot is a team sport. Crew, gear and a space to shoot it — assembled in one place, locally.</p></div>
+      </div>
+      <div class="founder reveal">
+        <div class="founder-img" style="background-image:url('https://picsum.photos/seed/founder-cc/700/800')"></div>
+        <div class="founder-copy"><div class="eyebrow">Founder story</div><h2 class="serif">Why we started.</h2>
+          <p class="serif">I spent years watching brilliant creatives struggle to get found, while brands burned weeks trying to build a team. The talent was everywhere — it just wasn't <em>visible</em>.</p>
+          <p class="serif">The Creative Collective is the platform I wished existed: a place that puts the people who actually make the work first, keeps it local, and never takes a cut of a creative's booking. This is for the scene.</p>
+          <div class="founder-sign">— The Creative Collective</div>
+        </div>
+      </div>
+      <div class="about-cta reveal"><h2>Be part of it.</h2><button class="btn btn-primary" id="ab-wl">Join the waitlist</button></div>
+    </div>
+  </div>`));
+  $('#ab-wl').addEventListener('click', openWaitlist);
+}
+
+// ============================================================================
+//  VIEW: LEGAL  (templates, ready for legal review)
+// ============================================================================
+const LEGAL_DOCS = {
+  'privacy-policy':   ['Privacy Policy', 'How we collect, use and protect your personal information.'],
+  'terms-of-service': ['Terms of Service', 'The terms that govern your use of The Creative Collective.'],
+  'creator-terms':    ['Creator Terms', 'Terms specific to creatives listing a profile, gear or space.'],
+  'acceptable-use':   ['Acceptable Use Policy', 'What is and isn’t allowed on the platform.'],
+  'copyright-policy': ['Copyright Policy', 'How we handle copyright and takedown requests.'],
+  'cookie-policy':    ['Cookie Policy', 'How we use cookies and similar technologies.'],
+};
+function renderLegal(){
+  const slug = ROUTE_PARAMS.get('doc') || 'privacy-policy';
+  const d = LEGAL_DOCS[slug] || LEGAL_DOCS['privacy-policy'];
+  const secs = ['Overview','Information we handle','How we use it','Your rights and choices','Third parties','Data retention','Changes to this policy','Contact'];
+  $('#view').appendChild(el(`<div class="wrap legal-wrap">
+    <nav class="crumb"><a href="#home">Home</a> ${ic('chev','icn')} <a href="#legal?doc=privacy-policy">Legal</a> ${ic('chev','icn')} <span>${esc(d[0])}</span></nav>
+    <div class="legal-grid">
+      <aside class="legal-nav">${Object.entries(LEGAL_DOCS).map(([k,v])=>`<a href="#legal?doc=${k}" class="${k===slug?'on':''}">${esc(v[0])}</a>`).join('')}</aside>
+      <article class="legal-body">
+        <div class="eyebrow">Legal</div><h1>${esc(d[0])}</h1>
+        <p class="legal-intro serif">${esc(d[1])}</p>
+        <p class="legal-note">Last updated: June 2026 · This is a template prepared for professional legal review before launch.</p>
+        ${secs.map((s,i)=>`<h2>${i+1}. ${esc(s)}</h2><p class="serif">Placeholder copy for “${esc(s)}”. The Creative Collective will provide finalised, lawyer-reviewed wording here covering ${esc(s.toLowerCase())} as it relates to ${esc(d[0].toLowerCase())}. This structure is in place so legal content can be dropped in without further engineering.</p>`).join('')}
+      </article>
+    </div>
+  </div>`));
+}
+
+// ============================================================================
 //  VIEW: SPACES  (venue / location hire — browse)
 // ============================================================================
 function renderSpaces(){
@@ -800,8 +929,8 @@ function renderSpaces(){
     const city=$('#sp-city').value, type=$('#sp-type').value;
     const list=state.spaces.filter(s => (city==='All cities'||s.city===city) && (type==='All types'||s.type===type));
     $('#sp-list').innerHTML = list.length ? list.map(s=>spaceCard(s)).join('') : `<div style="color:var(--muted)">No spaces match — try another city or type.</div>`;
-    $$('#sp-list .space-card').forEach(card => card.addEventListener('click', () => location.hash='#space?id='+card.dataset.id));
-    initReveal();
+    $$('#sp-list .space-card').forEach(card => card.addEventListener('click', e => { if(e.target.closest('.save-btn')) return; location.hash='#space?id='+card.dataset.id; }));
+    wireSaves($('#sp-list')); initReveal();
   };
   $('#sp-city').addEventListener('change', paint); $('#sp-type').addEventListener('change', paint); paint();
 }
@@ -810,6 +939,7 @@ function spaceCard(s){
     <div class="space-img" style="background-image:url('${spaceURL(s)}')">
       <span class="type">${esc(s.type)}</span>
       ${s.instant?`<span class="instant">${ic('bolt')} Instant</span>`:''}
+      ${saveBtnHTML('space',s.id,'on-img')}
       <span class="star">${ic('star')} ${s.rating.toFixed(1)} <span style="color:var(--muted)">(${s.reviews})</span></span>
     </div>
     <div class="space-info">
@@ -1087,14 +1217,17 @@ function saveUser(){ LS.set('user', state.user); renderNavCta(); }
 
 function renderNavCta(){
   const box = $('#nav-cta-area'); if(!box) return;
+  const savesBtn = `<button class="nav-ico" id="nav-saves" title="Saved" aria-label="Saved">${ic('heart','icn')}</button>`;
   if (state.user){
     const u = state.user;
-    box.innerHTML = `<a class="nav-profile" href="#account" data-nav title="Your profile">${ic('user','icn')}</a><div class="acct-chip" id="acct-chip"><span class="av" style="${avatarBg(u.name)}">${initials(u.name)}</span><span class="nm">${esc(u.name.split(' ')[0])}</span></div>`;
+    box.innerHTML = `${savesBtn}<a class="nav-profile" href="#account" data-nav title="Your profile">${ic('user','icn')}</a><div class="acct-chip" id="acct-chip"><span class="av" style="${avatarBg(u.name)}">${initials(u.name)}</span><span class="nm">${esc(u.name.split(' ')[0])}</span></div>`;
     $('#acct-chip').addEventListener('click', toggleAcctMenu);
   } else {
-    box.innerHTML = `<a class="btn-nav ghost" id="nav-login">Log in</a><a class="btn-nav solid" href="#join" data-nav>Join free</a><a class="btn-nav ghost" href="#join" data-nav>List your space</a>`;
+    box.innerHTML = `${savesBtn}<a class="btn-nav ghost" id="nav-login">Log in</a><button class="btn-nav solid" id="nav-wl">Join waitlist</button>`;
     $('#nav-login').addEventListener('click', () => openAuth('login'));
+    $('#nav-wl').addEventListener('click', openWaitlist);
   }
+  $('#nav-saves').addEventListener('click', openSaves);
 }
 function toggleAcctMenu(){
   if ($('#acct-menu')){ $('#acct-menu').remove(); return; }
@@ -1204,6 +1337,167 @@ function initFirebase(){
     console.info('Firebase connected ✓');
   }catch(e){ console.warn('Firebase init failed:', e.message); }
 }
+
+// ============================================================================
+//  V1 — credibility chips, availability, stats, reviews, project flip cards
+// ============================================================================
+function verifyChipsHTML(c){
+  const v=c.verify||{}; const chip=(on,l)=>`<span class="vchip ${on?'on':''}">${on?'✓':'·'} ${l}</span>`;
+  return `<span class="vchips">${chip(v.id,'ID')}${chip(v.email,'Email')}${chip(v.portfolio,'Portfolio')}</span>`;
+}
+const AVAIL = { now:['Available now','now'], limited:['Limited availability','limited'], booked:['Booked out','booked'] };
+function availabilityHTML(c){ const a=AVAIL[c.availability]||AVAIL.now; const d=c.availDays||{};
+  const days=[d.weekdays&&'Weekdays',d.weekends&&'Weekends',d.evenings&&'Evenings'].filter(Boolean).join(' · ');
+  return `<div class="avail-ind ${a[1]}"><span class="dot"></span> ${a[0]}${days?`<span class="avail-days">${days}</span>`:''}</div>`; }
+function statsGridHTML(c){
+  return `<div class="stats-grid">
+    <div class="sg"><div class="sg-v">${c.rating.toFixed(1)}★</div><div class="sg-k">${c.reviewCount} reviews</div></div>
+    <div class="sg"><div class="sg-v">${c.jobs}</div><div class="sg-k">Bookings</div></div>
+    <div class="sg"><div class="sg-v">${esc(c.responseTime)}</div><div class="sg-k">Responds in</div></div>
+    <div class="sg"><div class="sg-v">${c.responseRate}%</div><div class="sg-k">Response rate</div></div>
+    <div class="sg"><div class="sg-v">${c.repeatPct}%</div><div class="sg-k">Repeat clients</div></div>
+    <div class="sg"><div class="sg-v">${c.exp}<small> yrs</small></div><div class="sg-k">Experience</div></div>
+  </div>`;
+}
+function starsHTML(n){ return `<span class="stars">${'★'.repeat(n)}<span class="dim">${'★'.repeat(5-n)}</span></span>`; }
+function reviewsHTML(c){
+  const rev=c.reviews||[];
+  return `<div class="reviews-head"><div><span class="rev-avg">${c.rating.toFixed(1)}</span> ${starsHTML(Math.round(c.rating))} <span class="rev-tot">${c.reviewCount} reviews</span></div>
+    <button class="btn btn-ghost btn-sm" id="rev-add">Write a review</button></div>
+    <div class="reviews-grid" id="reviews-grid">${rev.map(reviewCardHTML).join('')}</div>`;
+}
+function reviewCardHTML(r){
+  return `<div class="review-card"><div class="rc-stars">${starsHTML(r.stars)}</div><p class="rc-text">${esc(r.text)}</p>
+    <div class="rc-by"><b>${esc(r.name)}</b><span>${esc(r.role)} · ${esc(r.date)}</span></div></div>`;
+}
+function projectFlipHTML(c){
+  const ps=c.projects||[];
+  return Array.from({length:portfolioCount(c)}, (_,i)=>{ const h=SHOT_H[i%SHOT_H.length], p=ps[i%ps.length];
+    return `<div class="flip" tabindex="0"><div class="flip-in">
+      <div class="flip-front" style="background-image:url('${shotURL(c.id,i+1,600,h)}')"><span class="flip-cue">${ic('chev','icn')}</span></div>
+      <div class="flip-back"><div class="fb-name">${esc(p.name)}</div>
+        <dl><div><dt>Client</dt><dd>${esc(p.client)}</dd></div><div><dt>Role</dt><dd>${esc(p.role)}</dd></div><div><dt>Location</dt><dd>${esc(p.location)}</dd></div><div><dt>Year</dt><dd>${p.year}</dd></div></dl>
+        <button class="fb-view" data-full="${shotURL(c.id,i+1,1100,Math.round(h*1.6))}">View image →</button>
+      </div></div></div>`; }).join('');
+}
+
+// ============================================================================
+//  V1 — SAVE / COLLECTIONS
+// ============================================================================
+const saveKey = (type,id) => `${type}:${id}`;
+function isSaved(type,id){ const k=saveKey(type,id); return Object.values(state.saves).some(arr=>arr.includes(k)); }
+function persistSaves(){ LS.set('saves', state.saves); }
+function toggleSave(type,id){
+  const k=saveKey(type,id);
+  if(isSaved(type,id)){ Object.keys(state.saves).forEach(n=>state.saves[n]=state.saves[n].filter(x=>x!==k)); toast('Removed from saved'); }
+  else { state.saves['Saved']=state.saves['Saved']||[]; state.saves['Saved'].push(k); toast('Saved'); }
+  persistSaves(); syncSaveBtns(type,id);
+}
+function syncSaveBtns(type,id){ const on=isSaved(type,id); $$(`[data-save="${type}:${id}"]`).forEach(b=>b.classList.toggle('on',on)); }
+function saveBtnHTML(type,id,cls=''){ return `<button class="save-btn ${cls} ${isSaved(type,id)?'on':''}" data-save="${type}:${id}" title="Save" aria-label="Save">${ic('heart','icn')}</button>`; }
+function wireSaves(scope=document){ $$('[data-save]', scope).forEach(b=>b.addEventListener('click', e=>{ e.preventDefault(); e.stopPropagation(); const [t,i]=b.dataset.save.split(':'); toggleSave(t,i); })); }
+function openSaves(){
+  const names=Object.keys(state.saves);
+  drawerOpen(`<div class="drawer-pad">
+    <div class="drawer-top"><h2>Saved</h2><button class="ico-btn" id="dw-close">${ic('x','icn')}</button></div>
+    <button class="btn btn-ghost btn-sm" id="new-coll" style="margin:6px 0 18px">+ New collection</button>
+    ${names.map(n=>{ const items=state.saves[n]; return `<div class="coll"><div class="coll-h">${esc(n)} <span>${items.length}</span></div>
+      <div class="coll-items">${items.length?items.map(k=>{ const [t,id]=k.split(':'); const o=t==='creator'?state.creators.find(x=>x.id===id):t==='space'?state.spaces.find(x=>x.id===id):state.jobs.find(x=>x.id===id); if(!o)return ''; const nm=o.name||o.title; const img=t==='space'?spaceURL(o):t==='creator'?coverURL(o):null;
+        return `<a class="coll-item" href="#${t==='creator'?'creator?id=':t==='space'?'space?id=':'jobs'}${t==='job'?'':id}"><span class="ci-av" style="${img?`background-image:url('${img}')`:avatarBg(nm)}">${img?'':initials(nm)}</span><span class="ci-nm">${esc(nm)}</span></a>`; }).join(''):`<div class="coll-empty">Nothing yet — tap the heart on any creator, space or job.</div>`}</div></div>`; }).join('')}
+  </div>`);
+  $('#dw-close').addEventListener('click', drawerClose);
+  $('#new-coll').addEventListener('click', ()=>{ const n=prompt('Collection name (e.g. Fashion Shoot, Campaign Team)'); if(n&&!state.saves[n]){ state.saves[n]=[]; persistSaves(); openSaves(); } });
+  $$('#drawer .coll-item').forEach(a=>a.addEventListener('click', drawerClose));
+}
+
+// ============================================================================
+//  V1 — COMPARE TRAY (up to 4)
+// ============================================================================
+function inCompare(id){ return state.compare.has(id); }
+function toggleCompare(id){
+  if(state.compare.has(id)) state.compare.delete(id);
+  else { if(state.compare.size>=4){ toast('Compare up to 4'); return; } state.compare.add(id); }
+  LS.set('compare',[...state.compare]); renderCompareTray(); $$(`[data-compare="${id}"]`).forEach(b=>b.classList.toggle('on',inCompare(id)));
+}
+function compareBtnHTML(id,cls=''){ return `<button class="cmp-btn ${cls} ${inCompare(id)?'on':''}" data-compare="${id}" title="Compare">${ic('scale','icn')}</button>`; }
+function wireCompare(scope=document){ $$('[data-compare]', scope).forEach(b=>b.addEventListener('click', e=>{ e.preventDefault(); e.stopPropagation(); toggleCompare(b.dataset.compare); })); }
+function renderCompareTray(){
+  let tray=$('#cmp-tray');
+  if(!state.compare.size){ tray?.remove(); return; }
+  const list=[...state.compare].map(id=>state.creators.find(c=>c.id===id)).filter(Boolean);
+  if(!tray){ tray=el(`<div class="cmp-tray" id="cmp-tray"></div>`); document.body.appendChild(tray); }
+  tray.innerHTML = `<div class="cmp-tray-in"><div class="cmp-thumbs">${list.map(c=>`<div class="cmp-thumb"><span class="ct-av" style="${avatarBg(c.name)}">${initials(c.name)}</span><span class="ct-nm">${esc(c.name.split(' ')[0])}</span><button data-rmcmp="${c.id}" aria-label="Remove">${ic('x','icn')}</button></div>`).join('')}${Array.from({length:4-list.length},()=>`<div class="cmp-thumb empty">+</div>`).join('')}</div>
+    <div class="cmp-actions"><button class="btn btn-ghost btn-sm" id="cmp-clear">Clear</button><button class="btn btn-primary btn-sm" id="cmp-go">Compare ${list.length}</button></div></div>`;
+  $('#cmp-clear').addEventListener('click', ()=>{ state.compare.clear(); LS.set('compare',[]); renderCompareTray(); $$('[data-compare]').forEach(b=>b.classList.remove('on')); });
+  $('#cmp-go').addEventListener('click', openCompare);
+  $$('[data-rmcmp]').forEach(b=>b.addEventListener('click',()=>toggleCompare(b.dataset.rmcmp)));
+}
+function openCompare(){
+  const list=[...state.compare].map(id=>state.creators.find(c=>c.id===id)).filter(Boolean);
+  const rows=[['Role',c=>c.roles.join(', ')],['Location',c=>`${c.area}, ${c.city}`],['Rate',c=>money(c.rate)],['Responds in',c=>c.responseTime],['Response rate',c=>c.responseRate+'%'],['Reviews',c=>`${c.rating.toFixed(1)}★ (${c.reviewCount})`],['Repeat clients',c=>c.repeatPct+'%'],['Availability',c=>(AVAIL[c.availability]||AVAIL.now)[0]]];
+  modalOpen(`<div class="cmp-modal"><div class="modal-top"><h3>Compare creators</h3><button class="ico-btn" id="md-x">${ic('x','icn')}</button></div>
+    <div class="cmp-table" style="grid-template-columns:140px repeat(${list.length},1fr)">
+      <div class="cmp-cell head"></div>${list.map(c=>`<a class="cmp-cell head creator" href="#creator?id=${c.id}"><span class="ct-av" style="${avatarBg(c.name)}">${initials(c.name)}</span>${esc(c.name)}</a>`).join('')}
+      ${rows.map(r=>`<div class="cmp-cell k">${r[0]}</div>${list.map(c=>`<div class="cmp-cell">${esc(String(r[1](c)))}</div>`).join('')}`).join('')}
+    </div></div>`);
+  $('#md-x').addEventListener('click', modalClose);
+  $$('.cmp-cell.creator').forEach(a=>a.addEventListener('click', modalClose));
+}
+
+// ============================================================================
+//  V1 — STRUCTURED PROJECT ENQUIRY
+// ============================================================================
+function openEnquiry(creator){
+  const team=['Photographer','Videographer','Model','Stylist','Hair & Makeup','Gaffer','Editor','Producer'];
+  drawerOpen(`<div class="drawer-pad">
+    <div class="drawer-top"><div><div class="eyebrow">Project enquiry</div><h2>${creator?`Brief ${esc(creator.name.split(' ')[0])}`:'Start a project'}</h2></div><button class="ico-btn" id="dw-close">${ic('x','icn')}</button></div>
+    <form id="enq-form" class="enq-form">
+      <div class="form-row"><label class="label">Project name</label><input class="field" name="project" required placeholder="Summer campaign"></div>
+      <div class="form-row two"><div><label class="label">Location</label><select class="field" name="city">${CITIES.map(c=>`<option ${c===(creator?.city)?'selected':''}>${c}</option>`).join('')}</select></div><div><label class="label">Date</label><input class="field" type="date" name="date"></div></div>
+      <div class="form-row"><label class="label">Budget</label><input class="field" name="budget" placeholder="$5,000"></div>
+      <div class="form-row"><label class="label">Description</label><textarea class="field" name="desc" placeholder="What you're making and what you need on the day…"></textarea></div>
+      <div class="form-row"><label class="label">Team required <span class="opt">optional</span></label><div class="checkrow">${team.map(t=>`<label class="check"><input type="checkbox" name="team" value="${t}">${t}</label>`).join('')}</div></div>
+      <button class="btn btn-primary btn-block" type="submit">Send enquiry</button>
+    </form></div>`);
+  $('#dw-close').addEventListener('click', drawerClose);
+  $('#enq-form').addEventListener('submit', e=>{ e.preventDefault(); const f=new FormData(e.target);
+    const enq={ id:'e'+Date.now(), to:creator?.id||null, project:f.get('project'), city:f.get('city'), date:f.get('date'), budget:f.get('budget'), desc:f.get('desc'), team:f.getAll('team'), at:new Date().toISOString() };
+    const all=LS.get('enquiries',[]); all.unshift(enq); LS.set('enquiries',all);
+    drawerClose(); toast(creator?`Enquiry sent to ${creator.name.split(' ')[0]}`:'Enquiry sent');
+  });
+}
+
+// ============================================================================
+//  V1 — WAITLIST (replaces signup language)
+// ============================================================================
+function waitlistCount(){ return WAITLIST_BASE + (LS.get('waitlist',[]).length); }
+function openWaitlist(){
+  modalOpen(`<div class="wl-modal"><button class="ico-btn modal-close" id="md-x">${ic('x','icn')}</button>
+    <div class="wl-count"><span class="dot"></span> ${waitlistCount().toLocaleString()} founding members waiting</div>
+    <h3>Join the waitlist</h3><p class="sub">Be first in when we open your city. Founding members get verified early and featured.</p>
+    <form id="wl-form">
+      <div class="form-row two"><div><input class="field" name="name" required placeholder="Name"></div><div><input class="field" name="phone" placeholder="Phone"></div></div>
+      <div class="form-row"><input class="field" type="email" name="email" required placeholder="Email"></div>
+      <div class="form-row two"><div><select class="field" name="city">${CITIES.map(c=>`<option>${c}</option>`).join('')}</select></div><div><input class="field" name="occupation" placeholder="Occupation"></div></div>
+      <button class="btn btn-primary btn-block" type="submit">Join waitlist</button>
+    </form></div>`);
+  $('#md-x').addEventListener('click', modalClose);
+  $('#wl-form').addEventListener('submit', e=>{ e.preventDefault(); const f=new FormData(e.target);
+    const entry={ name:f.get('name'), phone:f.get('phone'), email:f.get('email'), city:f.get('city'), occupation:f.get('occupation'), at:new Date().toISOString() };
+    const all=LS.get('waitlist',[]); all.push(entry); LS.set('waitlist',all);
+    if(FB.on&&FB.db) FB.db.collection('waitlist').add(entry).catch(()=>{});
+    modalClose(); toast(`You're on the list — #${waitlistCount().toLocaleString()}`);
+  });
+}
+
+// ---------- generic drawer / modal helpers ----------
+function drawerOpen(html){ const d=$('#drawer'); d.innerHTML=html; d.hidden=false; d.setAttribute('aria-hidden','false'); $('#scrim').hidden=false; wireSaves(d); }
+function drawerClose(){ const d=$('#drawer'); d.hidden=true; d.setAttribute('aria-hidden','true'); $('#scrim').hidden=true; }
+function modalOpen(html){ $('#vmodal')?.remove(); const m=el(`<div class="modal-scrim" id="vmodal"><div class="modal vmodal-box">${html}</div></div>`); document.body.appendChild(m); m.addEventListener('click',e=>{ if(e.target===m) m.remove(); }); }
+function modalClose(){ $('#vmodal')?.remove(); }
+
+// apply locally-submitted reviews on top of seed
+(function(){ const ur=LS.get('userReviews',{}); state.creators.forEach(c=>{ if(ur[c.id]){ c.reviews=[...ur[c.id], ...(c.reviews||[])]; c.reviewCount=(c.reviewCount||0)+ur[c.id].length; } }); })();
 
 // ---------- boot ----------
 $('#scrim').addEventListener('click', closeProfile);

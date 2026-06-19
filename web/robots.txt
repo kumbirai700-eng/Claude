@@ -1,0 +1,9 @@
+# The Creative Collective — robots.txt
+User-agent: *
+Allow: /
+
+# Block app-only utility routes from indexing (hash routes are app-side)
+Disallow: /account
+Disallow: /*?*compare
+
+Sitemap: https://thecreativecollective.com.au/sitemap.xml

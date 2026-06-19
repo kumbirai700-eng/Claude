@@ -9,12 +9,15 @@ const CATEGORIES = [
   { id: 'talent',    label: 'Talent',                 roles: ['Model', 'Actor', 'Dancer', 'Presenter', 'Extra'] },
   { id: 'camera',    label: 'Camera',                 roles: ['Photographer', 'Videographer', 'Cinematographer / DP', 'Camera Operator', 'Drone Operator', 'Assistant Camera'] },
   { id: 'lighting',  label: 'Lighting & Grip',        roles: ['Gaffer', 'Grip', 'Best Boy', 'Lighting Technician'] },
-  { id: 'sound',     label: 'Sound',                  roles: ['Sound Mixer', 'Boom Operator', 'Composer', 'Sound Designer'] },
-  { id: 'music',     label: 'Music & Studio',         roles: ['Music Producer', 'Recording Engineer', 'Mixing Engineer', 'Mastering Engineer', 'Session Musician', 'Vocalist', 'Beatmaker', 'Songwriter', 'Studio Engineer'] },
+  { id: 'sound',     label: 'Sound',                  roles: ['Sound Mixer', 'Boom Operator', 'Composer', 'Sound Designer', 'Sound Engineer', 'Audio Engineer'] },
+  { id: 'music',     label: 'Music & Studio',         roles: ['Music Producer', 'Recording Engineer', 'Mixing Engineer', 'Mastering Engineer', 'Session Musician', 'Vocalist', 'Beatmaker', 'Songwriter', 'Studio Engineer', 'DJ'] },
   { id: 'glam',      label: 'Hair, Makeup & Style',   roles: ['Makeup Artist', 'Hair Stylist', 'Wardrobe Stylist', 'Nail Artist', 'Groomer'] },
+  { id: 'fashion',   label: 'Fashion & Wardrobe',     roles: ['Fashion Designer', 'Textile Designer', 'Pattern Maker', 'Garment Technician', 'Fashion Stylist'] },
   { id: 'direction', label: 'Direction & Production', roles: ['Director', 'Creative Director', 'Art Director', 'Producer', 'Production Assistant', 'Casting Director'] },
-  { id: 'post',      label: 'Post-Production',         roles: ['Editor', 'Colorist', 'Retoucher', 'VFX Artist', 'Motion Designer'] },
-  { id: 'design',    label: 'Design & Build',          roles: ['Set Designer', 'Prop Stylist', 'Production Designer', 'Illustrator'] },
+  { id: 'post',      label: 'Post-Production',         roles: ['Editor', 'Colorist', 'Retoucher', 'VFX Artist', 'Motion Designer', 'Animator'] },
+  { id: 'design',    label: 'Design & Build',          roles: ['Set Designer', 'Prop Stylist', 'Production Designer', 'Illustrator', 'Graphic Designer'] },
+  { id: 'events',    label: 'Events & Stage',         roles: ['Event Manager', 'Event Producer', 'MC', 'Host'] },
+  { id: 'brand',     label: 'Marketing & Brand',      roles: ['Marketing Manager', 'Content Creator', 'Social Media Manager', 'Brand Strategist', 'Copywriter', 'Publicist', 'PR Manager'] },
 ];
 const ROLE_CATEGORY = {};
 CATEGORIES.forEach(c => c.roles.forEach(r => (ROLE_CATEGORY[r] = c.id)));
@@ -168,3 +171,60 @@ const SEED_POSTS = [
   { id:'p06', title:'The connectors: meet the producers holding cities together', cat:'People', author:'The Scene', date:'2026-05-16', read:6, img:'post-connectors', excerpt:'Every scene runs on a handful of people who know everyone. We profile five of them.', body:'You’ve met them, or you’ve been booked by them. The producer who somehow knows the gaffer, the studio and the caterer...' },
 ];
 const BLOG_CATS = ['All','Music','Production','Locations','Spaces','Business','People'];
+
+// ============================================================================
+//  V1 — credibility, responsiveness, availability, reviews, projects
+// ============================================================================
+const REVIEWER_POOL = [
+  ['Harriet Cole','Brand Manager, Aje'], ['Sam Okoro','Producer, Mavin'], ['Lucy Tran','Founder, Mecca Lab'],
+  ['Dev Patel','Creative Director'], ['Mia Sanderson','Marketing Lead, Tourism WA'], ['Jack Reilly','Photographer'],
+  ['Nadia Hassan','Casting Director'], ['Tom Whitfield','Agency Producer'], ['Bianca Ferraro','Stylist'],
+  ['Eli Moreau','Music Supervisor'], ['Grace Lin','E-comm Manager'], ['Owen Clarke','Label A&R'],
+];
+const REVIEW_TEXT = [
+  'Absolute professional. Turned a tight brief into something we were genuinely proud of — on time, on budget, zero drama.',
+  'One of the easiest bookings we’ve done. Communicated the whole way through and over-delivered on the day.',
+  'Brought real craft and calm to a chaotic shoot. We’ve already booked them again.',
+  'Understood the vision immediately and elevated it. Couldn’t recommend more highly for any campaign.',
+  'Fast, talented and lovely to work with. The kind of creative you build a long relationship with.',
+  'Delivered exactly what the brand needed and then some. Our go-to from now on.',
+];
+const PROJECT_POOL = [
+  ['Summer Capsule','Aje Athletica','Lead','Bondi, NSW'], ['Skin Story','Mecca Beauty','Beauty','Melbourne, VIC'],
+  ['Night Shift','Mavin Records','Music Video','Brisbane, QLD'], ['Coastline','Tourism WA','Brand Film','Fremantle, WA'],
+  ['Resort 26','Swim Co.','Campaign','Gold Coast, QLD'], ['The Valley','Independent','Editorial','Fitzroy, VIC'],
+  ['First Light','Tech Startup','Content','Sydney, NSW'], ['Heritage','Local Council','Documentary','Adelaide, SA'],
+];
+
+function pick(arr, seed){ return arr[Math.abs(seed) % arr.length]; }
+
+SEED_CREATORS.forEach((c) => {
+  const seed = hashCode(c.id);
+  // compact credibility — chips beside the name
+  c.verify = c.verify || { id: c.verified, email: true, portfolio: c.jobs > 0 };
+  // responsiveness
+  const rt = ['1h','2h','3h','4h','same day'];
+  c.responseTime = c.responseTime || pick(rt, seed + (c.verified?0:2));
+  c.responseRate = c.responseRate || (88 + (seed % 12));               // 88–99%
+  c.repeatPct    = c.repeatPct    || (22 + (seed % 45));               // 22–66%
+  // availability
+  const av = ['now','limited','booked'];
+  c.availability = c.availability || (c.jobs>90?'limited':(c.jobs<30?'now':pick(av, seed)));
+  c.availDays    = c.availDays    || { weekdays:true, weekends:(seed%2===0), evenings:(seed%3!==0) };
+  // reviews
+  const nrev = 3 + (seed % 5);
+  c.reviews = c.reviews || Array.from({length:nrev}, (_,i)=>{
+    const r = pick(REVIEWER_POOL, seed+i*7); const stars = (i%6===0)?4:5;
+    return { name:r[0], role:r[1], stars, date: ['2026-05','2026-04','2026-03','2026-02'][i%4], text: pick(REVIEW_TEXT, seed+i*3) };
+  });
+  c.reviewCount = c.reviewCount || (nrev + (seed % 20));
+  // portfolio project context (per shot)
+  c.projects = c.projects || Array.from({length:9}, (_,i)=>{
+    const p = pick(PROJECT_POOL, seed+i*5);
+    return { name:p[0], client:p[1], role:p[2]||c.roles[0], location:p[3], year: 2026 - (i%4) };
+  });
+});
+function hashCode(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))|0; return h; }
+
+// Waitlist (founding members) — base + however many have joined locally
+const WAITLIST_BASE = 728;
