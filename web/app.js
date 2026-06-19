@@ -70,7 +70,7 @@ function filtered(){
 // ============================================================================
 //  ROUTER
 // ============================================================================
-const routes = { home:renderHome, discover:renderDiscover, jobs:renderJobs, gear:renderGear, join:renderJoin, creator:renderCreator, spaces:renderSpaces, space:renderSpace, blog:renderBlog, post:renderPost, account:renderAccount, about:renderAbout, legal:renderLegal };
+const routes = { home:renderHome, discover:renderDiscover, jobs:renderJobs, gear:renderGear, join:renderJoin, creator:renderCreator, spaces:renderSpaces, space:renderSpace, blog:renderBlog, post:renderPost, account:renderAccount, about:renderAbout, legal:renderLegal, admin:renderAdmin };
 function router(){
   const raw = location.hash.replace('#','') || 'home';
   const [route, qs] = raw.split('?');
@@ -375,7 +375,7 @@ function renderHome(){
       <div class="foot-cols">
         <div class="about"><a class="brand" href="#home" data-nav><span class="brand-mark"><svg viewBox="0 0 900 820" class="brand-au"><path d="M612,60 C660,96 740,190 800,440 C788,540 755,612 730,645 C700,665 625,672 590,650 C540,646 500,648 470,645 C360,652 230,640 155,610 C135,580 120,530 120,520 C130,440 150,360 250,230 C300,172 330,142 360,150 C420,150 455,118 470,86 C520,108 560,148 560,150 C600,118 612,60 612,60 Z"/></svg></span><span class="brand-name">THE&nbsp;CREATIVE&nbsp;COLLECTIVE</span></a><p>Australia's map-based marketplace for finding creative crew. Free for creators, density-first by design.</p></div>
         <div class="foot-col"><h5>Product</h5><a href="#discover?reset=1">Discover map</a><a href="#spaces">Spaces</a><a href="#jobs">For brands</a><a href="#gear">Gear rental</a><a href="#blog">The Scene</a></div>
-        <div class="foot-col"><h5>Company</h5><a href="#about">About</a><a id="foot-wl" href="#about">Join waitlist</a><a href="#discover?role=Model">Models</a><a href="#discover?role=Photographer">Photographers</a></div>
+        <div class="foot-col"><h5>Company</h5><a href="#about">About</a><a id="foot-wl" href="#about">Join waitlist</a><a href="#blog">The Scene</a><a href="#admin">Admin</a></div>
         <div class="foot-col"><h5>Legal</h5>${Object.entries(LEGAL_DOCS).map(([k,v])=>`<a href="#legal?doc=${k}">${esc(v[0])}</a>`).join('')}</div>
       </div>
       <div class="foot-bar"><span>© 2026 The Creative Collective · Australia</span><span>Free for creators, always.</span></div>
@@ -809,7 +809,7 @@ function openReview(c){
     const r={ name:f.get('name'), role:f.get('role')||'Client', stars, date:new Date().toISOString().slice(0,7), text:f.get('text') };
     c.reviews=[r,...(c.reviews||[])]; c.reviewCount=(c.reviewCount||0)+1;
     const ur=LS.get('userReviews',{}); ur[c.id]=[r,...(ur[c.id]||[])]; LS.set('userReviews',ur);
-    if(FB.on&&FB.db) FB.db.collection('reviews').add({creator:c.id,...r}).catch(()=>{});
+    sbInsert('reviews', { creator_ref:c.id, creator_name:c.name, author_name:r.name, author_role:r.role, stars:r.stars, text:r.text });
     modalClose(); const grid=$('#reviews-grid'); if(grid) grid.insertAdjacentHTML('afterbegin', reviewCardHTML(r)); toast('Review posted');
   });
 }
@@ -852,6 +852,76 @@ function renderPost(){
     <p class="body">${esc(p.body)}</p>
     <p class="body" style="margin-top:18px;color:var(--muted)">More from this story is coming — The Scene is a living newsletter. Want to be featured? <a href="#join" style="color:var(--green)">Get on the map.</a></p>
   </div>`));
+}
+
+// ============================================================================
+//  VIEW: ADMIN  (Supabase-backed dashboard — gated by app_admins allowlist)
+// ============================================================================
+function renderAdmin(){
+  const view = $('#view');
+  if(!SB.on){ view.appendChild(el(`<div class="wrap section-pad"><div class="admin-gate"><h1>Admin</h1><p>Backend is connecting — refresh in a moment.</p></div></div>`)); return; }
+  if(!SB.user){ renderAdminLogin(); return; }
+  if(!SB.admin){ view.appendChild(el(`<div class="wrap section-pad"><div class="admin-gate"><div class="eyebrow">Admin</div><h1>No access</h1><p>You're logged in as <b>${esc(SB.user.email)}</b>, which isn't an admin account.</p><button class="btn btn-ghost" id="adm-out">Log out</button></div></div>`)); $('#adm-out').addEventListener('click', ()=>SB.client.auth.signOut().then(()=>location.reload())); return; }
+
+  view.appendChild(el(`<div class="admin">
+    <div class="admin-bar"><div><span class="adm-dot"></span> ADMIN · <b>${esc(SB.user.email)}</b></div>
+      <div class="admin-bar-r"><span class="adm-live">● live on Supabase</span><button class="btn btn-ghost btn-sm" id="adm-out">Log out</button></div></div>
+    <div class="wrap">
+      <div class="page-head" style="padding:34px 0 20px"><div class="eyebrow">Dashboard</div><h1>The Collective — operations</h1></div>
+      <div class="adm-metrics" id="adm-metrics"></div>
+      <div class="adm-tabs" id="adm-tabs">
+        ${['Waitlist','Enquiries','Reviews','Profiles','Support'].map((t,i)=>`<button class="adm-tab ${i===0?'on':''}" data-tab="${t.toLowerCase()}">${t}</button>`).join('')}
+      </div>
+      <div class="adm-panel" id="adm-panel"><div class="adm-loading">Loading…</div></div>
+    </div>
+  </div>`));
+  $('#adm-out').addEventListener('click', ()=>SB.client.auth.signOut().then(()=>location.reload()));
+  loadAdminMetrics();
+  $$('#adm-tabs .adm-tab').forEach(b=>b.addEventListener('click', ()=>{ $$('#adm-tabs .adm-tab').forEach(x=>x.classList.toggle('on',x===b)); loadAdminTab(b.dataset.tab); }));
+  loadAdminTab('waitlist');
+}
+function renderAdminLogin(){
+  $('#view').appendChild(el(`<div class="wrap section-pad"><div class="admin-login">
+    <div class="eyebrow">Admin access</div><h1>Sign in to the dashboard</h1>
+    <p>Use your admin email. First time? Set a password below — you'll be let straight in.</p>
+    <div class="modal-head" style="margin-top:24px"><button class="modal-tab on" data-t="login">Log in</button><button class="modal-tab" data-t="signup">Set password</button></div>
+    <form id="adm-form" class="admin-form">
+      <div class="form-row"><input class="field" type="email" name="email" required placeholder="Admin email" value="kumbirai700@gmail.com"></div>
+      <div class="form-row"><input class="field" type="password" name="pass" required minlength="6" placeholder="Password (min 6 chars)"></div>
+      <button class="btn btn-primary btn-block" type="submit" id="adm-submit">Log in</button>
+      <div class="adm-msg" id="adm-msg"></div>
+    </form>
+  </div></div>`));
+  let mode='login';
+  $$('.modal-tab').forEach(b=>b.addEventListener('click',()=>{ mode=b.dataset.t; $$('.modal-tab').forEach(x=>x.classList.toggle('on',x===b)); $('#adm-submit').textContent = mode==='login'?'Log in':'Set password & enter'; }));
+  $('#adm-form').addEventListener('submit', async e=>{
+    e.preventDefault(); const f=new FormData(e.target); const email=f.get('email'), pass=f.get('pass'); const msg=$('#adm-msg'); msg.textContent='';
+    const res = mode==='signup'
+      ? await SB.client.auth.signUp({ email, password:pass, options:{ data:{ name:'Admin', kind:'admin' } } })
+      : await SB.client.auth.signInWithPassword({ email, password:pass });
+    if(res.error){ msg.textContent = res.error.message; return; }
+    await refreshAdminFlag(); renderViewReset(); renderAdmin();
+  });
+}
+function renderViewReset(){ $('#view').innerHTML=''; }
+async function loadAdminMetrics(){
+  const tables=[['waitlist','Waitlist'],['enquiries','Enquiries'],['reviews','Reviews'],['profiles','Profiles'],['support_tickets','Support']];
+  const box=$('#adm-metrics'); box.innerHTML = tables.map(t=>`<div class="adm-metric"><div class="am-v" id="am-${t[0]}">—</div><div class="am-k">${t[1]}</div></div>`).join('');
+  for(const [tbl] of tables){ const { count } = await SB.client.from(tbl).select('*',{count:'exact',head:true}); const e=$(`#am-${tbl}`); if(e) e.textContent = (count??0); }
+}
+async function loadAdminTab(tab){
+  const panel=$('#adm-panel'); panel.innerHTML=`<div class="adm-loading">Loading…</div>`;
+  const map={ waitlist:['waitlist',['name','email','phone','city','occupation','created_at']],
+    enquiries:['enquiries',['project','to_name','from_name','from_email','budget','location','date','created_at']],
+    reviews:['reviews',['creator_name','author_name','stars','text','created_at']],
+    profiles:['profiles',['name','city','roles','verified','availability','created_at']],
+    support:['support_tickets',['email','subject','status','created_at']] };
+  const [tbl,cols]=map[tab];
+  const { data, error } = await SB.client.from(tbl).select('*').order('created_at',{ascending:false}).limit(200);
+  if(error){ panel.innerHTML=`<div class="adm-empty">Can't read ${tbl}: ${esc(error.message)}</div>`; return; }
+  if(!data||!data.length){ panel.innerHTML=`<div class="adm-empty">No ${tab} yet. As people use the live site, rows appear here in real time.</div>`; return; }
+  panel.innerHTML = `<div class="adm-table-wrap"><table class="adm-table"><thead><tr>${cols.map(c=>`<th>${esc(c.replace(/_/g,' '))}</th>`).join('')}</tr></thead>
+    <tbody>${data.map(r=>`<tr>${cols.map(c=>{ let v=r[c]; if(Array.isArray(v))v=v.join(', '); if(c==='created_at'&&v)v=new Date(v).toLocaleDateString(); if(c==='stars')v='★'.repeat(v||0); if(v===true)v='✓'; if(v===false)v='·'; return `<td>${esc(String(v??'—')).slice(0,120)}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
 
 // ============================================================================
@@ -1463,6 +1533,7 @@ function openEnquiry(creator){
   $('#enq-form').addEventListener('submit', e=>{ e.preventDefault(); const f=new FormData(e.target);
     const enq={ id:'e'+Date.now(), to:creator?.id||null, project:f.get('project'), city:f.get('city'), date:f.get('date'), budget:f.get('budget'), desc:f.get('desc'), team:f.getAll('team'), at:new Date().toISOString() };
     const all=LS.get('enquiries',[]); all.unshift(enq); LS.set('enquiries',all);
+    sbInsert('enquiries', { to_ref:creator?.id||null, to_name:creator?.name||null, from_name:state.user?.name||null, from_email:state.user?.email||null, project:enq.project, location:enq.city, date:enq.date||null, budget:enq.budget, description:enq.desc, team:enq.team });
     drawerClose(); toast(creator?`Enquiry sent to ${creator.name.split(' ')[0]}`:'Enquiry sent');
   });
 }
@@ -1483,9 +1554,9 @@ function openWaitlist(){
     </form></div>`);
   $('#md-x').addEventListener('click', modalClose);
   $('#wl-form').addEventListener('submit', e=>{ e.preventDefault(); const f=new FormData(e.target);
-    const entry={ name:f.get('name'), phone:f.get('phone'), email:f.get('email'), city:f.get('city'), occupation:f.get('occupation'), at:new Date().toISOString() };
-    const all=LS.get('waitlist',[]); all.push(entry); LS.set('waitlist',all);
-    if(FB.on&&FB.db) FB.db.collection('waitlist').add(entry).catch(()=>{});
+    const entry={ name:f.get('name'), phone:f.get('phone'), email:f.get('email'), city:f.get('city'), occupation:f.get('occupation') };
+    const all=LS.get('waitlist',[]); all.push({...entry, at:new Date().toISOString()}); LS.set('waitlist',all);
+    sbInsert('waitlist', entry);
     modalClose(); toast(`You're on the list — #${waitlistCount().toLocaleString()}`);
   });
 }
@@ -1499,6 +1570,29 @@ function modalClose(){ $('#vmodal')?.remove(); }
 // apply locally-submitted reviews on top of seed
 (function(){ const ur=LS.get('userReviews',{}); state.creators.forEach(c=>{ if(ur[c.id]){ c.reviews=[...ur[c.id], ...(c.reviews||[])]; c.reviewCount=(c.reviewCount||0)+ur[c.id].length; } }); })();
 
+// ============================================================================
+//  SUPABASE — live backend (data + admin auth)
+// ============================================================================
+const SB = { on:false, client:null, admin:false, user:null };
+function initSupabase(){
+  if(!window.SUPABASE_URL || typeof supabase === 'undefined') return;
+  try{
+    SB.client = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+    SB.on = true;
+    SB.client.auth.getSession().then(({data})=>{ SB.user = data.session?.user || null; refreshAdminFlag(); });
+    SB.client.auth.onAuthStateChange((_e, session)=>{ SB.user = session?.user || null; refreshAdminFlag(); });
+    console.info('Supabase connected ✓');
+  }catch(e){ console.warn('Supabase init failed:', e.message); }
+}
+async function refreshAdminFlag(){
+  if(!SB.on || !SB.user){ SB.admin=false; renderNavCta(); return; }
+  const { data } = await SB.client.from('app_admins').select('email').limit(1);
+  SB.admin = !!(data && data.length);
+  renderNavCta();
+}
+// fire-and-forget insert helpers (localStorage stays as the offline mirror)
+function sbInsert(table, row){ if(SB.on) SB.client.from(table).insert(row).then(({error})=>{ if(error) console.warn(table, error.message); }); }
+
 // ---------- boot ----------
 $('#scrim').addEventListener('click', closeProfile);
 document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeProfile(); $('.lightbox')?.remove(); } });
@@ -1506,5 +1600,6 @@ $('#burger')?.addEventListener('click', () => { const open=$('.nav-links').class
 const curSel = $('#cur-select');
 if (curSel){ curSel.value = state.cur; curSel.addEventListener('change', () => { state.cur = curSel.value; LS.set('cur', state.cur); router(); }); }
 initFirebase();
+initSupabase();
 renderNavCta();
 router();

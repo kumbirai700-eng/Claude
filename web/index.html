@@ -80,13 +80,17 @@
   <div class="toast" id="toast" hidden></div>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <!-- Firebase (optional). Paste your config below to switch on real accounts. -->
+  <!-- Supabase backend (live) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    window.SUPABASE_URL = "https://tbukreqlmymhmvnuczah.supabase.co";
+    window.SUPABASE_KEY = "sb_publishable_EW5W0u4hNaTBgvVT80ncpg_7BXoAd6U";
+  </script>
+  <!-- Firebase (optional, off by default — Supabase is the live backend) -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <script>
-    /* TODO: paste your Firebase project config here (Firebase console → Project settings → SDK setup).
-       Leave apiKey empty to keep the localStorage demo. */
     window.FIREBASE_CONFIG = { apiKey:"", authDomain:"", projectId:"", appId:"" };
   </script>
   <script src="data.js"></script>
