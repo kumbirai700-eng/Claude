@@ -458,15 +458,21 @@ function renderDiscover(){
           <div class="city-sug" id="city-sug" hidden></div>
         </div>
         <div class="search-wrap">${ic('search','icn')}<input id="search" placeholder="search ${state.mode==='jobs'?'briefs':state.mode==='spaces'?'spaces':'crew'}…" value="${esc(state.query)}" /></div>
+        <details class="filter-drop" id="filter-drop">
+          <summary><span class="fd-label">Filters</span><span class="fd-count" id="fd-count"></span><i class="fd-caret"></i></summary>
+          <div class="filters" id="cat-filters"></div>
+        </details>
       </div>
-      <div class="filters" id="cat-filters"></div>
-      <div class="hotspots" id="hotspots"></div>
       <div class="results-head"><span id="results-title">Results</span><span id="results-sub"></span></div>
       <div id="results"></div>
     </div>
     <div class="map-wrap" id="map-wrap">
       <div id="map"></div>
       <div class="map-overlay-top"><div class="map-city-tag">${ic('pin','icn')} <span id="map-city">${esc(state.city)}</span></div><div class="map-count" id="map-count"></div></div>
+      <details class="map-hotspots" id="hotspots-wrap" open>
+        <summary>Hotspots <i class="fd-caret"></i></summary>
+        <div id="hotspots"></div>
+      </details>
     </div>
   </section>`));
 
@@ -526,7 +532,7 @@ function renderHotspots(){
   const box = $('#hotspots'); if(!box) return;
   const counts = CITIES.map(c => ({ c, n: cityCount(c) })).filter(x=>x.n>0).sort((a,b)=>b.n-a.n).slice(0,6);
   const max = counts[0]?.n || 1;
-  box.innerHTML = `<div class="cat-title">Hotspots · where it's busiest</div>` + counts.map(({c,n})=>`
+  box.innerHTML = counts.map(({c,n})=>`
     <button class="hotspot ${c===state.city?'on':''}" data-city="${esc(c)}"><span class="hs-name">${esc(c)}</span><span class="hs-bar"><i style="width:${Math.round(n/max*100)}%"></i></span><span class="hs-n">${n}</span></button>`).join('');
   $$('#hotspots .hotspot').forEach(b => b.addEventListener('click', () => pickCity(b.dataset.city)));
 }
@@ -567,13 +573,14 @@ function initMap(){
     },
     center: [c.lng, c.lat], zoom: c.zoom, attributionControl: true,
   });
-  state.map.addControl(new maplibregl.NavigationControl({ showCompass:false }), 'bottom-right');
+  state.map.addControl(new maplibregl.NavigationControl({ showCompass:false }), 'bottom-left');
   state.map.on('load', () => state.map.resize());
 }
 function flyToCity(){ const c=CITY_COORDS[state.city]; if(state.map) state.map.flyTo({ center:[c.lng,c.lat], zoom:c.zoom, speed:1.2, curve:1.5 }); $('#map-city').textContent=state.city; }
 
 function refreshDiscover(){
   renderHotspots();
+  const fc=$('#fd-count'); if(fc){ fc.textContent = state.roles.size ? state.roles.size : ''; fc.classList.toggle('on', state.roles.size>0); }
   if (state.mode === 'spaces'){
     const list = filteredSpaces();
     $('#map-count').innerHTML = `<b>${list.length}</b>&nbsp;spaces`;
